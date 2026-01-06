@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, MoreHorizontal, Search } from "lucide-react";
+import Link from "next/link";
 
 const mockCategories = [
   {
@@ -81,9 +82,11 @@ export default function CategoriesPage() {
             Organize your products into categories
           </p>
         </div>
-        <Button className="bg-accent-blue hover:bg-accent-blue-hover">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Category
+        <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
+          <Link href="/admin/categories/add">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Category
+          </Link>
         </Button>
       </div>
 
