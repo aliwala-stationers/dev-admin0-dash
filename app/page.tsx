@@ -62,13 +62,13 @@ export default function LoginPage() {
                   <Label htmlFor="password" className="text-sm font-medium">
                     Password
                   </Label>
-                  <a
+                  {/* <a
                     href="#"
                     className="text-xs text-accent-blue hover:text-accent-blue-hover transition-colors"
                     tabIndex={-1}
                   >
                     Forgot password?
-                  </a>
+                  </a> */}
                 </div>
                 <div className="relative">
                   <Input
@@ -96,7 +96,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              {/* <div className="flex items-center space-x-2">
                 <Checkbox
                   id="remember"
                   checked={rememberMe}
@@ -109,7 +109,7 @@ export default function LoginPage() {
                 >
                   Remember me for 30 days
                 </Label>
-              </div>
+              </div> */}
 
               <Button
                 type="submit"
@@ -120,7 +120,7 @@ export default function LoginPage() {
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          {/* <CardFooter className="flex flex-col space-y-4">
             <div className="relative w-full">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border" />
@@ -166,7 +166,7 @@ export default function LoginPage() {
                 Sign up
               </a>
             </p>
-          </CardFooter>
+          </CardFooter> */}
         </Card>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
