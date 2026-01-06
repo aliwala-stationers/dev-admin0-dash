@@ -32,7 +32,7 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast.success("Welcome back!", {
-        description: "Redirecting to dashboard...",
+        description: "Admin Panel Dashboard",
       });
     } catch (error) {
       toast.error("Authentication Failed", {

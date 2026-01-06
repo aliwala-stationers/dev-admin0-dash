@@ -35,25 +35,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Mock login - in production, this would call an API
-    if (password.length >= 6) {
+    // PATCH: Strict credential check
+    // in production, this would call an API
+    if (email === "info@aliwala.in" && password === "adminAliwala32") {
       const mockUser: User = {
         id: "1",
         name: "Admin User",
-        email: email,
+        email: email, // Carry the email over
         role: "admin",
       };
       setUser(mockUser);
       localStorage.setItem("user", JSON.stringify(mockUser));
+      // Note: You have a router.push here AND in the page useEffect. 
+      // This ensures the redirect happens immediately after state update.
       router.push("/admin/dashboard");
     } else {
+      // Logic branch for failure
       throw new Error("Invalid credentials");
     }
   };
 
   const logout = () => {
+    // Clear user data
     setUser(null);
     localStorage.removeItem("user");
+    // Redirect to login page
     router.push("/");
   };
 
