@@ -4,9 +4,10 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ChevronLeft, Save, Plus } from "lucide-react";
+import { ChevronLeft, Save, Plus, X, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useState, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -50,12 +51,19 @@ const productSchema = z.object({
     message: "SKU must be at least 3 characters.",
   }),
   status: z.boolean(),
+  images: z.array(z.string()).min(2, {
+    message: "At least 2 images are required.",
+  }).max(5, {
+    message: "Maximum 5 images allowed.",
+  }),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
 export default function AddProductPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previews, setPreviews] = useState<string[]>([]);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -67,8 +75,44 @@ export default function AddProductPage() {
       stock: "",
       status: true,
       category: "",
+      images: [],
     },
   });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const currentImages = form.getValues("images");
+    if (currentImages.length + files.length > 5) {
+      toast.error("Limit exceeded", {
+        description: "You can only upload a maximum of 5 images.",
+      });
+      return;
+    }
+
+    const newPreviews: string[] = [];
+    const newImageUrls: string[] = [];
+
+    files.forEach((file) => {
+      const url = URL.createObjectURL(file);
+      newPreviews.push(url);
+      newImageUrls.push(url); // Mock URL for now
+    });
+
+    const updatedImages = [...currentImages, ...newImageUrls];
+    setPreviews([...previews, ...newPreviews]);
+    form.setValue("images", updatedImages, { shouldValidate: true });
+  };
+
+  const removeImage = (index: number) => {
+    const currentImages = form.getValues("images");
+    const updatedImages = currentImages.filter((_, i) => i !== index);
+    const updatedPreviews = previews.filter((_, i) => i !== index);
+    
+    setPreviews(updatedPreviews);
+    form.setValue("images", updatedImages, { shouldValidate: true });
+  };
 
   function onSubmit(values: ProductFormValues) {
     console.log(values);
@@ -253,17 +297,76 @@ export default function AddProductPage() {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Product Image</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle>Product Images</CardTitle>
+                  <span className="text-xs text-muted-foreground">
+                    {previews.length}/5
+                  </span>
                 </CardHeader>
-                <CardContent>
-                  <div className="border-2 border-dashed border-muted rounded-lg p-8 flex flex-col items-center justify-center text-center space-y-2 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <div className="p-3 rounded-full bg-muted">
-                      <Plus className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm font-medium">Click to upload or drag and drop</p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG, WEBP up to 5MB</p>
-                  </div>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="images"
+                    render={() => (
+                      <FormItem>
+                        <FormControl>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-2">
+                              {previews.map((url, index) => (
+                                <div key={url} className="relative group aspect-square rounded-md overflow-hidden border">
+                                  <img 
+                                    src={url} 
+                                    alt={`Preview ${index}`} 
+                                    className="h-full w-full object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => removeImage(index)}
+                                    className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                              {previews.length < 5 && (
+                                <button
+                                  type="button"
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className="aspect-square rounded-md border-2 border-dashed border-muted flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 transition-colors"
+                                >
+                                  <Plus className="h-6 w-6" />
+                                  <span className="text-[10px] mt-1 uppercase font-semibold">Upload</span>
+                                </button>
+                              )}
+                            </div>
+                            
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              ref={fileInputRef}
+                              onChange={handleImageChange}
+                            />
+
+                            {previews.length === 0 && (
+                              <div 
+                                onClick={() => fileInputRef.current?.click()}
+                                className="border-2 border-dashed border-muted rounded-lg p-8 flex flex-col items-center justify-center text-center space-y-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                              >
+                                <div className="p-3 rounded-full bg-muted">
+                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                                <p className="text-sm font-medium">Click to upload images</p>
+                                <p className="text-xs text-muted-foreground">Minimum 2, Maximum 5 images</p>
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
               </Card>
             </div>
