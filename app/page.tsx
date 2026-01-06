@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,7 +23,25 @@ export default function LoginPage() {
     // Simulate login process
     setTimeout(() => {
       setIsLoading(false);
-      console.log("Login submitted:", { email, password, rememberMe });
+      
+      // MOCK LOGIC: 
+      // Success Path
+      if (password.length >= 6) {
+        toast.success("Welcome back!", {
+          description: "Redirecting to dashboard...",
+        });
+        console.log("Login success");
+      } 
+      // Error Path
+      else {
+        toast.error("Authentication Failed", {
+          description: "Please check your email and password.",
+          action: {
+            label: "Undo",
+            onClick: () => console.log("Undo"),
+          },
+        });
+      }
     }, 1500);
   };
 
