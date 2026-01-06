@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, MoreHorizontal, Search, Filter } from "lucide-react";
+import Link from "next/link";
 
 const mockProducts = [
   {
@@ -94,9 +95,11 @@ export default function ProductsPage() {
             Manage your product inventory
           </p>
         </div>
-        <Button className="bg-accent-blue hover:bg-accent-blue-hover">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
+        <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
+          <Link href="/admin/products/add">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Link>
         </Button>
       </div>
 
