@@ -129,3 +129,57 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    
+    .print-only {
+      display: block !important;
+    }
+
+    body {
+      background-color: white !important;
+      color: black !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .print-break-inside-avoid {
+      break-inside: avoid;
+    }
+
+    /* Hide sidebar and header during print */
+    header, 
+    aside, 
+    nav,
+    button,
+    [role="navigation"],
+    [data-sidebar="sidebar"] {
+      display: none !important;
+    }
+
+    /* Ensure content takes full width */
+    main, 
+    .p-6 {
+      padding: 0 !important;
+      margin: 0 !important;
+      width: 100% !important;
+    }
+
+    .border {
+      border-color: #e5e7eb !important;
+    }
+
+    .bg-muted\/20 {
+      background-color: transparent !important;
+      border-top: 2px solid black !important;
+    }
+  }
+}
+
+.print-only {
+  display: none;
+}

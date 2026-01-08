@@ -107,6 +107,10 @@ export default function OrderDetailPage() {
     // Add API call here
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleAccept = () => {
     handleStatusUpdate("processing");
   };
@@ -117,7 +121,22 @@ export default function OrderDetailPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Print-only Invoice Header */}
+      <div className="print-only mb-8">
+        <div className="flex justify-between items-start border-b-2 pb-6">
+          <div>
+            <h1 className="text-4xl font-bold uppercase tracking-tighter">Aliwala</h1>
+            <p className="text-sm text-muted-foreground mt-1">Marketplace Admin Panel</p>
+          </div>
+          <div className="text-right">
+            <h2 className="text-2xl font-semibold">INVOICE</h2>
+            <p className="font-medium mt-1">#{order.id}</p>
+            <p className="text-sm text-muted-foreground">{order.date}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between no-print">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/admin/orders">
@@ -137,7 +156,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" />
             Print Invoice
           </Button>
@@ -193,7 +212,7 @@ export default function OrderDetailPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="no-print">
             <CardHeader>
               <CardTitle className="text-lg">Update Status</CardTitle>
               <CardDescription>Manually override the current order status</CardDescription>
