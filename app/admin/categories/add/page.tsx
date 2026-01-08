@@ -7,6 +7,7 @@ import * as z from "zod";
 import { ChevronLeft, Save } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useData } from "@/lib/data-context";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +43,7 @@ type CategoryFormValues = z.infer<typeof categorySchema>;
 
 export default function AddCategoryPage() {
   const router = useRouter();
+  const { addCategory } = useData();
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
@@ -65,7 +67,7 @@ export default function AddCategoryPage() {
   };
 
   function onSubmit(values: CategoryFormValues) {
-    console.log(values);
+    addCategory(values);
     toast.success("Category created", {
       description: `${values.name} has been successfully added.`,
     });
@@ -173,9 +175,6 @@ export default function AddCategoryPage() {
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Active Status</FormLabel>
-                      <FormDescription>
-                        Visible to customers on the storefront.
-                      </FormDescription>
                     </div>
                     <FormControl>
                       <Switch

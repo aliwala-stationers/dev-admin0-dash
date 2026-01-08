@@ -8,6 +8,7 @@ import { ChevronLeft, Save, Plus, X, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
+import { useData } from "@/lib/data-context";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -62,6 +63,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 
 export default function AddProductPage() {
   const router = useRouter();
+  const { addProduct } = useData();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
 
@@ -95,14 +97,17 @@ export default function AddProductPage() {
     const newImageUrls: string[] = [];
 
     files.forEach((file) => {
-      const url = URL.createObjectURL(file);
-      newPreviews.push(url);
-      newImageUrls.push(url); // Mock URL for now
+      // In a real app, you would upload to S3/Cloudinary here
+      // For now, we use data URLs to persist in local storage via context
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setPreviews((prev) => [...prev, result]);
+        const updatedImages = [...form.getValues("images"), result];
+        form.setValue("images", updatedImages, { shouldValidate: true });
+      };
+      reader.readAsDataURL(file);
     });
-
-    const updatedImages = [...currentImages, ...newImageUrls];
-    setPreviews([...previews, ...newPreviews]);
-    form.setValue("images", updatedImages, { shouldValidate: true });
   };
 
   const removeImage = (index: number) => {
@@ -115,7 +120,7 @@ export default function AddProductPage() {
   };
 
   function onSubmit(values: ProductFormValues) {
-    console.log(values);
+    addProduct(values);
     toast.success("Product created", {
       description: `${values.name} has been successfully added.`,
     });
@@ -255,7 +260,7 @@ export default function AddProductPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a category" />
@@ -313,7 +318,7 @@ export default function AddProductPage() {
                           <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-2">
                               {previews.map((url, index) => (
-                                <div key={url} className="relative group aspect-square rounded-md overflow-hidden border">
+                                <div key={index} className="relative group aspect-square rounded-md overflow-hidden border">
                                   <img 
                                     src={url} 
                                     alt={`Preview ${index}`} 

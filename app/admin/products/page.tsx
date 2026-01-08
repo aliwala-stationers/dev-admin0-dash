@@ -27,57 +27,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Filter } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Filter, Trash2 } from "lucide-react";
 import Link from "next/link";
-
-const mockProducts = [
-  {
-    id: "1",
-    name: "Wireless Headphones",
-    category: "Electronics",
-    price: 99.99,
-    stock: 45,
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Running Shoes",
-    category: "Footwear",
-    price: 79.99,
-    stock: 120,
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Laptop Sleeve",
-    category: "Accessories",
-    price: 29.99,
-    stock: 5,
-    status: "low_stock",
-  },
-  {
-    id: "4",
-    name: "Smart Watch",
-    category: "Electronics",
-    price: 199.99,
-    stock: 0,
-    status: "out_of_stock",
-  },
-  {
-    id: "5",
-    name: "Coffee Maker",
-    category: "Home & Kitchen",
-    price: 149.99,
-    stock: 32,
-    status: "active",
-  },
-];
+import { useData } from "@/lib/data-context";
+import { toast } from "sonner";
 
 export default function ProductsPage() {
+  const { products, deleteProduct } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const filteredProducts = mockProducts.filter((product) => {
+  const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
@@ -86,13 +46,20 @@ export default function ProductsPage() {
     return matchesSearch && matchesCategory;
   });
 
+  const handleDelete = (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete ${name}?`)) {
+      deleteProduct(id);
+      toast.success("Product deleted");
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-semibold">Products</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your product inventory
+            Manage your product inventory ({products.length} total)
           </p>
         </div>
         <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
@@ -141,54 +108,55 @@ export default function ProductsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProducts.map((product) => (
-              <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.name}</TableCell>
-                <TableCell>{product.category}</TableCell>
-                <TableCell>${product.price.toFixed(2)}</TableCell>
-                <TableCell>{product.stock}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      product.status === "active"
-                        ? "default"
-                        : product.status === "low_stock"
-                        ? "secondary"
-                        : "destructive"
-                    }
-                  >
-                    {product.status === "active"
-                      ? "Active"
-                      : product.status === "low_stock"
-                      ? "Low Stock"
-                      : "Out of Stock"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/products/${product.id}`}>View Details</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/products/edit/${product.id}`}>Edit</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredProducts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  No products found.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredProducts.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell>{product.category}</TableCell>
+                  <TableCell>${parseFloat(product.price).toFixed(2)}</TableCell>
+                  <TableCell>{product.stock}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={product.status ? "default" : "secondary"}
+                    >
+                      {product.status ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/products/${product.id}`}>View Details</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/products/edit/${product.id}`}>Edit</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={() => handleDelete(product.id, product.name)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

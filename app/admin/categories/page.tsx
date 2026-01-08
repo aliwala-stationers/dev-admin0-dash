@@ -20,58 +20,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
-
-const mockCategories = [
-  {
-    id: "1",
-    name: "Electronics",
-    slug: "electronics",
-    productCount: 45,
-    status: "active",
-    description: "Electronic devices and gadgets",
-  },
-  {
-    id: "2",
-    name: "Footwear",
-    slug: "footwear",
-    productCount: 120,
-    status: "active",
-    description: "Shoes and sandals for all occasions",
-  },
-  {
-    id: "3",
-    name: "Accessories",
-    slug: "accessories",
-    productCount: 78,
-    status: "active",
-    description: "Fashion and tech accessories",
-  },
-  {
-    id: "4",
-    name: "Home & Kitchen",
-    slug: "home-kitchen",
-    productCount: 92,
-    status: "active",
-    description: "Home appliances and kitchen essentials",
-  },
-  {
-    id: "5",
-    name: "Sports & Outdoors",
-    slug: "sports-outdoors",
-    productCount: 15,
-    status: "inactive",
-    description: "Sports equipment and outdoor gear",
-  },
-];
+import { useData } from "@/lib/data-context";
+import { toast } from "sonner";
 
 export default function CategoriesPage() {
+  const { categories, deleteCategory } = useData();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredCategories = mockCategories.filter((category) =>
+  const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleDelete = (id: string, name: string) => {
+    if (confirm(`Are you sure you want to delete the category "${name}"?`)) {
+      deleteCategory(id);
+      toast.success("Category deleted");
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -79,7 +46,7 @@ export default function CategoriesPage() {
         <div>
           <h1 className="text-3xl font-semibold">Categories</h1>
           <p className="text-muted-foreground mt-1">
-            Organize your products into categories
+            Organize your products into categories ({categories.length} total)
           </p>
         </div>
         <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
@@ -115,50 +82,59 @@ export default function CategoriesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCategories.map((category) => (
-              <TableRow key={category.id}>
-                <TableCell className="font-medium">{category.name}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {category.slug}
-                </TableCell>
-                <TableCell className="max-w-xs truncate">
-                  {category.description}
-                </TableCell>
-                <TableCell>{category.productCount}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      category.status === "active" ? "default" : "secondary"
-                    }
-                  >
-                    {category.status === "active" ? "Active" : "Inactive"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/categories/${category.id}`}>View Details</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/categories/edit/${category.id}`}>Edit</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>View Products</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredCategories.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  No categories found.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredCategories.map((category) => (
+                <TableRow key={category.id}>
+                  <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    /{category.slug}
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {category.description}
+                  </TableCell>
+                  <TableCell>{category.productCount}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={category.status ? "default" : "secondary"}
+                    >
+                      {category.status ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/categories/${category.id}`}>View Details</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/categories/edit/${category.id}`}>Edit</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={() => handleDelete(category.id, category.name)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

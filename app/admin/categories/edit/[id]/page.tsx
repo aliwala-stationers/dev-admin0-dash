@@ -8,6 +8,7 @@ import { ChevronLeft, Save } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useEffect, useState, use } from "react";
+import { useData } from "@/lib/data-context";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -41,30 +42,10 @@ const categorySchema = z.object({
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
-// Mock function to get category data
-const getCategory = (id: string) => {
-  const categories = [
-    {
-      id: "1",
-      name: "Electronics",
-      slug: "electronics",
-      description: "Electronic devices and gadgets including smartphones, laptops, and more.",
-      status: true,
-    },
-    {
-      id: "2",
-      name: "Footwear",
-      slug: "footwear",
-      description: "Shoes and sandals for all occasions, from athletic to formal wear.",
-      status: true,
-    },
-  ];
-  return categories.find(c => c.id === id) || categories[0];
-};
-
 export default function EditCategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { getCategory, updateCategory } = useData();
   const [isLoading, setIsLoading] = useState(true);
 
   const form = useForm<CategoryFormValues>({
@@ -78,7 +59,6 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
   });
 
   useEffect(() => {
-    // Simulate API fetch
     const category = getCategory(id);
     if (category) {
       form.reset({
@@ -87,9 +67,11 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
         description: category.description,
         status: category.status,
       });
+      setIsLoading(false);
+    } else {
+      router.push("/admin/categories");
     }
-    setIsLoading(false);
-  }, [id, form]);
+  }, [id, getCategory, form, router]);
 
   // Auto-generate slug from name
   const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,7 +85,7 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
   };
 
   function onSubmit(values: CategoryFormValues) {
-    console.log("Updating category:", values);
+    updateCategory(id, values);
     toast.success("Category updated", {
       description: `${values.name} has been successfully updated.`,
     });
@@ -215,9 +197,6 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Active Status</FormLabel>
-                      <FormDescription>
-                        Visible to customers on the storefront.
-                      </FormDescription>
                     </div>
                     <FormControl>
                       <Switch

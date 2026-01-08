@@ -8,6 +8,7 @@ import { ChevronLeft, Save, Plus, X, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useState, useRef, useEffect, use } from "react";
+import { useData } from "@/lib/data-context";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -60,30 +61,10 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
-// Mock function to get product data
-const getProduct = (id: string) => {
-  const products = [
-    {
-      id: "1",
-      name: "Wireless Headphones",
-      category: "Electronics",
-      price: "99.99",
-      stock: "45",
-      status: true,
-      sku: "WH-001",
-      description: "Premium wireless headphones with noise-canceling technology and 40-hour battery life.",
-      images: [
-        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80",
-        "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=800&q=80"
-      ],
-    },
-  ];
-  return products.find(p => p.id === id) || products[0];
-};
-
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { getProduct, updateProduct } = useData();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,7 +84,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   });
 
   useEffect(() => {
-    // Simulate API fetch
     const product = getProduct(id);
     if (product) {
       form.reset({
@@ -117,9 +97,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         images: product.images,
       });
       setPreviews(product.images);
+      setIsLoading(false);
+    } else {
+      router.push("/admin/products");
     }
-    setIsLoading(false);
-  }, [id, form]);
+  }, [id, getProduct, form, router]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -133,18 +115,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       return;
     }
 
-    const newPreviews: string[] = [];
-    const newImageUrls: string[] = [];
-
     files.forEach((file) => {
-      const url = URL.createObjectURL(file);
-      newPreviews.push(url);
-      newImageUrls.push(url);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setPreviews((prev) => [...prev, result]);
+        const updatedImages = [...form.getValues("images"), result];
+        form.setValue("images", updatedImages, { shouldValidate: true });
+      };
+      reader.readAsDataURL(file);
     });
-
-    const updatedImages = [...currentImages, ...newImageUrls];
-    setPreviews([...previews, ...newPreviews]);
-    form.setValue("images", updatedImages, { shouldValidate: true });
   };
 
   const removeImage = (index: number) => {
@@ -157,7 +137,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   };
 
   function onSubmit(values: ProductFormValues) {
-    console.log("Updating product:", values);
+    updateProduct(id, values);
     toast.success("Product updated", {
       description: `${values.name} has been successfully updated.`,
     });
@@ -203,6 +183,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid gap-6 md:grid-cols-3">
             <div className="md:col-span-2 space-y-6">
+              {/* Basic Information */}
               <Card>
                 <CardHeader>
                   <CardTitle>Basic Information</CardTitle>
@@ -241,6 +222,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 </CardContent>
               </Card>
 
+              {/* Inventory & Pricing */}
               <Card>
                 <CardHeader>
                   <CardTitle>Inventory & Pricing</CardTitle>
@@ -251,7 +233,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     name="sku"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>SKU (Stock Keeping Unit)</FormLabel>
+                        <FormLabel>SKU</FormLabel>
                         <FormControl>
                           <Input placeholder="WH-001" {...field} />
                         </FormControl>
@@ -290,6 +272,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div className="space-y-6">
+              {/* Organization */}
               <Card>
                 <CardHeader>
                   <CardTitle>Organization</CardTitle>
@@ -326,9 +309,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                           <FormLabel className="text-base">Product Status</FormLabel>
-                          <FormDescription>
-                            Enable or disable the product visibility.
-                          </FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -342,6 +322,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 </CardContent>
               </Card>
 
+              {/* Product Images */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle>Product Images</CardTitle>
@@ -359,7 +340,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                           <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-2">
                               {previews.map((url, index) => (
-                                <div key={url} className="relative group aspect-square rounded-md overflow-hidden border">
+                                <div key={index} className="relative group aspect-square rounded-md overflow-hidden border">
                                   <img 
                                     src={url} 
                                     alt={`Preview ${index}`} 
@@ -394,19 +375,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                               ref={fileInputRef}
                               onChange={handleImageChange}
                             />
-
-                            {previews.length === 0 && (
-                              <div 
-                                onClick={() => fileInputRef.current?.click()}
-                                className="border-2 border-dashed border-muted rounded-lg p-8 flex flex-col items-center justify-center text-center space-y-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                              >
-                                <div className="p-3 rounded-full bg-muted">
-                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                </div>
-                                <p className="text-sm font-medium">Click to upload images</p>
-                                <p className="text-xs text-muted-foreground">Minimum 2, Maximum 5 images</p>
-                              </div>
-                            )}
                           </div>
                         </FormControl>
                         <FormMessage />

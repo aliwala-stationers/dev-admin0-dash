@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { 
   ChevronLeft, 
@@ -15,28 +15,30 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-// Mock function to get category data
-const getCategory = (id: string) => {
-  const categories = [
-    {
-      id: "1",
-      name: "Electronics",
-      slug: "electronics",
-      productCount: 45,
-      status: "active",
-      description: "Electronic devices and gadgets including smartphones, laptops, tablets, and various tech accessories. This category covers high-demand consumer electronics with regular inventory updates.",
-      createdAt: "2023-11-15",
-      updatedAt: "2024-01-02"
-    },
-    // ... more categories
-  ];
-  return categories.find(c => c.id === id) || categories[0];
-};
+import { useData, Category } from "@/lib/data-context";
 
 export default function ViewCategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const category = getCategory(id);
+  const { getCategory, products } = useData();
+  const [category, setCategory] = useState<Category | undefined>(undefined);
+
+  useEffect(() => {
+    setCategory(getCategory(id));
+  }, [id, getCategory]);
+
+  if (!category) {
+    return (
+      <div className="p-6 text-center">
+        <h2 className="text-xl font-semibold">Category not found</h2>
+        <Button variant="link" asChild>
+          <Link href="/admin/categories">Back to categories</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  // Get products in this category
+  const categoryProducts = products.filter(p => p.category === category.name);
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -51,8 +53,8 @@ export default function ViewCategoryPage({ params }: { params: Promise<{ id: str
           <div>
             <h1 className="text-3xl font-semibold">{category.name}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant={category.status === "active" ? "default" : "secondary"}>
-                {category.status.toUpperCase()}
+              <Badge variant={category.status ? "default" : "secondary"}>
+                {category.status ? "ACTIVE" : "INACTIVE"}
               </Badge>
               <span className="text-sm text-muted-foreground">Slug: /{category.slug}</span>
             </div>
@@ -88,32 +90,40 @@ export default function ViewCategoryPage({ params }: { params: Promise<{ id: str
 
           <Card>
             <CardHeader>
-              <CardTitle>Recent Products in {category.name}</CardTitle>
+              <CardTitle>Products in {category.name}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
-                        <Package className="h-5 w-5 text-muted-foreground" />
+                {categoryProducts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No products assigned to this category yet.
+                  </p>
+                ) : (
+                  categoryProducts.slice(0, 5).map((product) => (
+                    <div key={product.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
+                          <Package className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{product.name}</p>
+                          <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium">Sample Product {i}</p>
-                        <p className="text-xs text-muted-foreground">SKU: PROD-00{i}</p>
-                      </div>
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/admin/products/${product.id}`}>View</Link>
+                      </Button>
                     </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/admin/products/${i}`}>View</Link>
-                    </Button>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
-              <Button variant="link" className="w-full mt-4 text-accent-blue" asChild>
-                <Link href={`/admin/products?category=${category.name}`}>
-                  View All Products in this Category
-                </Link>
-              </Button>
+              {categoryProducts.length > 5 && (
+                <Button variant="link" className="w-full mt-4 text-accent-blue" asChild>
+                  <Link href={`/admin/products?category=${category.name}`}>
+                    View All {categoryProducts.length} Products
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -130,7 +140,7 @@ export default function ViewCategoryPage({ params }: { params: Promise<{ id: str
                   <Layers className="h-4 w-4" />
                   <span className="text-sm">Total Products</span>
                 </div>
-                <span className="font-semibold">{category.productCount}</span>
+                <span className="font-semibold">{categoryProducts.length}</span>
               </div>
               <Separator />
               <div className="flex items-center justify-between">

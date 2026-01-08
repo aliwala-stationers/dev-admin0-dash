@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { 
   ChevronLeft, 
@@ -16,34 +16,27 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-
-// Mock function to get product data
-const getProduct = (id: string) => {
-  const products = [
-    {
-      id: "1",
-      name: "Wireless Headphones",
-      category: "Electronics",
-      price: 99.99,
-      stock: 45,
-      status: "active",
-      sku: "WH-001",
-      description: "Premium wireless headphones with noise-canceling technology and 40-hour battery life. Perfect for music lovers and professionals alike.",
-      images: [
-        "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80",
-        "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=800&q=80"
-      ],
-      createdAt: "2023-12-01",
-      updatedAt: "2024-01-05"
-    },
-    // ... more products if needed
-  ];
-  return products.find(p => p.id === id) || products[0];
-};
+import { useData, Product } from "@/lib/data-context";
 
 export default function ViewProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const product = getProduct(id);
+  const { getProduct } = useData();
+  const [product, setProduct] = useState<Product | undefined>(undefined);
+
+  useEffect(() => {
+    setProduct(getProduct(id));
+  }, [id, getProduct]);
+
+  if (!product) {
+    return (
+      <div className="p-6 text-center">
+        <h2 className="text-xl font-semibold">Product not found</h2>
+        <Button variant="link" asChild>
+          <Link href="/admin/products">Back to products</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -58,8 +51,8 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
           <div>
             <h1 className="text-3xl font-semibold">{product.name}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant={product.status === "active" ? "default" : "secondary"}>
-                {product.status.replace("_", " ").toUpperCase()}
+              <Badge variant={product.status ? "default" : "secondary"}>
+                {product.status ? "ACTIVE" : "INACTIVE"}
               </Badge>
               <span className="text-sm text-muted-foreground">SKU: {product.sku}</span>
             </div>
@@ -104,7 +97,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
               <CardTitle>Description</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                 {product.description}
               </p>
             </CardContent>
@@ -123,7 +116,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
                   <Tag className="h-4 w-4" />
                   <span className="text-sm">Price</span>
                 </div>
-                <span className="font-semibold text-lg">${product.price.toFixed(2)}</span>
+                <span className="font-semibold text-lg">${parseFloat(product.price).toFixed(2)}</span>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -139,7 +132,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
                   <Package className="h-4 w-4" />
                   <span className="text-sm">Stock</span>
                 </div>
-                <span className={`font-medium ${product.stock < 10 ? "text-red-500" : "text-green-600"}`}>
+                <span className={`font-medium ${parseInt(product.stock) < 10 ? "text-red-500" : "text-green-600"}`}>
                   {product.stock} units
                 </span>
               </div>
@@ -148,23 +141,15 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
 
           <Card>
             <CardHeader>
-              <CardTitle>Performance</CardTitle>
+              <CardTitle>Metadata</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <BarChart3 className="h-4 w-4" />
-                  <span className="text-sm">Total Sales</span>
-                </div>
-                <span className="font-medium">124</span>
-              </div>
-              <Separator />
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4" />
                   <span className="text-sm">Added on</span>
                 </div>
-                <span className="text-sm">{product.createdAt}</span>
+                <span className="text-xs">{product.createdAt}</span>
               </div>
             </CardContent>
           </Card>
