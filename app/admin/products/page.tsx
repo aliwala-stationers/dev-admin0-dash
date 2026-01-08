@@ -173,7 +173,12 @@ export default function ProductsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/products/${product.id}`}>View Details</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/products/edit/${product.id}`}>Edit</Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem>Duplicate</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive">

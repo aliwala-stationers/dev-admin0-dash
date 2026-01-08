@@ -143,7 +143,12 @@ export default function CategoriesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/categories/${category.id}`}>View Details</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/categories/edit/${category.id}`}>Edit</Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem>View Products</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive">
