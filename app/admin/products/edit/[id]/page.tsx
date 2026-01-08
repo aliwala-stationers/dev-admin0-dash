@@ -64,7 +64,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { getProduct, updateProduct } = useData();
+  const { getProduct, updateProduct, categories } = useData();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -183,7 +183,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid gap-6 md:grid-cols-3">
             <div className="md:col-span-2 space-y-6">
-              {/* Basic Information */}
               <Card>
                 <CardHeader>
                   <CardTitle>Basic Information</CardTitle>
@@ -222,7 +221,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 </CardContent>
               </Card>
 
-              {/* Inventory & Pricing */}
               <Card>
                 <CardHeader>
                   <CardTitle>Inventory & Pricing</CardTitle>
@@ -272,7 +270,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div className="space-y-6">
-              {/* Organization */}
               <Card>
                 <CardHeader>
                   <CardTitle>Organization</CardTitle>
@@ -291,10 +288,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Electronics">Electronics</SelectItem>
-                            <SelectItem value="Footwear">Footwear</SelectItem>
-                            <SelectItem value="Accessories">Accessories</SelectItem>
-                            <SelectItem value="Home & Kitchen">Home & Kitchen</SelectItem>
+                            {categories.map((category) => (
+                              <SelectItem key={category.id} value={category.name}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                            {categories.length === 0 && (
+                              <div className="p-2 text-sm text-muted-foreground">
+                                No categories found. Please create one first.
+                              </div>
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -322,7 +325,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 </CardContent>
               </Card>
 
-              {/* Product Images */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle>Product Images</CardTitle>

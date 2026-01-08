@@ -63,7 +63,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 
 export default function AddProductPage() {
   const router = useRouter();
-  const { addProduct } = useData();
+  const { addProduct, categories } = useData();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
 
@@ -93,12 +93,7 @@ export default function AddProductPage() {
       return;
     }
 
-    const newPreviews: string[] = [];
-    const newImageUrls: string[] = [];
-
     files.forEach((file) => {
-      // In a real app, you would upload to S3/Cloudinary here
-      // For now, we use data URLs to persist in local storage via context
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
@@ -267,10 +262,16 @@ export default function AddProductPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Electronics">Electronics</SelectItem>
-                            <SelectItem value="Footwear">Footwear</SelectItem>
-                            <SelectItem value="Accessories">Accessories</SelectItem>
-                            <SelectItem value="Home & Kitchen">Home & Kitchen</SelectItem>
+                            {categories.map((category) => (
+                              <SelectItem key={category.id} value={category.name}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                            {categories.length === 0 && (
+                              <div className="p-2 text-sm text-muted-foreground">
+                                No categories found. Please create one first.
+                              </div>
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -285,9 +286,6 @@ export default function AddProductPage() {
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                           <FormLabel className="text-base">Product Status</FormLabel>
-                          <FormDescription>
-                            Enable or disable the product visibility.
-                          </FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -353,19 +351,6 @@ export default function AddProductPage() {
                               ref={fileInputRef}
                               onChange={handleImageChange}
                             />
-
-                            {previews.length === 0 && (
-                              <div 
-                                onClick={() => fileInputRef.current?.click()}
-                                className="border-2 border-dashed border-muted rounded-lg p-8 flex flex-col items-center justify-center text-center space-y-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                              >
-                                <div className="p-3 rounded-full bg-muted">
-                                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                </div>
-                                <p className="text-sm font-medium">Click to upload images</p>
-                                <p className="text-xs text-muted-foreground">Minimum 2, Maximum 5 images</p>
-                              </div>
-                            )}
                           </div>
                         </FormControl>
                         <FormMessage />
