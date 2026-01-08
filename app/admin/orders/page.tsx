@@ -27,7 +27,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Filter } from "lucide-react";
+import { MoreHorizontal, Search, Filter, Eye } from "lucide-react";
+import Link from "next/link";
 
 const mockOrders = [
   {
@@ -146,7 +147,11 @@ export default function OrdersPage() {
           <TableBody>
             {filteredOrders.map((order) => (
               <TableRow key={order.id}>
-                <TableCell className="font-medium">{order.id}</TableCell>
+                <TableCell className="font-medium">
+                  <Link href={`/admin/orders/${order.id}`} className="hover:underline text-primary">
+                    {order.id}
+                  </Link>
+                </TableCell>
                 <TableCell>{order.customer}</TableCell>
                 <TableCell>{order.date}</TableCell>
                 <TableCell>{order.items}</TableCell>
@@ -166,13 +171,13 @@ export default function OrdersPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem>Update Status</DropdownMenuItem>
-                      <DropdownMenuItem>Print Invoice</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
-                        Cancel Order
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/orders/${order.id}`}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem>Print Invoice</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

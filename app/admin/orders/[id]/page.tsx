@@ -1,0 +1,292 @@
+"use client";
+
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  ArrowLeft, 
+  CheckCircle2, 
+  XCircle, 
+  Package, 
+  User, 
+  Calendar, 
+  CreditCard,
+  Printer
+} from "lucide-react";
+import Link from "next/link";
+
+// Expanded mock data for detail view
+const mockOrderDetails = {
+  "ORD-1001": {
+    id: "ORD-1001",
+    customer: "John Doe",
+    email: "john@example.com",
+    phone: "+1 (555) 123-4567",
+    date: "2024-01-05",
+    total: 249.99,
+    status: "delivered",
+    paymentStatus: "paid",
+    shippingAddress: "123 Main St, New York, NY 10001",
+    items: [
+      { id: 1, name: "Wireless Headphones", quantity: 1, price: 99.99 },
+      { id: 2, name: "Phone Case", quantity: 2, price: 25.00 },
+      { id: 3, name: "USB-C Cable", quantity: 1, price: 100.00 },
+    ],
+  },
+  "ORD-1002": {
+    id: "ORD-1002",
+    customer: "Jane Smith",
+    email: "jane@example.com",
+    phone: "+1 (555) 987-6543",
+    date: "2024-01-05",
+    total: 149.99,
+    status: "processing",
+    paymentStatus: "paid",
+    shippingAddress: "456 Oak Ave, Los Angeles, CA 90001",
+    items: [
+      { id: 4, name: "Running Shoes", quantity: 1, price: 120.00 },
+      { id: 5, name: "Sports Socks", quantity: 3, price: 10.00 },
+    ],
+  },
+};
+
+const statusVariants = {
+  pending: "secondary",
+  processing: "default",
+  shipped: "default",
+  delivered: "default",
+  cancelled: "destructive",
+} as const;
+
+export default function OrderDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const orderId = params.id as string;
+  
+  // In a real app, you'd fetch this data
+  const order = mockOrderDetails[orderId as keyof typeof mockOrderDetails] || {
+    id: orderId,
+    customer: "Unknown Customer",
+    email: "-",
+    phone: "-",
+    date: "-",
+    total: 0,
+    status: "pending",
+    paymentStatus: "pending",
+    shippingAddress: "-",
+    items: [],
+  };
+
+  const [currentStatus, setCurrentStatus] = useState(order.status);
+
+  const handleStatusUpdate = (newStatus: string) => {
+    setCurrentStatus(newStatus);
+    // Add API call here
+  };
+
+  const handleAccept = () => {
+    handleStatusUpdate("processing");
+  };
+
+  const handleReject = () => {
+    handleStatusUpdate("cancelled");
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/admin/orders">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-semibold">Order {order.id}</h1>
+              <Badge variant={statusVariants[currentStatus as keyof typeof statusVariants]}>
+                {currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground mt-1">
+              Placed on {order.date}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline">
+            <Printer className="mr-2 h-4 w-4" />
+            Print Invoice
+          </Button>
+          {currentStatus === "pending" && (
+            <>
+              <Button variant="destructive" onClick={handleReject}>
+                <XCircle className="mr-2 h-4 w-4" />
+                Reject
+              </Button>
+              <Button className="bg-green-600 hover:bg-green-700" onClick={handleAccept}>
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Accept Order
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Package className="h-5 w-5 text-muted-foreground" />
+                Order Items
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead className="text-center">Quantity</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {order.items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-center">{item.quantity}</TableCell>
+                      <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">${(item.quantity * item.price).toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/20 font-semibold">
+                    <TableCell colSpan={3} className="text-right">Total Amount</TableCell>
+                    <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Update Status</CardTitle>
+              <CardDescription>Manually override the current order status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <Select value={currentStatus} onValueChange={handleStatusUpdate}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Change status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="processing">Processing</SelectItem>
+                    <SelectItem value="shipped">Shipped</SelectItem>
+                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Last updated: Today at 10:45 AM
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <User className="h-5 w-5 text-muted-foreground" />
+                Customer Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium">Name</p>
+                <p className="text-sm text-muted-foreground">{order.customer}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Email</p>
+                <p className="text-sm text-muted-foreground">{order.email}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Phone</p>
+                <p className="text-sm text-muted-foreground">{order.phone}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Calendar className="h-5 w-5 text-muted-foreground" />
+                Shipping Info
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {order.shippingAddress}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <CreditCard className="h-5 w-5 text-muted-foreground" />
+                Payment Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>${order.total.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Shipping</span>
+                <span>$0.00</span>
+              </div>
+              <div className="border-t pt-2 flex justify-between font-semibold">
+                <span>Total</span>
+                <span>${order.total.toFixed(2)}</span>
+              </div>
+              <div className="mt-4">
+                <Badge variant="outline" className="w-full justify-center py-1">
+                  Payment Status: {order.paymentStatus.toUpperCase()}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
