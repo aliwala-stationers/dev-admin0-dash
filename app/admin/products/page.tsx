@@ -117,7 +117,7 @@ export default function ProductsPage() {
             ) : (
               filteredProducts.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell className="font-medium"><Link href={`/admin/products/${product.id}`} className="text-blue-600">{product.name}</Link></TableCell>
                   <TableCell>{product.category}</TableCell>
                   <TableCell>${parseFloat(product.price).toFixed(2)}</TableCell>
                   <TableCell>{product.stock}</TableCell>
@@ -131,12 +131,12 @@ export default function ProductsPage() {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="text-blue-600">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/products/${product.id}`}>View Details</Link>
                         </DropdownMenuItem>
@@ -144,7 +144,7 @@ export default function ProductsPage() {
                           <Link href={`/admin/products/edit/${product.id}`}>Edit</Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => handleDelete(product.id, product.name)}
                         >

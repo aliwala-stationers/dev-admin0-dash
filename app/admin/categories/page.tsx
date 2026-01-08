@@ -91,7 +91,7 @@ export default function CategoriesPage() {
             ) : (
               filteredCategories.map((category) => (
                 <TableRow key={category.id}>
-                  <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableCell className="font-medium"><Link href={`/admin/categories/${category.id}`} className="text-blue-600">{category.name}</Link></TableCell>
                   <TableCell className="text-muted-foreground">
                     /{category.slug}
                   </TableCell>
@@ -109,26 +109,26 @@ export default function CategoriesPage() {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="text-blue-600">
+                          <MoreHorizontal className="h-4 w-4 " />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/categories/${category.id}`}>View Details</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/categories/edit/${category.id}`}>Edit</Link>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        {/* <DropdownMenuSeparator /> */}
+                        {/* <DropdownMenuItem 
                           className="text-destructive"
                           onClick={() => handleDelete(category.id, category.name)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
-                        </DropdownMenuItem>
+                        </DropdownMenuItem> */}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
