@@ -27,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Filter, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Filter, Trash2, Building2 } from "lucide-react";
 import Link from "next/link";
 import { useData } from "@/lib/data-context";
 import { toast } from "sonner";
@@ -100,6 +100,7 @@ export default function ProductsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Product Name</TableHead>
+              <TableHead>Brand</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
@@ -110,14 +111,24 @@ export default function ProductsPage() {
           <TableBody>
             {filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No products found.
                 </TableCell>
               </TableRow>
             ) : (
               filteredProducts.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="font-medium"><Link href={`/admin/products/${product.id}`} className="text-blue-600">{product.name}</Link></TableCell>
+                  <TableCell className="font-medium">
+                    <Link href={`/admin/products/${product.id}`} className="text-blue-600 hover:underline">
+                      {product.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <span>{product.brand}</span>
+                    </div>
+                  </TableCell>
                   <TableCell>{product.category}</TableCell>
                   <TableCell>${parseFloat(product.price).toFixed(2)}</TableCell>
                   <TableCell>{product.stock}</TableCell>
@@ -136,7 +147,6 @@ export default function ProductsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/products/${product.id}`}>View Details</Link>
                         </DropdownMenuItem>
@@ -144,7 +154,7 @@ export default function ProductsPage() {
                           <Link href={`/admin/products/edit/${product.id}`}>Edit</Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
+                        <DropdownMenuItem 
                           className="text-destructive"
                           onClick={() => handleDelete(product.id, product.name)}
                         >

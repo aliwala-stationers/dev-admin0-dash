@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Trash2, Building2 } from "lucide-react";
 import Link from "next/link";
 import { useData } from "@/lib/data-context";
 import { toast } from "sonner";
@@ -73,7 +74,7 @@ export default function BrandsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Brand Name</TableHead>
+              <TableHead>Brand</TableHead>
               <TableHead>Slug</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Status</TableHead>
@@ -90,7 +91,17 @@ export default function BrandsPage() {
             ) : (
               filteredBrands.map((brand) => (
                 <TableRow key={brand.id}>
-                  <TableCell className="font-medium">{brand.name}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border rounded-md">
+                        <AvatarImage src={brand.logo} className="object-contain p-1" />
+                        <AvatarFallback className="rounded-md">
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{brand.name}</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     /{brand.slug}
                   </TableCell>
@@ -113,6 +124,9 @@ export default function BrandsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/brands/${brand.id}`}>View Details</Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/brands/edit/${brand.id}`}>Edit</Link>
                         </DropdownMenuItem>
