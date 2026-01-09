@@ -148,7 +148,7 @@ export default function OrdersPage() {
             {filteredOrders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell className="font-medium">
-                  <Link href={`/admin/orders/${order.id}`} className="hover:underline text-primary">
+                  <Link href={`/admin/orders/${order.id}`} className="hover:underline text-blue-600">
                     {order.id}
                   </Link>
                 </TableCell>
@@ -165,19 +165,19 @@ export default function OrdersPage() {
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" className="text-blue-600">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/orders/${order.id}`}>
+                        <Link href={`/admin/orders/${order.id}`} >
                           <Eye className="mr-2 h-4 w-4" />
                           View Details
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem>Print Invoice</DropdownMenuItem>
+                      {/* <DropdownMenuItem>Print Invoice</DropdownMenuItem> */}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
