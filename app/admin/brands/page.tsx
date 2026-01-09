@@ -31,7 +31,7 @@ export default function BrandsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredBrands = brands.filter((brand) =>
-    brand.name.toLowerCase().includes(searchQuery.toLowerCase())
+    brand.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleDelete = (id: string, name: string) => {
@@ -92,15 +92,21 @@ export default function BrandsPage() {
               filteredBrands.map((brand) => (
                 <TableRow key={brand.id}>
                   <TableCell>
-                    <div className="flex items-center gap-3">
+                    <Link
+                      href={`/admin/brands/${brand.id}`}
+                      className="text-blue-600 flex items-center gap-3"
+                    >
                       <Avatar className="h-10 w-10 border rounded-md">
-                        <AvatarImage src={brand.logo} className="object-contain p-1" />
+                        <AvatarImage
+                          src={brand.logo}
+                          className="object-contain p-1"
+                        />
                         <AvatarFallback className="rounded-md">
                           <Building2 className="h-5 w-5 text-muted-foreground" />
                         </AvatarFallback>
                       </Avatar>
                       <span className="font-medium">{brand.name}</span>
-                    </div>
+                    </Link>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     /{brand.slug}
@@ -109,35 +115,41 @@ export default function BrandsPage() {
                     {brand.description}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={brand.status ? "default" : "secondary"}
-                    >
+                    <Badge variant={brand.status ? "default" : "secondary"}>
                       {brand.status ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-blue-600"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/brands/${brand.id}`}>View Details</Link>
+                          <Link href={`/admin/brands/${brand.id}`}>
+                            View Details
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/brands/edit/${brand.id}`}>Edit</Link>
+                          <Link href={`/admin/brands/edit/${brand.id}`}>
+                            Edit
+                          </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        {/* <DropdownMenuSeparator /> */}
+                        {/* <DropdownMenuItem 
                           className="text-destructive"
                           onClick={() => handleDelete(brand.id, brand.name)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
-                        </DropdownMenuItem>
+                        </DropdownMenuItem> */}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
