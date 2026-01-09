@@ -67,6 +67,16 @@ export interface Payment {
   transactionId: string;
 }
 
+export interface Enquiry {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: "new" | "read" | "replied";
+  createdAt: string;
+}
+
 interface DataContextType {
   products: Product[];
   categories: Category[];
@@ -74,6 +84,7 @@ interface DataContextType {
   orders: Order[];
   customers: Customer[];
   payments: Payment[];
+  enquiries: Enquiry[];
   addProduct: (product: Omit<Product, "id" | "createdAt">) => void;
   updateProduct: (id: string, product: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
@@ -83,6 +94,8 @@ interface DataContextType {
   addBrand: (brand: Omit<Brand, "id" | "createdAt">) => void;
   updateBrand: (id: string, brand: Partial<Brand>) => void;
   deleteBrand: (id: string) => void;
+  deleteEnquiry: (id: string) => void;
+  updateEnquiryStatus: (id: string, status: Enquiry["status"]) => void;
   getProduct: (id: string) => Product | undefined;
   getCategory: (id: string) => Category | undefined;
   getBrand: (id: string) => Brand | undefined;
@@ -162,6 +175,12 @@ const initialPayments: Payment[] = [
   { id: "PAY-1005", orderId: "ORD-1005", customer: "Charlie Brown", date: "2024-01-03", amount: 199.99, method: "credit_card", status: "failed", transactionId: "txn_5E6F7G8H9I" },
 ];
 
+const initialEnquiries: Enquiry[] = [
+  { id: "1", name: "David Miller", email: "david.miller@example.com", subject: "Product Availability", message: "Hello, I wanted to check if the Wireless Headphones will be back in stock soon?", status: "new", createdAt: "2024-01-06" },
+  { id: "2", name: "Sarah Wilson", email: "sarah.w@example.com", subject: "Shipping Query", message: "Do you provide international shipping to Canada?", status: "read", createdAt: "2024-01-05" },
+  { id: "3", name: "Michael Ross", email: "mike.r@example.com", subject: "Bulk Order Discount", message: "I'm looking to buy 50 units for my company. Do you offer bulk discounts?", status: "replied", createdAt: "2024-01-04" },
+];
+
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -171,6 +190,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -180,6 +200,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const storedOrders = localStorage.getItem("orders");
     const storedCustomers = localStorage.getItem("customers");
     const storedPayments = localStorage.getItem("payments");
+    const storedEnquiries = localStorage.getItem("enquiries");
     
     setProducts(storedProducts ? JSON.parse(storedProducts) : initialProducts);
     setCategories(storedCategories ? JSON.parse(storedCategories) : initialCategories);
@@ -187,6 +208,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setOrders(storedOrders ? JSON.parse(storedOrders) : initialOrders);
     setCustomers(storedCustomers ? JSON.parse(storedCustomers) : initialCustomers);
     setPayments(storedPayments ? JSON.parse(storedPayments) : initialPayments);
+    setEnquiries(storedEnquiries ? JSON.parse(storedEnquiries) : initialEnquiries);
     setIsInitialized(true);
   }, []);
 
@@ -198,8 +220,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("orders", JSON.stringify(orders));
       localStorage.setItem("customers", JSON.stringify(customers));
       localStorage.setItem("payments", JSON.stringify(payments));
+      localStorage.setItem("enquiries", JSON.stringify(enquiries));
     }
-  }, [products, categories, brands, orders, customers, payments, isInitialized]);
+  }, [products, categories, brands, orders, customers, payments, enquiries, isInitialized]);
 
   const addProduct = (product: Omit<Product, "id" | "createdAt">) => {
     const newProduct: Product = {
@@ -259,6 +282,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setBrands((prev) => prev.filter((b) => b.id !== id));
   };
 
+  const deleteEnquiry = (id: string) => {
+    setEnquiries((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  const updateEnquiryStatus = (id: string, status: Enquiry["status"]) => {
+    setEnquiries((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, status } : e))
+    );
+  };
+
   const getProduct = (id: string) => products.find((p) => p.id === id);
   const getCategory = (id: string) => categories.find((c) => c.id === id);
   const getBrand = (id: string) => brands.find((b) => b.id === id);
@@ -272,6 +305,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         orders,
         customers,
         payments,
+        enquiries,
         addProduct,
         updateProduct,
         deleteProduct,
@@ -281,6 +315,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addBrand,
         updateBrand,
         deleteBrand,
+        deleteEnquiry,
+        updateEnquiryStatus,
         getProduct,
         getCategory,
         getBrand,

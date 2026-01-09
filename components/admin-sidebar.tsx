@@ -9,6 +9,7 @@ import {
   CreditCard,
   LogOut,
   Tag,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -61,6 +62,11 @@ const menuItems = [
     title: "Payments",
     icon: CreditCard,
     href: "/admin/payments",
+  },
+  {
+    title: "Enquiries",
+    icon: MessageSquare,
+    href: "/admin/enquiries",
   },
 ];
 
