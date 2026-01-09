@@ -14,14 +14,14 @@ export function AdminHeader() {
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-background px-6">
       <SidebarTrigger />
       <div className="flex flex-1 items-center gap-4">
-        <div className="relative flex-1 max-w-md">
+        {/* <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Search..."
             className="pl-10 h-9"
           />
-        </div>
+        </div> */}
       </div>
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" className="h-9 w-9">
