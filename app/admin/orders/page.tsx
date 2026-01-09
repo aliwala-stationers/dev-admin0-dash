@@ -29,49 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Search, Filter, Eye } from "lucide-react";
 import Link from "next/link";
-
-const mockOrders = [
-  {
-    id: "ORD-1001",
-    customer: "John Doe",
-    date: "2024-01-05",
-    total: 249.99,
-    status: "delivered",
-    items: 3,
-  },
-  {
-    id: "ORD-1002",
-    customer: "Jane Smith",
-    date: "2024-01-05",
-    total: 149.99,
-    status: "processing",
-    items: 2,
-  },
-  {
-    id: "ORD-1003",
-    customer: "Bob Johnson",
-    date: "2024-01-04",
-    total: 399.99,
-    status: "shipped",
-    items: 5,
-  },
-  {
-    id: "ORD-1004",
-    customer: "Alice Williams",
-    date: "2024-01-04",
-    total: 89.99,
-    status: "pending",
-    items: 1,
-  },
-  {
-    id: "ORD-1005",
-    customer: "Charlie Brown",
-    date: "2024-01-03",
-    total: 199.99,
-    status: "cancelled",
-    items: 2,
-  },
-];
+import { useData } from "@/lib/data-context";
 
 const statusVariants = {
   pending: "secondary",
@@ -82,10 +40,11 @@ const statusVariants = {
 } as const;
 
 export default function OrdersPage() {
+  const { orders } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredOrders = mockOrders.filter((order) => {
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customer.toLowerCase().includes(searchQuery.toLowerCase());

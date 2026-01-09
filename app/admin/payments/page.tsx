@@ -28,59 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Search, Filter, Download } from "lucide-react";
-
-const mockPayments = [
-  {
-    id: "PAY-1001",
-    orderId: "ORD-1001",
-    customer: "John Doe",
-    date: "2024-01-05",
-    amount: 249.99,
-    method: "credit_card",
-    status: "completed",
-    transactionId: "txn_1A2B3C4D5E",
-  },
-  {
-    id: "PAY-1002",
-    orderId: "ORD-1002",
-    customer: "Jane Smith",
-    date: "2024-01-05",
-    amount: 149.99,
-    method: "paypal",
-    status: "pending",
-    transactionId: "txn_2B3C4D5E6F",
-  },
-  {
-    id: "PAY-1003",
-    orderId: "ORD-1003",
-    customer: "Bob Johnson",
-    date: "2024-01-04",
-    amount: 399.99,
-    method: "credit_card",
-    status: "completed",
-    transactionId: "txn_3C4D5E6F7G",
-  },
-  {
-    id: "PAY-1004",
-    orderId: "ORD-1004",
-    customer: "Alice Williams",
-    date: "2024-01-04",
-    amount: 89.99,
-    method: "debit_card",
-    status: "processing",
-    transactionId: "txn_4D5E6F7G8H",
-  },
-  {
-    id: "PAY-1005",
-    orderId: "ORD-1005",
-    customer: "Charlie Brown",
-    date: "2024-01-03",
-    amount: 199.99,
-    method: "credit_card",
-    status: "failed",
-    transactionId: "txn_5E6F7G8H9I",
-  },
-];
+import { useData } from "@/lib/data-context";
 
 const statusVariants = {
   completed: "default",
@@ -98,10 +46,11 @@ const methodLabels = {
 } as const;
 
 export default function PaymentsPage() {
+  const { payments } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredPayments = mockPayments.filter((payment) => {
+  const filteredPayments = payments.filter((payment) => {
     const matchesSearch =
       payment.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       payment.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||

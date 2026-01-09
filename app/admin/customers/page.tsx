@@ -22,64 +22,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Search } from "lucide-react";
-
-const mockCustomers = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 234 567 8900",
-    orders: 12,
-    totalSpent: 1249.99,
-    status: "active",
-    joinedDate: "2023-06-15",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    phone: "+1 234 567 8901",
-    orders: 8,
-    totalSpent: 849.99,
-    status: "active",
-    joinedDate: "2023-07-22",
-  },
-  {
-    id: "3",
-    name: "Bob Johnson",
-    email: "bob.johnson@example.com",
-    phone: "+1 234 567 8902",
-    orders: 24,
-    totalSpent: 2499.99,
-    status: "active",
-    joinedDate: "2023-05-10",
-  },
-  {
-    id: "4",
-    name: "Alice Williams",
-    email: "alice.williams@example.com",
-    phone: "+1 234 567 8903",
-    orders: 3,
-    totalSpent: 299.99,
-    status: "inactive",
-    joinedDate: "2023-11-05",
-  },
-  {
-    id: "5",
-    name: "Charlie Brown",
-    email: "charlie.brown@example.com",
-    phone: "+1 234 567 8904",
-    orders: 15,
-    totalSpent: 1599.99,
-    status: "active",
-    joinedDate: "2023-08-18",
-  },
-];
+import { useData } from "@/lib/data-context";
 
 export default function CustomersPage() {
+  const { customers } = useData();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredCustomers = mockCustomers.filter(
+  const filteredCustomers = customers.filter(
     (customer) =>
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchQuery.toLowerCase())

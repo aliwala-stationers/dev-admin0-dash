@@ -1,3 +1,5 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Package,
@@ -6,44 +8,84 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
+  Layers,
+  Tag,
+  CreditCard,
 } from "lucide-react";
-
-const stats = [
-  {
-    title: "Total Revenue",
-    value: "$45,231.89",
-    change: "+20.1%",
-    trend: "up" as const,
-    icon: DollarSign,
-  },
-  {
-    title: "Total Orders",
-    value: "2,350",
-    change: "+15.3%",
-    trend: "up" as const,
-    icon: ShoppingCart,
-  },
-  {
-    title: "Total Products",
-    value: "486",
-    change: "+12.5%",
-    trend: "up" as const,
-    icon: Package,
-  },
-  {
-    title: "Total Customers",
-    value: "1,234",
-    change: "-3.2%",
-    trend: "down" as const,
-    icon: Users,
-  },
-];
+import { useData } from "@/lib/data-context";
 
 export default function DashboardPage() {
+  const { products, categories, brands, orders, customers, payments } = useData();
+
+  // Calculate stats
+  const totalRevenue = payments
+    .filter((p) => p.status === "completed")
+    .reduce((sum, p) => sum + p.amount, 0);
+
+  const stats = [
+    {
+      title: "Total Revenue",
+      value: `$${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      change: "+20.1%",
+      trend: "up" as const,
+      icon: DollarSign,
+    },
+    {
+      title: "Total Orders",
+      value: orders.length.toString(),
+      change: "+15.3%",
+      trend: "up" as const,
+      icon: ShoppingCart,
+    },
+    {
+      title: "Total Products",
+      value: products.length.toString(),
+      change: "+12.5%",
+      trend: "up" as const,
+      icon: Package,
+    },
+    {
+      title: "Total Customers",
+      value: customers.length.toString(),
+      change: "+3.2%",
+      trend: "up" as const,
+      icon: Users,
+    },
+  ];
+
+  const subStats = [
+    {
+      title: "Brands",
+      value: brands.length,
+      icon: Tag,
+    },
+    {
+      title: "Categories",
+      value: categories.length,
+      icon: Layers,
+    },
+    {
+      title: "Payments",
+      value: payments.length,
+      icon: CreditCard,
+    },
+  ];
+
+  const recentOrders = [...orders]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
+  const topProducts = [...products]
+    .slice(0, 5)
+    .map(p => ({
+      name: p.name,
+      sold: Math.floor(Math.random() * 50) + 10, // Mocked sold count for now
+    }));
+
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold">Dashboard</h1>
+        <h1 className="text-3xl font-semibold text-accent-blue">Dashboard</h1>
         <p className="text-muted-foreground mt-1">
           Welcome back! Here's an overview of your store.
         </p>
@@ -54,12 +96,12 @@ export default function DashboardPage() {
           const Icon = stat.icon;
           const TrendIcon = stat.trend === "up" ? TrendingUp : TrendingDown;
           return (
-            <Card key={stat.title}>
+            <Card key={stat.title} className="border-border/50 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
+                <Icon className="h-4 w-4 text-accent-blue" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
@@ -84,27 +126,45 @@ export default function DashboardPage() {
         })}
       </div>
 
+      <div className="grid gap-4 md:grid-cols-3">
+        {subStats.map((stat) => (
+          <Card key={stat.title} className="border-border/50 shadow-sm">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-md bg-accent-blue/10">
+                  <stat.icon className="h-5 w-5 text-accent-blue" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="border-border/50 shadow-sm">
           <CardHeader>
-            <CardTitle>Recent Orders</CardTitle>
+            <CardTitle className="text-accent-blue">Recent Orders</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-center justify-between">
+              {recentOrders.map((order) => (
+                <div key={order.id} className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0">
                   <div>
-                    <p className="text-sm font-medium">Order #{1000 + i}</p>
+                    <p className="text-sm font-medium">{order.id}</p>
                     <p className="text-xs text-muted-foreground">
-                      Customer Name {i}
+                      {order.customer}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium">
-                      ${(Math.random() * 500 + 50).toFixed(2)}
+                      ${order.total.toFixed(2)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date().toLocaleDateString()}
+                      {order.date}
                     </p>
                   </div>
                 </div>
@@ -113,29 +173,27 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/50 shadow-sm">
           <CardHeader>
-            <CardTitle>Top Products</CardTitle>
+            <CardTitle className="text-accent-blue">Top Products</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {["Product A", "Product B", "Product C", "Product D"].map(
-                (product, i) => (
-                  <div key={product} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-                        <Package className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{product}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {Math.floor(Math.random() * 100 + 50)} sold
-                        </p>
-                      </div>
+              {topProducts.map((product) => (
+                <div key={product.name} className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent-blue/10">
+                      <Package className="h-5 w-5 text-accent-blue" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{product.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {product.sold} sold
+                      </p>
                     </div>
                   </div>
-                )
-              )}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
