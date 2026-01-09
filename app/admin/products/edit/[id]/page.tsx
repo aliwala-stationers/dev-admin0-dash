@@ -42,6 +42,9 @@ const productSchema = z.object({
   category: z.string().min(1, {
     message: "Please select a category.",
   }),
+  brand: z.string().min(1, {
+    message: "Please select a brand.",
+  }),
   price: z.string().regex(/^\d+(\.\d{1,2})?$/, {
     message: "Invalid price format.",
   }),
@@ -64,7 +67,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { getProduct, updateProduct, categories } = useData();
+  const { getProduct, updateProduct, categories, brands } = useData();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,6 +82,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       stock: "",
       status: true,
       category: "",
+      brand: "",
       images: [],
     },
   });
@@ -94,6 +98,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         stock: product.stock,
         status: product.status,
         category: product.category,
+        brand: product.brand,
         images: product.images,
       });
       setPreviews(product.images);
@@ -293,11 +298,31 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                 {category.name}
                               </SelectItem>
                             ))}
-                            {categories.length === 0 && (
-                              <div className="p-2 text-sm text-muted-foreground">
-                                No categories found. Please create one first.
-                              </div>
-                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="brand"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Brand</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a brand" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {brands.map((brand) => (
+                              <SelectItem key={brand.id} value={brand.name}>
+                                {brand.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />

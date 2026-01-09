@@ -8,6 +8,7 @@ import {
   Users,
   CreditCard,
   LogOut,
+  Tag,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -40,6 +41,11 @@ const menuItems = [
     title: "Categories",
     icon: FolderTree,
     href: "/admin/categories",
+  },
+  {
+    title: "Brands",
+    icon: Tag,
+    href: "/admin/brands",
   },
   {
     title: "Orders",

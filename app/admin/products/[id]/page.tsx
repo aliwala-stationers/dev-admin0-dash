@@ -7,10 +7,10 @@ import {
   Edit, 
   Package, 
   Tag, 
-  BarChart3, 
   Layers, 
   Clock,
-  Eye
+  Eye,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +117,14 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
                   <span className="text-sm">Price</span>
                 </div>
                 <span className="font-semibold text-lg">${parseFloat(product.price).toFixed(2)}</span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Building2 className="h-4 w-4" />
+                  <span className="text-sm">Brand</span>
+                </div>
+                <Badge variant="secondary">{product.brand}</Badge>
               </div>
               <Separator />
               <div className="flex items-center justify-between">

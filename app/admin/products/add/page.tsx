@@ -42,6 +42,9 @@ const productSchema = z.object({
   category: z.string().min(1, {
     message: "Please select a category.",
   }),
+  brand: z.string().min(1, {
+    message: "Please select a brand.",
+  }),
   price: z.string().regex(/^\d+(\.\d{1,2})?$/, {
     message: "Invalid price format.",
   }),
@@ -63,7 +66,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 
 export default function AddProductPage() {
   const router = useRouter();
-  const { addProduct, categories } = useData();
+  const { addProduct, categories, brands } = useData();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
 
@@ -77,6 +80,7 @@ export default function AddProductPage() {
       stock: "",
       status: true,
       category: "",
+      brand: "",
       images: [],
     },
   });
@@ -205,7 +209,7 @@ export default function AddProductPage() {
                     name="sku"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>SKU (Stock Keeping Unit)</FormLabel>
+                        <FormLabel>SKU</FormLabel>
                         <FormControl>
                           <Input placeholder="WH-001" {...field} />
                         </FormControl>
@@ -269,7 +273,37 @@ export default function AddProductPage() {
                             ))}
                             {categories.length === 0 && (
                               <div className="p-2 text-sm text-muted-foreground">
-                                No categories found. Please create one first.
+                                No categories found.
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="brand"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Brand</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a brand" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {brands.map((brand) => (
+                              <SelectItem key={brand.id} value={brand.name}>
+                                {brand.name}
+                              </SelectItem>
+                            ))}
+                            {brands.length === 0 && (
+                              <div className="p-2 text-sm text-muted-foreground">
+                                No brands found.
                               </div>
                             )}
                           </SelectContent>
