@@ -117,6 +117,14 @@ const statusIcons = {
   order_delivered: CheckCircle,
 } as const;
 
+const STATUS_ORDER: OrderStatus[] = [
+  "order_placed",
+  "accepted_order_by_seller",
+  "order_packed",
+  "order_shipped",
+  "order_delivered"
+];
+
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -312,9 +320,25 @@ export default function OrderDetailPage() {
                       <SelectValue placeholder="Change status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="order_packed">Order Packed</SelectItem>
-                      <SelectItem value="order_shipped">Order Shipped</SelectItem>
-                      <SelectItem value="order_delivered">Order Delivered</SelectItem>
+                      <SelectItem value="accepted_order_by_seller" disabled>Accepted by Seller</SelectItem>
+                      <SelectItem 
+                        value="order_packed" 
+                        disabled={STATUS_ORDER.indexOf(order.status) >= STATUS_ORDER.indexOf("order_packed")}
+                      >
+                        Order Packed
+                      </SelectItem>
+                      <SelectItem 
+                        value="order_shipped" 
+                        disabled={STATUS_ORDER.indexOf(order.status) >= STATUS_ORDER.indexOf("order_shipped")}
+                      >
+                        Order Shipped
+                      </SelectItem>
+                      <SelectItem 
+                        value="order_delivered" 
+                        disabled={STATUS_ORDER.indexOf(order.status) >= STATUS_ORDER.indexOf("order_delivered")}
+                      >
+                        Order Delivered
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   {currentStatus !== order.status && (
