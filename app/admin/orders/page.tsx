@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -23,13 +23,21 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Filter, Eye } from "lucide-react";
+import { MoreHorizontal, Search, Filter, Eye, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
 import { useData } from "@/lib/data-context";
+import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
 const statusVariants = {
   order_placed: "secondary",
@@ -51,19 +59,201 @@ const statusLabels = {
   order_delivered: "Order Delivered",
 } as const;
 
+type OrderRow = {
+  id: string;
+  customer: string;
+  date: string;
+  lastUpdated?: string;
+  items: number;
+  total: number;
+  status: keyof typeof statusLabels;
+};
+
 export default function OrdersPage() {
   const { orders } = useData();
-  const [searchQuery, setSearchQuery] = useState("");
+  const data = useMemo(() => orders as OrderRow[], [orders]);
+  const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const columns = useMemo<ColumnDef<OrderRow>[]>(
+    () => [
+      {
+        accessorKey: "id",
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="inline-flex items-center gap-2"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Order ID
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <Link
+            href={`/admin/orders/${row.original.id}`}
+            className="hover:underline text-blue-600"
+          >
+            {row.original.id}
+          </Link>
+        ),
+      },
+      {
+        accessorKey: "customer",
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="inline-flex items-center gap-2"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Customer
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
+      },
+      {
+        accessorKey: "date",
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="inline-flex items-center gap-2"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Placed On
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
+      },
+      {
+        id: "lastUpdated",
+        accessorFn: (row) => row.lastUpdated || row.date,
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="inline-flex items-center gap-2"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Last Updated
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <span className="text-muted-foreground text-xs">
+            {row.original.lastUpdated || row.original.date}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "items",
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="inline-flex items-center gap-2"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Items
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
+      },
+      {
+        accessorKey: "total",
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="inline-flex items-center gap-2"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Total
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => `$${row.original.total.toFixed(2)}`,
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <button
+            type="button"
+            className="inline-flex items-center gap-2"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Status
+            <ArrowUpDown className="h-4 w-4" />
+          </button>
+        ),
+        cell: ({ row }) => (
+          <Badge
+            variant={
+              statusVariants[row.original.status as keyof typeof statusVariants]
+            }
+          >
+            {statusLabels[row.original.status as keyof typeof statusLabels]}
+          </Badge>
+        ),
+        filterFn: (row, id, value) => {
+          if (!value || value === "all") return true;
+          return row.getValue(id) === value;
+        },
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => (
+          <div className="text-right">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-blue-600">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
+                <DropdownMenuItem asChild>
+                  <Link href={`/admin/orders/${row.original.id}`}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Details
+                  </Link>
+                </DropdownMenuItem>
+                {/* <DropdownMenuItem>Print Invoice</DropdownMenuItem> */}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
+
+  const table = useReactTable({
+    data,
+    columns,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter,
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const q = String(filterValue ?? "").toLowerCase().trim();
+      if (!q) return true;
+      const id = String(row.original.id ?? "").toLowerCase();
+      const customer = String(row.original.customer ?? "").toLowerCase();
+      return id.includes(q) || customer.includes(q);
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    table.getColumn("status")?.setFilterValue(value);
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -82,11 +272,11 @@ export default function OrdersPage() {
           <Input
             placeholder="Search orders..."
             className="pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
           <SelectTrigger className="w-[200px]">
             <Filter className="mr-2 h-4 w-4" />
             <SelectValue placeholder="Filter by status" />
@@ -107,58 +297,52 @@ export default function OrdersPage() {
       <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Placed On</TableHead>
-              <TableHead>Last Updated</TableHead>
-              <TableHead>Items</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredOrders.map((order) => (
-              <TableRow key={order.id}>
-                <TableCell className="font-medium">
-                  <Link href={`/admin/orders/${order.id}`} className="hover:underline text-blue-600">
-                    {order.id}
-                  </Link>
-                </TableCell>
-                <TableCell>{order.customer}</TableCell>
-                <TableCell>{order.date}</TableCell>
-                <TableCell className="text-muted-foreground text-xs">
-                  {order.lastUpdated || order.date}
-                </TableCell>
-                <TableCell>{order.items}</TableCell>
-                <TableCell>${order.total.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Badge variant={statusVariants[order.status as keyof typeof statusVariants]}>
-                    {statusLabels[order.status as keyof typeof statusLabels]}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-blue-600">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/orders/${order.id}`} >
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </Link>
-                      </DropdownMenuItem>
-                      {/* <DropdownMenuItem>Print Invoice</DropdownMenuItem> */}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className={
+                      header.column.id === "actions" ? "text-right" : undefined
+                    }
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No orders found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      className={
+                        cell.column.id === "actions" ? "text-right" : undefined
+                      }
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
