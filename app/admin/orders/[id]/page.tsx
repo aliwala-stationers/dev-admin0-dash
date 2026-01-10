@@ -26,6 +26,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   ArrowLeft, 
   CheckCircle2, 
@@ -136,6 +144,16 @@ export default function OrderDetailPage() {
 
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order.status);
   const [isSaving, setIsSaving] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+
+  const rejectionOptions = [
+    "Out of Stock",
+    "Delivery not available in this area",
+    "Incorrect pricing",
+    "Customer requested cancellation",
+    "Other"
+  ];
 
   useEffect(() => {
     setCurrentStatus(order.status);
@@ -165,10 +183,15 @@ export default function OrderDetailPage() {
     toast.success("Order accepted. Tracking history updated.");
   };
 
-  const handleReject = () => {
+  const handleConfirmReject = () => {
+    if (!rejectReason) {
+      toast.error("Please select a reason for rejection");
+      return;
+    }
     setCurrentStatus("order_rejected_by_seller");
-    updateOrderStatus(order.id, "order_rejected_by_seller");
-    toast.error("Order rejected. Status history updated.");
+    updateOrderStatus(order.id, "order_rejected_by_seller", rejectReason);
+    setShowRejectModal(false);
+    toast.error("Order rejected. Reason: " + rejectReason);
   };
 
   return (
@@ -212,9 +235,9 @@ export default function OrderDetailPage() {
             <Printer className="mr-2 h-4 w-4" />
             Print Invoice
           </Button>
-          {currentStatus === "order_placed" && (
+          {order.status === "order_placed" && (
             <>
-              <Button variant="destructive" onClick={handleReject}>
+              <Button variant="destructive" onClick={() => setShowRejectModal(true)}>
                 <XCircle className="mr-2 h-4 w-4" />
                 Reject
               </Button>
@@ -264,11 +287,11 @@ export default function OrderDetailPage() {
             </CardContent>
           </Card>
 
-          {order.status !== "order_delivered" && (
+          {["accepted_order_by_seller", "order_packed", "order_shipped"].includes(order.status) && (
             <Card className="no-print border-accent-blue/20">
               <CardHeader>
                 <CardTitle className="text-lg">Update Status</CardTitle>
-                <CardDescription>Manually override the current order status</CardDescription>
+                <CardDescription>Progress the order through fulfillment stages</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4">
@@ -277,10 +300,6 @@ export default function OrderDetailPage() {
                       <SelectValue placeholder="Change status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="order_placed">Order Placed</SelectItem>
-                      <SelectItem value="accepted_order_by_seller">Accepted Order by Seller</SelectItem>
-                      <SelectItem value="order_rejected_by_seller">Order Rejected by Seller</SelectItem>
-                      <SelectItem value="order_cancelled_by_customer">Order Cancelled by Customer</SelectItem>
                       <SelectItem value="order_packed">Order Packed</SelectItem>
                       <SelectItem value="order_shipped">Order Shipped</SelectItem>
                       <SelectItem value="order_delivered">Order Delivered</SelectItem>
@@ -304,7 +323,20 @@ export default function OrderDetailPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 text-green-700">
                   <CheckCircle2 className="h-5 w-5" />
-                  <p className="font-medium">Order completed. Status updates are now locked.</p>
+                  <p className="font-medium">Order delivered successfully. Status updates are now locked.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {["order_rejected_by_seller", "order_cancelled_by_customer"].includes(order.status) && (
+            <Card className="no-print border-destructive/20 bg-destructive/5">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3 text-destructive">
+                  <XCircle className="h-5 w-5" />
+                  <p className="font-medium">
+                    Order {order.status === "order_rejected_by_seller" ? "Rejected" : "Cancelled"}. No further actions can be taken.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -334,6 +366,11 @@ export default function OrderDetailPage() {
                             {statusLabels[event.status as keyof typeof statusLabels]}
                           </p>
                           <p className="text-xs text-muted-foreground">{event.date}</p>
+                          {event.reason && (
+                            <p className="text-xs text-destructive font-medium mt-1 bg-destructive/5 px-2 py-1 rounded w-fit">
+                              Reason: {event.reason}
+                            </p>
+                          )}
                         </div>
                       </div>
                     );
@@ -411,6 +448,35 @@ export default function OrderDetailPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reject Order</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for rejecting this order. This will be visible to the customer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Select value={rejectReason} onValueChange={setRejectReason}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a reason" />
+              </SelectTrigger>
+              <SelectContent>
+                {rejectionOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRejectModal(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleConfirmReject}>Confirm Rejection</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

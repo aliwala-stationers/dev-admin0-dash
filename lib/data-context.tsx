@@ -48,6 +48,7 @@ export type OrderStatus =
 export interface OrderHistory {
   status: OrderStatus;
   date: string;
+  reason?: string;
 }
 
 export interface Order {
@@ -108,7 +109,7 @@ interface DataContextType {
   payments: Payment[];
   enquiries: Enquiry[];
   newsletterSubscribers: Newsletter[];
-  updateOrderStatus: (id: string, status: OrderStatus) => void;
+  updateOrderStatus: (id: string, status: OrderStatus, reason?: string) => void;
   addProduct: (product: Omit<Product, "id" | "createdAt">) => void;
   updateProduct: (id: string, product: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
@@ -377,17 +378,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setBrands((prev) => prev.filter((b) => b.id !== id));
   };
 
-  const updateOrderStatus = (id: string, status: OrderStatus) => {
+  const updateOrderStatus = (id: string, status: OrderStatus, reason?: string) => {
     setOrders((prev) =>
       prev.map((o) => {
         if (o.id === id) {
-          // Prevent duplicate history entries if same status updated
-          const isDuplicate = o.history && o.history[o.history.length - 1]?.status === status;
+          // Prevent duplicate history entries if same status updated (unless reason changes)
+          const isDuplicate = o.history && 
+                             o.history[o.history.length - 1]?.status === status && 
+                             o.history[o.history.length - 1]?.reason === reason;
           if (isDuplicate) return o;
 
           const newHistory = [
             ...(o.history || []),
-            { status, date: new Date().toLocaleString() }
+            { status, date: new Date().toLocaleString(), reason }
           ];
           return { ...o, status, history: newHistory };
         }
