@@ -34,7 +34,10 @@ import {
   User, 
   Calendar, 
   CreditCard,
-  Printer
+  Printer,
+  Clock,
+  Truck,
+  CheckCircle
 } from "lucide-react";
 import Link from "next/link";
 
@@ -50,6 +53,12 @@ const mockOrderDetails = {
     status: "delivered",
     paymentStatus: "paid",
     shippingAddress: "123 Main St, New York, NY 10001",
+    history: [
+      { status: "Order Placed", date: "2024-01-05 10:30 AM", icon: Clock },
+      { status: "Packed", date: "2024-01-05 02:15 PM", icon: Package },
+      { status: "Shipped", date: "2024-01-06 09:00 AM", icon: Truck },
+      { status: "Delivered", date: "2024-01-07 04:30 PM", icon: CheckCircle },
+    ],
     items: [
       { id: 1, name: "Wireless Headphones", quantity: 1, price: 99.99 },
       { id: 2, name: "Phone Case", quantity: 2, price: 25.00 },
@@ -66,6 +75,10 @@ const mockOrderDetails = {
     status: "processing",
     paymentStatus: "paid",
     shippingAddress: "456 Oak Ave, Los Angeles, CA 90001",
+    history: [
+      { status: "Order Placed", date: "2024-01-05 11:20 AM", icon: Clock },
+      { status: "Packed", date: "2024-01-05 04:00 PM", icon: Package },
+    ],
     items: [
       { id: 4, name: "Running Shoes", quantity: 1, price: 120.00 },
       { id: 5, name: "Sports Socks", quantity: 3, price: 10.00 },
@@ -98,6 +111,7 @@ export default function OrderDetailPage() {
     paymentStatus: "pending",
     shippingAddress: "-",
     items: [],
+    history: [],
   };
 
   const [currentStatus, setCurrentStatus] = useState(order.status);
@@ -212,34 +226,75 @@ export default function OrderDetailPage() {
             </CardContent>
           </Card>
 
-          <Card className="no-print">
-            <CardHeader>
-              <CardTitle className="text-lg">Update Status</CardTitle>
-              <CardDescription>Manually override the current order status</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <Select value={currentStatus} onValueChange={handleStatusUpdate}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Change status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="shipped">Shipped</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">
-                  Last updated: Today at 10:45 AM
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          {currentStatus !== "delivered" && (
+            <Card className="no-print border-accent-blue/20">
+              <CardHeader>
+                <CardTitle className="text-lg">Update Status</CardTitle>
+                <CardDescription>Manually override the current order status</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <Select value={currentStatus} onValueChange={handleStatusUpdate}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Change status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="shipped">Shipped</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Last updated: Today at 10:45 AM
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {currentStatus === "delivered" && (
+            <Card className="no-print border-green-200 bg-green-50/30">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3 text-green-700">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <p className="font-medium">Order completed. Status updates are now locked.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+                Order History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-muted">
+                {order.history.length > 0 ? (
+                  order.history.map((event, index) => (
+                    <div key={index} className="relative pl-8">
+                      <div className="absolute left-0 top-1 p-1 bg-background border rounded-full z-10">
+                        <event.icon className="h-3 w-3 text-primary" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium leading-none">{event.status}</p>
+                        <p className="text-xs text-muted-foreground">{event.date}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No history available</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
