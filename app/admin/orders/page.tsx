@@ -110,7 +110,8 @@ export default function OrdersPage() {
             <TableRow>
               <TableHead>Order ID</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead>Placed On</TableHead>
+              <TableHead>Last Updated</TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
@@ -127,6 +128,9 @@ export default function OrdersPage() {
                 </TableCell>
                 <TableCell>{order.customer}</TableCell>
                 <TableCell>{order.date}</TableCell>
+                <TableCell className="text-muted-foreground text-xs">
+                  {order.lastUpdated || order.date}
+                </TableCell>
                 <TableCell>{order.items}</TableCell>
                 <TableCell>${order.total.toFixed(2)}</TableCell>
                 <TableCell>

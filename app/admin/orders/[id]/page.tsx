@@ -249,9 +249,14 @@ export default function OrderDetailPage() {
                 {statusLabels[currentStatus as keyof typeof statusLabels]}
               </Badge>
             </div>
-            <p className="text-muted-foreground mt-1">
-              Placed on {order.date}
-            </p>
+            <div className="flex flex-col gap-0.5 mt-1">
+              <p className="text-muted-foreground text-sm">
+                Placed on {order.date}
+              </p>
+              <p className="text-muted-foreground text-sm font-medium">
+                Last updated: {order.lastUpdated}
+              </p>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
