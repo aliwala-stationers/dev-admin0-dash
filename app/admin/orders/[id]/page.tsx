@@ -108,6 +108,16 @@ const statusLabels = {
   order_delivered: "Order Delivered",
 } as const;
 
+const statusIcons = {
+  order_placed: Clock,
+  accepted_order_by_seller: CheckCircle2,
+  order_rejected_by_seller: XCircle,
+  order_cancelled_by_customer: XCircle,
+  order_packed: Package,
+  order_shipped: Truck,
+  order_delivered: CheckCircle,
+} as const;
+
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -129,9 +139,9 @@ export default function OrderDetailPage() {
       paymentStatus: "pending",
       shippingAddress: "-",
       items: [],
-      history: [],
     }),
-    status: orderFromContext?.status || (mockOrderDetails[orderId as keyof typeof mockOrderDetails]?.status as OrderStatus) || "order_placed" as OrderStatus
+    status: orderFromContext?.status || "order_placed" as OrderStatus,
+    history: orderFromContext?.history || []
   };
 
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order.status);
@@ -321,18 +331,23 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-muted">
-                {order.history.length > 0 ? (
-                  order.history.map((event, index) => (
-                    <div key={index} className="relative pl-8">
-                      <div className="absolute left-0 top-1 p-1 bg-background border rounded-full z-10">
-                        <event.icon className="h-3 w-3 text-primary" />
+                {order.history && order.history.length > 0 ? (
+                  [...order.history].reverse().map((event, index) => {
+                    const Icon = statusIcons[event.status as keyof typeof statusIcons] || Clock;
+                    return (
+                      <div key={index} className="relative pl-8">
+                        <div className="absolute left-0 top-1 p-1 bg-background border rounded-full z-10">
+                          <Icon className="h-3 w-3 text-primary" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium leading-none">
+                            {statusLabels[event.status as keyof typeof statusLabels]}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{event.date}</p>
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium leading-none">{event.status}</p>
-                        <p className="text-xs text-muted-foreground">{event.date}</p>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <p className="text-sm text-muted-foreground italic">No history available</p>
                 )}

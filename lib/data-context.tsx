@@ -45,6 +45,11 @@ export type OrderStatus =
   | "order_shipped" 
   | "order_delivered";
 
+export interface OrderHistory {
+  status: OrderStatus;
+  date: string;
+}
+
 export interface Order {
   id: string;
   customer: string;
@@ -52,6 +57,7 @@ export interface Order {
   total: number;
   status: OrderStatus;
   items: number;
+  history?: OrderHistory[];
 }
 
 export interface Customer {
@@ -172,11 +178,70 @@ const initialBrands: Brand[] = [
 ];
 
 const initialOrders: Order[] = [
-  { id: "ORD-1001", customer: "John Doe", date: "2024-01-05", total: 249.99, status: "order_delivered", items: 3 },
-  { id: "ORD-1002", customer: "Jane Smith", date: "2024-01-05", total: 149.99, status: "accepted_order_by_seller", items: 2 },
-  { id: "ORD-1003", customer: "Bob Johnson", date: "2024-01-04", total: 399.99, status: "order_shipped", items: 5 },
-  { id: "ORD-1004", customer: "Alice Williams", date: "2024-01-04", total: 89.99, status: "order_placed", items: 1 },
-  { id: "ORD-1005", customer: "Charlie Brown", date: "2024-01-03", total: 199.99, status: "order_cancelled_by_customer", items: 2 },
+  { 
+    id: "ORD-1001", 
+    customer: "John Doe", 
+    date: "2024-01-05", 
+    total: 249.99, 
+    status: "order_delivered", 
+    items: 3,
+    history: [
+      { status: "order_placed", date: "2024-01-05 10:30 AM" },
+      { status: "accepted_order_by_seller", date: "2024-01-05 02:15 PM" },
+      { status: "order_packed", date: "2024-01-06 09:00 AM" },
+      { status: "order_shipped", date: "2024-01-06 02:00 PM" },
+      { status: "order_delivered", date: "2024-01-07 04:30 PM" },
+    ]
+  },
+  { 
+    id: "ORD-1002", 
+    customer: "Jane Smith", 
+    date: "2024-01-05", 
+    total: 149.99, 
+    status: "accepted_order_by_seller", 
+    items: 2,
+    history: [
+      { status: "order_placed", date: "2024-01-05 11:20 AM" },
+      { status: "accepted_order_by_seller", date: "2024-01-05 04:00 PM" },
+    ]
+  },
+  { 
+    id: "ORD-1003", 
+    customer: "Bob Johnson", 
+    date: "2024-01-04", 
+    total: 399.99, 
+    status: "order_shipped", 
+    items: 5,
+    history: [
+      { status: "order_placed", date: "2024-01-04 09:00 AM" },
+      { status: "accepted_order_by_seller", date: "2024-01-04 11:30 AM" },
+      { status: "order_packed", date: "2024-01-04 03:00 PM" },
+      { status: "order_shipped", date: "2024-01-05 08:00 AM" },
+    ]
+  },
+  { 
+    id: "ORD-1004", 
+    customer: "Alice Williams", 
+    date: "2024-01-04", 
+    total: 89.99, 
+    status: "order_placed", 
+    items: 1,
+    history: [
+      { status: "order_placed", date: "2024-01-04 02:15 PM" },
+    ]
+  },
+  { 
+    id: "ORD-1005", 
+    customer: "Charlie Brown", 
+    date: "2024-01-03", 
+    total: 199.99, 
+    status: "order_cancelled_by_customer", 
+    items: 2,
+    history: [
+      { status: "order_placed", date: "2024-01-03 10:00 AM" },
+      { status: "order_cancelled_by_customer", date: "2024-01-03 11:45 AM" },
+    ]
+  },
 ];
 
 const initialCustomers: Customer[] = [
@@ -314,7 +379,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const updateOrderStatus = (id: string, status: OrderStatus) => {
     setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status } : o))
+      prev.map((o) => {
+        if (o.id === id) {
+          const newHistory = [
+            ...(o.history || []),
+            { status, date: new Date().toLocaleString() }
+          ];
+          return { ...o, status, history: newHistory };
+        }
+        return o;
+      })
     );
   };
 
