@@ -52,15 +52,9 @@ const mockOrderDetails = {
     phone: "+1 (555) 123-4567",
     date: "2024-01-05",
     total: 249.99,
-    status: "delivered",
+    status: "order_delivered" as OrderStatus,
     paymentStatus: "paid",
     shippingAddress: "123 Main St, New York, NY 10001",
-    history: [
-      { status: "Order Placed", date: "2024-01-05 10:30 AM", icon: Clock },
-      { status: "Packed", date: "2024-01-05 02:15 PM", icon: Package },
-      { status: "Shipped", date: "2024-01-06 09:00 AM", icon: Truck },
-      { status: "Delivered", date: "2024-01-07 04:30 PM", icon: CheckCircle },
-    ],
     items: [
       { id: 1, name: "Wireless Headphones", quantity: 1, price: 99.99 },
       { id: 2, name: "Phone Case", quantity: 2, price: 25.00 },
@@ -74,13 +68,9 @@ const mockOrderDetails = {
     phone: "+1 (555) 987-6543",
     date: "2024-01-05",
     total: 149.99,
-    status: "processing",
+    status: "accepted_order_by_seller" as OrderStatus,
     paymentStatus: "paid",
     shippingAddress: "456 Oak Ave, Los Angeles, CA 90001",
-    history: [
-      { status: "Order Placed", date: "2024-01-05 11:20 AM", icon: Clock },
-      { status: "Packed", date: "2024-01-05 04:00 PM", icon: Package },
-    ],
     items: [
       { id: 4, name: "Running Shoes", quantity: 1, price: 120.00 },
       { id: 5, name: "Sports Socks", quantity: 3, price: 10.00 },
@@ -274,7 +264,7 @@ export default function OrderDetailPage() {
             </CardContent>
           </Card>
 
-          {currentStatus !== "order_delivered" && (
+          {order.status !== "order_delivered" && (
             <Card className="no-print border-accent-blue/20">
               <CardHeader>
                 <CardTitle className="text-lg">Update Status</CardTitle>
@@ -309,7 +299,7 @@ export default function OrderDetailPage() {
             </Card>
           )}
 
-          {currentStatus === "order_delivered" && (
+          {order.status === "order_delivered" && (
             <Card className="no-print border-green-200 bg-green-50/30">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 text-green-700">
