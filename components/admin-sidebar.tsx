@@ -10,6 +10,7 @@ import {
   LogOut,
   Tag,
   MessageSquare,
+  Mail,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -67,6 +68,11 @@ const menuItems = [
     title: "Enquiries",
     icon: MessageSquare,
     href: "/admin/enquiries",
+  },
+  {
+    title: "Newsletter",
+    icon: Mail,
+    href: "/admin/newsletter",
   },
 ];
 

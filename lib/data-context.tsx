@@ -77,6 +77,13 @@ export interface Enquiry {
   createdAt: string;
 }
 
+export interface Newsletter {
+  id: string;
+  email: string;
+  status: "active" | "unsubscribed";
+  createdAt: string;
+}
+
 interface DataContextType {
   products: Product[];
   categories: Category[];
@@ -85,6 +92,7 @@ interface DataContextType {
   customers: Customer[];
   payments: Payment[];
   enquiries: Enquiry[];
+  newsletterSubscribers: Newsletter[];
   addProduct: (product: Omit<Product, "id" | "createdAt">) => void;
   updateProduct: (id: string, product: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
@@ -96,6 +104,8 @@ interface DataContextType {
   deleteBrand: (id: string) => void;
   deleteEnquiry: (id: string) => void;
   updateEnquiryStatus: (id: string, status: Enquiry["status"]) => void;
+  deleteSubscriber: (id: string) => void;
+  updateSubscriberStatus: (id: string, status: Newsletter["status"]) => void;
   getProduct: (id: string) => Product | undefined;
   getCategory: (id: string) => Category | undefined;
   getBrand: (id: string) => Brand | undefined;
@@ -181,6 +191,12 @@ const initialEnquiries: Enquiry[] = [
   { id: "3", name: "Michael Ross", email: "mike.r@example.com", subject: "Bulk Order Discount", message: "I'm looking to buy 50 units for my company. Do you offer bulk discounts?", status: "replied", createdAt: "2024-01-04" },
 ];
 
+const initialNewsletter: Newsletter[] = [
+  { id: "1", email: "alex.g@example.com", status: "active", createdAt: "2024-01-07" },
+  { id: "2", email: "maria.s@example.com", status: "active", createdAt: "2024-01-06" },
+  { id: "3", email: "tom.h@example.com", status: "unsubscribed", createdAt: "2024-01-05" },
+];
+
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -191,6 +207,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
+  const [newsletterSubscribers, setNewsletterSubscribers] = useState<Newsletter[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
@@ -201,6 +218,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const storedCustomers = localStorage.getItem("customers");
     const storedPayments = localStorage.getItem("payments");
     const storedEnquiries = localStorage.getItem("enquiries");
+    const storedNewsletter = localStorage.getItem("newsletter");
     
     setProducts(storedProducts ? JSON.parse(storedProducts) : initialProducts);
     setCategories(storedCategories ? JSON.parse(storedCategories) : initialCategories);
@@ -209,6 +227,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setCustomers(storedCustomers ? JSON.parse(storedCustomers) : initialCustomers);
     setPayments(storedPayments ? JSON.parse(storedPayments) : initialPayments);
     setEnquiries(storedEnquiries ? JSON.parse(storedEnquiries) : initialEnquiries);
+    setNewsletterSubscribers(storedNewsletter ? JSON.parse(storedNewsletter) : initialNewsletter);
     setIsInitialized(true);
   }, []);
 
@@ -221,8 +240,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("customers", JSON.stringify(customers));
       localStorage.setItem("payments", JSON.stringify(payments));
       localStorage.setItem("enquiries", JSON.stringify(enquiries));
+      localStorage.setItem("newsletter", JSON.stringify(newsletterSubscribers));
     }
-  }, [products, categories, brands, orders, customers, payments, enquiries, isInitialized]);
+  }, [products, categories, brands, orders, customers, payments, enquiries, newsletterSubscribers, isInitialized]);
 
   const addProduct = (product: Omit<Product, "id" | "createdAt">) => {
     const newProduct: Product = {
@@ -292,6 +312,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const deleteSubscriber = (id: string) => {
+    setNewsletterSubscribers((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const updateSubscriberStatus = (id: string, status: Newsletter["status"]) => {
+    setNewsletterSubscribers((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status } : s))
+    );
+  };
+
   const getProduct = (id: string) => products.find((p) => p.id === id);
   const getCategory = (id: string) => categories.find((c) => c.id === id);
   const getBrand = (id: string) => brands.find((b) => b.id === id);
@@ -306,6 +336,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         customers,
         payments,
         enquiries,
+        newsletterSubscribers,
         addProduct,
         updateProduct,
         deleteProduct,
@@ -317,6 +348,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         deleteBrand,
         deleteEnquiry,
         updateEnquiryStatus,
+        deleteSubscriber,
+        updateSubscriberStatus,
         getProduct,
         getCategory,
         getBrand,
