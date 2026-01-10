@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Package,
   ShoppingCart,
@@ -11,11 +12,22 @@ import {
   Layers,
   Tag,
   CreditCard,
+  MessageSquare,
+  Mail,
 } from "lucide-react";
 import { useData } from "@/lib/data-context";
 
 export default function DashboardPage() {
-  const { products, categories, brands, orders, customers, payments } = useData();
+  const { 
+    products, 
+    categories, 
+    brands, 
+    orders, 
+    customers, 
+    payments, 
+    enquiries, 
+    newsletterSubscribers 
+  } = useData();
 
   // Calculate stats
   const totalRevenue = payments
@@ -69,6 +81,16 @@ export default function DashboardPage() {
       value: payments.length,
       icon: CreditCard,
     },
+    {
+      title: "Enquiries",
+      value: enquiries.length,
+      icon: MessageSquare,
+    },
+    {
+      title: "Newsletter",
+      value: newsletterSubscribers.length,
+      icon: Mail,
+    },
   ];
 
   const recentOrders = [...orders]
@@ -81,6 +103,10 @@ export default function DashboardPage() {
       name: p.name,
       sold: Math.floor(Math.random() * 50) + 10, // Mocked sold count for now
     }));
+
+  const recentEnquiries = [...enquiries]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
 
   return (
     <div className="p-6 space-y-6">
@@ -126,7 +152,7 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {subStats.map((stat) => (
           <Card key={stat.title} className="border-border/50 shadow-sm">
             <CardContent className="pt-6">
@@ -144,7 +170,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
             <CardTitle className="text-accent-blue">Recent Orders</CardTitle>
@@ -194,6 +220,33 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-accent-blue">Recent Enquiries</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentEnquiries.length > 0 ? (
+                recentEnquiries.map((enquiry) => (
+                  <div key={enquiry.id} className="flex flex-col border-b border-border/50 pb-4 last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium truncate max-w-[150px]">{enquiry.subject}</p>
+                      <Badge variant={enquiry.status === 'new' ? 'default' : 'secondary'} className="text-[10px] h-4 px-1">
+                        {enquiry.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                      {enquiry.name}: {enquiry.message}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No recent enquiries</p>
+              )}
             </div>
           </CardContent>
         </Card>
