@@ -1,61 +1,101 @@
 import { NextResponse } from "next/server";
+import { SignJWT } from "jose"; // Lightweight JWT lib (Edge compatible)
+import { createSecretKey } from "crypto";
+import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 
+const JWT_SECRET = process.env.ADMIN_JWT_SECRET || "fallback-secret";
+const COOKIE_NAME = "aliwala_admin_token";
+const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 Hours
+
 export async function POST(req: Request) {
   try {
-    // 1. Parse the incoming JSON
-    const { email, password } = await req.json();
+    // 1. Parse Input
+    const body = await req.json().catch(() => ({}));
+    const { email, password } = body;
 
-    // 2. Validate input
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
+        { ok: false, message: "Missing credentials" },
+        { status: 400 },
       );
     }
 
-    // 3. Connect to the Dumpster (Database)
+    // 2. Connect DB
     await connectDB();
 
-    // 4. Find the user (explicitly selecting password because we set select: false in schema)
+    // 3. Find User (Explicitly select password)
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
       return NextResponse.json(
-        { error: "Invalid credentials" },
-        { status: 401 }
+        { ok: false, message: "Invalid credentials" }, // Generic message for security
+        { status: 401 },
       );
     }
 
-    // 5. Check Password
-    // NOTE: For this "Trojan Horse" phase, we are doing a direct string compare.
-    // In Phase 3 (Security Hardening), we will wrap this with bcrypt.compare(password, user.password).
-    const isMatch = (password === user.password); 
+    // 4. Verify Password (Bcrypt)
+    const passwordMatches = await bcrypt.compare(password, user.password);
 
-    if (!isMatch) {
+    // 5. Verify Role (Admin Gatekeeper)
+    if (!passwordMatches) {
       return NextResponse.json(
-        { error: "Invalid credentials" },
-        { status: 401 }
+        { ok: false, message: "Invalid credentials" },
+        { status: 401 },
       );
     }
 
-    // 6. Strip the password before returning
-    const userWithoutPassword = {
+    // Optional: Enforce Admin Role
+    // if (!user.isAdmin) { ... }
+
+    // 6. Generate JWT (Session)
+    const secret = createSecretKey(Buffer.from(JWT_SECRET, "utf-8"));
+    const nowInSec = Math.floor(Date.now() / 1000);
+    const expInSec = nowInSec + COOKIE_MAX_AGE;
+
+    const token = await new SignJWT({
+      sub: user._id.toString(),
+      email: user.email,
+      role: user.role,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt(nowInSec)
+      .setExpirationTime(expInSec)
+      .sign(secret);
+
+    // 7. Prepare Response
+    const userPayload = {
       id: user._id,
       email: user.email,
       name: user.name,
       role: user.role,
-      isPremium: user.isPremium
+      isAdmin: user.isAdmin || false,
+      avatarUrl: user.avatarUrl || "",
     };
 
-    return NextResponse.json(userWithoutPassword, { status: 200 });
+    const response = NextResponse.json({
+      ok: true,
+      user: userPayload,
+    });
 
+    // 8. Set HttpOnly Cookie (The Security Layer)
+    response.cookies.set({
+      name: COOKIE_NAME,
+      value: token,
+      httpOnly: true, // Client JS cannot read this (prevents XSS)
+      sameSite: "lax",
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: COOKIE_MAX_AGE,
+    });
+
+    return response;
   } catch (error) {
     console.error("Login Error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
+      { ok: false, message: "Internal Server Error" },
+      { status: 500 },
     );
   }
 }

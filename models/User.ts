@@ -25,6 +25,12 @@ const UserSchema = new Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    // --- FIELD ADDED FROM YOUR DUMP ---
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    // --- OPTIONAL: Keep these if you plan to use them later ---
     // The "Razorpay" Hook
     isPremium: {
       type: Boolean,
