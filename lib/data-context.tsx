@@ -55,6 +55,7 @@ export interface Order {
   id: string;
   customer: string;
   date: string;
+  lastUpdated?: string;
   total: number;
   status: OrderStatus;
   items: number;
@@ -388,11 +389,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
                              o.history[o.history.length - 1]?.reason === reason;
           if (isDuplicate) return o;
 
+          const now = new Date().toLocaleString();
           const newHistory = [
             ...(o.history || []),
-            { status, date: new Date().toLocaleString(), reason }
+            { status, date: now, reason }
           ];
-          return { ...o, status, history: newHistory };
+          return { 
+            ...o, 
+            status, 
+            history: newHistory,
+            lastUpdated: now
+          };
         }
         return o;
       })

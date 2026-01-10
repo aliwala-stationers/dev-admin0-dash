@@ -148,7 +148,11 @@ export default function OrderDetailPage() {
       items: [],
     }),
     status: orderFromContext?.status || "order_placed" as OrderStatus,
-    history: orderFromContext?.history || []
+    history: orderFromContext?.history || [],
+    customer: orderFromContext?.customer || "Unknown Customer",
+    total: orderFromContext?.total || 0,
+    date: orderFromContext?.date || "-",
+    lastUpdated: orderFromContext?.lastUpdated || orderFromContext?.date || "-",
   };
 
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order.status);
@@ -347,7 +351,7 @@ export default function OrderDetailPage() {
                     </Button>
                   )}
                   <p className="text-sm text-muted-foreground">
-                    Last updated: Today at 10:45 AM
+                    Last updated: {order.lastUpdated}
                   </p>
                 </div>
               </CardContent>
