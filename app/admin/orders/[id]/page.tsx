@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -146,6 +147,7 @@ export default function OrderDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
 
   const rejectionOptions = [
     "Out of Stock",
@@ -188,10 +190,20 @@ export default function OrderDetailPage() {
       toast.error("Please select a reason for rejection");
       return;
     }
+    
+    const finalReason = rejectReason === "Other" ? customReason : rejectReason;
+    
+    if (rejectReason === "Other" && !customReason.trim()) {
+      toast.error("Please provide a custom reason");
+      return;
+    }
+
     setCurrentStatus("order_rejected_by_seller");
-    updateOrderStatus(order.id, "order_rejected_by_seller", rejectReason);
+    updateOrderStatus(order.id, "order_rejected_by_seller", finalReason);
     setShowRejectModal(false);
-    toast.error("Order rejected. Reason: " + rejectReason);
+    setRejectReason("");
+    setCustomReason("");
+    toast.error("Order rejected. Reason: " + finalReason);
   };
 
   return (
@@ -470,6 +482,17 @@ export default function OrderDetailPage() {
                 ))}
               </SelectContent>
             </Select>
+
+            {rejectReason === "Other" && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <Textarea
+                  placeholder="Enter custom rejection reason..."
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRejectModal(false)}>Cancel</Button>
