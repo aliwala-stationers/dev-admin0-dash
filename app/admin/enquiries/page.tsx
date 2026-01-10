@@ -122,7 +122,14 @@ export default function EnquiriesPage() {
             <TableBody>
               {filteredEnquiries.length > 0 ? (
                 filteredEnquiries.map((enquiry) => (
-                  <TableRow key={enquiry.id}>
+                  <TableRow 
+                    key={enquiry.id} 
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {
+                      updateEnquiryStatus(enquiry.id, "read");
+                      router.push(`/admin/enquiries/${enquiry.id}`);
+                    }}
+                  >
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-medium">{enquiry.name}</span>
@@ -141,7 +148,7 @@ export default function EnquiriesPage() {
                         {enquiry.status.charAt(0).toUpperCase() + enquiry.status.slice(1)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="text-blue-600">
@@ -149,6 +156,10 @@ export default function EnquiriesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => router.push(`/admin/enquiries/${enquiry.id}`)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => updateEnquiryStatus(enquiry.id, "read")}>
                             <CheckCircle2 className="mr-2 h-4 w-4" />
                             Mark as Read
@@ -228,9 +239,10 @@ export default function EnquiriesPage() {
                     variant="outline" 
                     size="sm" 
                     className="h-8"
-                    onClick={() => updateEnquiryStatus(enquiry.id, "read")}
+                    onClick={() => router.push(`/admin/enquiries/${enquiry.id}`)}
                   >
-                    Read
+                    <Eye className="mr-2 h-4 w-4" />
+                    View
                   </Button>
                   <Button 
                     variant="destructive" 
