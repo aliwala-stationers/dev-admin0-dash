@@ -381,6 +381,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setOrders((prev) =>
       prev.map((o) => {
         if (o.id === id) {
+          // Prevent duplicate history entries if same status updated
+          const isDuplicate = o.history && o.history[o.history.length - 1]?.status === status;
+          if (isDuplicate) return o;
+
           const newHistory = [
             ...(o.history || []),
             { status, date: new Date().toLocaleString() }

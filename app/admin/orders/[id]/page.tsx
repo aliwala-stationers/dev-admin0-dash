@@ -172,13 +172,13 @@ export default function OrderDetailPage() {
   const handleAccept = () => {
     setCurrentStatus("accepted_order_by_seller");
     updateOrderStatus(order.id, "accepted_order_by_seller");
-    toast.success("Order accepted");
+    toast.success("Order accepted. Tracking history updated.");
   };
 
   const handleReject = () => {
     setCurrentStatus("order_rejected_by_seller");
     updateOrderStatus(order.id, "order_rejected_by_seller");
-    toast.error("Order rejected");
+    toast.error("Order rejected. Status history updated.");
   };
 
   return (
