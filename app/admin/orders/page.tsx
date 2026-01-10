@@ -32,11 +32,23 @@ import Link from "next/link";
 import { useData } from "@/lib/data-context";
 
 const statusVariants = {
-  pending: "secondary",
-  processing: "default",
-  shipped: "default",
-  delivered: "default",
-  cancelled: "destructive",
+  order_placed: "secondary",
+  accepted_order_by_seller: "default",
+  order_rejected_by_seller: "destructive",
+  order_cancelled_by_customer: "destructive",
+  order_packed: "default",
+  order_shipped: "default",
+  order_delivered: "default",
+} as const;
+
+const statusLabels = {
+  order_placed: "Order Placed",
+  accepted_order_by_seller: "Accepted by Seller",
+  order_rejected_by_seller: "Rejected by Seller",
+  order_cancelled_by_customer: "Cancelled by Customer",
+  order_packed: "Order Packed",
+  order_shipped: "Order Shipped",
+  order_delivered: "Order Delivered",
 } as const;
 
 export default function OrdersPage() {
@@ -81,11 +93,13 @@ export default function OrdersPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="shipped">Shipped</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="order_placed">Order Placed</SelectItem>
+            <SelectItem value="accepted_order_by_seller">Accepted Order by Seller</SelectItem>
+            <SelectItem value="order_rejected_by_seller">Order Rejected by Seller</SelectItem>
+            <SelectItem value="order_cancelled_by_customer">Order Cancelled by Customer</SelectItem>
+            <SelectItem value="order_packed">Order Packed</SelectItem>
+            <SelectItem value="order_shipped">Order Shipped</SelectItem>
+            <SelectItem value="order_delivered">Order Delivered</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -117,8 +131,7 @@ export default function OrdersPage() {
                 <TableCell>${order.total.toFixed(2)}</TableCell>
                 <TableCell>
                   <Badge variant={statusVariants[order.status as keyof typeof statusVariants]}>
-                    {order.status.charAt(0).toUpperCase() +
-                      order.status.slice(1)}
+                    {statusLabels[order.status as keyof typeof statusLabels]}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">

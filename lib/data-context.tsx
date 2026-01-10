@@ -36,12 +36,21 @@ export interface Brand {
   createdAt: string;
 }
 
+export type OrderStatus = 
+  | "order_placed" 
+  | "accepted_order_by_seller" 
+  | "order_rejected_by_seller" 
+  | "order_cancelled_by_customer" 
+  | "order_packed" 
+  | "order_shipped" 
+  | "order_delivered";
+
 export interface Order {
   id: string;
   customer: string;
   date: string;
   total: number;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  status: OrderStatus;
   items: number;
 }
 
@@ -93,6 +102,7 @@ interface DataContextType {
   payments: Payment[];
   enquiries: Enquiry[];
   newsletterSubscribers: Newsletter[];
+  updateOrderStatus: (id: string, status: OrderStatus) => void;
   addProduct: (product: Omit<Product, "id" | "createdAt">) => void;
   updateProduct: (id: string, product: Partial<Product>) => void;
   deleteProduct: (id: string) => void;
@@ -162,11 +172,11 @@ const initialBrands: Brand[] = [
 ];
 
 const initialOrders: Order[] = [
-  { id: "ORD-1001", customer: "John Doe", date: "2024-01-05", total: 249.99, status: "delivered", items: 3 },
-  { id: "ORD-1002", customer: "Jane Smith", date: "2024-01-05", total: 149.99, status: "processing", items: 2 },
-  { id: "ORD-1003", customer: "Bob Johnson", date: "2024-01-04", total: 399.99, status: "shipped", items: 5 },
-  { id: "ORD-1004", customer: "Alice Williams", date: "2024-01-04", total: 89.99, status: "pending", items: 1 },
-  { id: "ORD-1005", customer: "Charlie Brown", date: "2024-01-03", total: 199.99, status: "cancelled", items: 2 },
+  { id: "ORD-1001", customer: "John Doe", date: "2024-01-05", total: 249.99, status: "order_delivered", items: 3 },
+  { id: "ORD-1002", customer: "Jane Smith", date: "2024-01-05", total: 149.99, status: "accepted_order_by_seller", items: 2 },
+  { id: "ORD-1003", customer: "Bob Johnson", date: "2024-01-04", total: 399.99, status: "order_shipped", items: 5 },
+  { id: "ORD-1004", customer: "Alice Williams", date: "2024-01-04", total: 89.99, status: "order_placed", items: 1 },
+  { id: "ORD-1005", customer: "Charlie Brown", date: "2024-01-03", total: 199.99, status: "order_cancelled_by_customer", items: 2 },
 ];
 
 const initialCustomers: Customer[] = [
@@ -302,6 +312,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setBrands((prev) => prev.filter((b) => b.id !== id));
   };
 
+  const updateOrderStatus = (id: string, status: OrderStatus) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, status } : o))
+    );
+  };
+
   const deleteEnquiry = (id: string) => {
     setEnquiries((prev) => prev.filter((e) => e.id !== id));
   };
@@ -337,6 +353,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         payments,
         enquiries,
         newsletterSubscribers,
+        updateOrderStatus,
         addProduct,
         updateProduct,
         deleteProduct,

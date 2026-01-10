@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,8 @@ import {
   CheckCircle
 } from "lucide-react";
 import Link from "next/link";
+import { useData, OrderStatus } from "@/lib/data-context";
+import { toast } from "sonner";
 
 // Expanded mock data for detail view
 const mockOrderDetails = {
@@ -87,38 +89,70 @@ const mockOrderDetails = {
 };
 
 const statusVariants = {
-  pending: "secondary",
-  processing: "default",
-  shipped: "default",
-  delivered: "default",
-  cancelled: "destructive",
+  order_placed: "secondary",
+  accepted_order_by_seller: "default",
+  order_rejected_by_seller: "destructive",
+  order_cancelled_by_customer: "destructive",
+  order_packed: "default",
+  order_shipped: "default",
+  order_delivered: "default",
+} as const;
+
+const statusLabels = {
+  order_placed: "Order Placed",
+  accepted_order_by_seller: "Accepted by Seller",
+  order_rejected_by_seller: "Rejected by Seller",
+  order_cancelled_by_customer: "Cancelled by Customer",
+  order_packed: "Order Packed",
+  order_shipped: "Order Shipped",
+  order_delivered: "Order Delivered",
 } as const;
 
 export default function OrderDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { orders, updateOrderStatus } = useData();
   const orderId = params.id as string;
   
+  const orderFromContext = orders.find(o => o.id === orderId);
+  
   // In a real app, you'd fetch this data
-  const order = mockOrderDetails[orderId as keyof typeof mockOrderDetails] || {
-    id: orderId,
-    customer: "Unknown Customer",
-    email: "-",
-    phone: "-",
-    date: "-",
-    total: 0,
-    status: "pending",
-    paymentStatus: "pending",
-    shippingAddress: "-",
-    items: [],
-    history: [],
+  const order = {
+    ...(mockOrderDetails[orderId as keyof typeof mockOrderDetails] || {
+      id: orderId,
+      customer: "Unknown Customer",
+      email: "-",
+      phone: "-",
+      date: "-",
+      total: 0,
+      status: "order_placed" as OrderStatus,
+      paymentStatus: "pending",
+      shippingAddress: "-",
+      items: [],
+      history: [],
+    }),
+    status: orderFromContext?.status || (mockOrderDetails[orderId as keyof typeof mockOrderDetails]?.status as OrderStatus) || "order_placed" as OrderStatus
   };
 
-  const [currentStatus, setCurrentStatus] = useState(order.status);
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order.status);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleStatusUpdate = (newStatus: string) => {
+  useEffect(() => {
+    setCurrentStatus(order.status);
+  }, [order.status]);
+
+  const handleStatusUpdate = (newStatus: OrderStatus) => {
     setCurrentStatus(newStatus);
-    // Add API call here
+  };
+
+  const handleSaveChanges = () => {
+    setIsSaving(true);
+    // Simulate API delay
+    setTimeout(() => {
+      updateOrderStatus(order.id, currentStatus);
+      setIsSaving(false);
+      toast.success("Order status updated successfully");
+    }, 500);
   };
 
   const handlePrint = () => {
@@ -126,11 +160,15 @@ export default function OrderDetailPage() {
   };
 
   const handleAccept = () => {
-    handleStatusUpdate("processing");
+    setCurrentStatus("accepted_order_by_seller");
+    updateOrderStatus(order.id, "accepted_order_by_seller");
+    toast.success("Order accepted");
   };
 
   const handleReject = () => {
-    handleStatusUpdate("cancelled");
+    setCurrentStatus("order_rejected_by_seller");
+    updateOrderStatus(order.id, "order_rejected_by_seller");
+    toast.error("Order rejected");
   };
 
   return (
@@ -161,7 +199,7 @@ export default function OrderDetailPage() {
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-semibold">Order {order.id}</h1>
               <Badge variant={statusVariants[currentStatus as keyof typeof statusVariants]}>
-                {currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
+                {statusLabels[currentStatus as keyof typeof statusLabels]}
               </Badge>
             </div>
             <p className="text-muted-foreground mt-1">
@@ -174,7 +212,7 @@ export default function OrderDetailPage() {
             <Printer className="mr-2 h-4 w-4" />
             Print Invoice
           </Button>
-          {currentStatus === "pending" && (
+          {currentStatus === "order_placed" && (
             <>
               <Button variant="destructive" onClick={handleReject}>
                 <XCircle className="mr-2 h-4 w-4" />
@@ -226,7 +264,7 @@ export default function OrderDetailPage() {
             </CardContent>
           </Card>
 
-          {currentStatus !== "delivered" && (
+          {currentStatus !== "order_delivered" && (
             <Card className="no-print border-accent-blue/20">
               <CardHeader>
                 <CardTitle className="text-lg">Update Status</CardTitle>
@@ -234,18 +272,25 @@ export default function OrderDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4">
-                  <Select value={currentStatus} onValueChange={handleStatusUpdate}>
+                  <Select value={currentStatus} onValueChange={(v) => handleStatusUpdate(v as OrderStatus)}>
                     <SelectTrigger className="w-[200px]">
                       <SelectValue placeholder="Change status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="processing">Processing</SelectItem>
-                      <SelectItem value="shipped">Shipped</SelectItem>
-                      <SelectItem value="delivered">Delivered</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="order_placed">Order Placed</SelectItem>
+                      <SelectItem value="accepted_order_by_seller">Accepted Order by Seller</SelectItem>
+                      <SelectItem value="order_rejected_by_seller">Order Rejected by Seller</SelectItem>
+                      <SelectItem value="order_cancelled_by_customer">Order Cancelled by Customer</SelectItem>
+                      <SelectItem value="order_packed">Order Packed</SelectItem>
+                      <SelectItem value="order_shipped">Order Shipped</SelectItem>
+                      <SelectItem value="order_delivered">Order Delivered</SelectItem>
                     </SelectContent>
                   </Select>
+                  {currentStatus !== order.status && (
+                    <Button onClick={handleSaveChanges} disabled={isSaving}>
+                      {isSaving ? "Saving..." : "Save Changes"}
+                    </Button>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     Last updated: Today at 10:45 AM
                   </p>
@@ -254,7 +299,7 @@ export default function OrderDetailPage() {
             </Card>
           )}
 
-          {currentStatus === "delivered" && (
+          {currentStatus === "order_delivered" && (
             <Card className="no-print border-green-200 bg-green-50/30">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-3 text-green-700">
