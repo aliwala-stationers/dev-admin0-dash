@@ -1,32 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, MoreHorizontal, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useData } from "@/lib/data-context";
-import { toast } from "sonner";
+import { useCategories, useDeleteCategory } from "@/hooks/api/useCategories"; // <--- NEW HOOKS
 
 export default function CategoriesPage() {
-  const { categories, deleteCategory } = useData();
+  const { data: categories = [], isLoading } = useCategories();
+  const deleteMutation = useDeleteCategory();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredCategories = categories.filter((category) =>
@@ -34,11 +20,12 @@ export default function CategoriesPage() {
   );
 
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete the category "${name}"?`)) {
-      deleteCategory(id);
-      toast.success("Category deleted");
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      deleteMutation.mutate(id);
     }
   };
+
+  if (isLoading) return <div className="p-6">Loading categories...</div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -46,7 +33,7 @@ export default function CategoriesPage() {
         <div>
           <h1 className="text-3xl font-semibold">Categories</h1>
           <p className="text-muted-foreground mt-1">
-            Organize your products into categories ({categories.length} total)
+            Organize your products ({categories.length} total)
           </p>
         </div>
         <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
@@ -76,7 +63,6 @@ export default function CategoriesPage() {
               <TableHead>Category Name</TableHead>
               <TableHead>Slug</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead>Products</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -84,25 +70,22 @@ export default function CategoriesPage() {
           <TableBody>
             {filteredCategories.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   No categories found.
                 </TableCell>
               </TableRow>
             ) : (
               filteredCategories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell className="font-medium"><Link href={`/admin/categories/${category.id}`} className="text-blue-600">{category.name}</Link></TableCell>
-                  <TableCell className="text-muted-foreground">
-                    /{category.slug}
+                <TableRow key={category._id}>
+                  <TableCell className="font-medium">
+                    <Link href={`/admin/categories/${category._id}`} className="text-blue-600 hover:underline">
+                        {category.name}
+                    </Link>
                   </TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {category.description}
-                  </TableCell>
-                  <TableCell>{category.productCount}</TableCell>
+                  <TableCell className="text-muted-foreground">/{category.slug}</TableCell>
+                  <TableCell className="max-w-xs truncate">{category.description}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={category.status ? "default" : "secondary"}
-                    >
+                    <Badge variant={category.status ? "default" : "secondary"}>
                       {category.status ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
@@ -110,25 +93,23 @@ export default function CategoriesPage() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="text-blue-600">
-                          <MoreHorizontal className="h-4 w-4 " />
+                          <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/categories/${category.id}`}>View Details</Link>
+                          <Link href={`/admin/categories/${category._id}`}>View Details</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/categories/edit/${category.id}`}>Edit</Link>
+                          <Link href={`/admin/categories/edit/${category._id}`}>Edit</Link>
                         </DropdownMenuItem>
-                        {/* <DropdownMenuSeparator /> */}
-                        {/* <DropdownMenuItem 
+                        <DropdownMenuItem 
                           className="text-destructive"
-                          onClick={() => handleDelete(category.id, category.name)}
+                          onClick={() => handleDelete(category._id, category.name)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
-                        </DropdownMenuItem> */}
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
