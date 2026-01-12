@@ -17,17 +17,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, MoreHorizontal, Search, Trash2, Building2 } from "lucide-react";
 import Link from "next/link";
-import { useData } from "@/lib/data-context";
-import { toast } from "sonner";
+import { useBrands, useDeleteBrand } from "@/hooks/api/useBrands"; // <--- NEW HOOKS
 
 export default function BrandsPage() {
-  const { brands, deleteBrand } = useData();
+  // Use React Query hooks instead of static context
+  const { data: brands = [], isLoading } = useBrands();
+  const deleteMutation = useDeleteBrand();
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredBrands = brands.filter((brand) =>
@@ -35,11 +34,12 @@ export default function BrandsPage() {
   );
 
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete the brand "${name}"?`)) {
-      deleteBrand(id);
-      toast.success("Brand deleted");
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      deleteMutation.mutate(id);
     }
   };
+
+  if (isLoading) return <div className="p-6">Loading brands...</div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -90,10 +90,10 @@ export default function BrandsPage() {
               </TableRow>
             ) : (
               filteredBrands.map((brand) => (
-                <TableRow key={brand.id}>
+                <TableRow key={brand._id}>
                   <TableCell>
                     <Link
-                      href={`/admin/brands/${brand.id}`}
+                      href={`/admin/brands/${brand._id}`}
                       className="text-blue-600 flex items-center gap-3"
                     >
                       <Avatar className="h-10 w-10 border rounded-md">
@@ -131,25 +131,23 @@ export default function BrandsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/brands/${brand.id}`}>
+                          <Link href={`/admin/brands/${brand._id}`}>
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/brands/edit/${brand.id}`}>
+                          <Link href={`/admin/brands/edit/${brand._id}`}>
                             Edit
                           </Link>
                         </DropdownMenuItem>
-                        {/* <DropdownMenuSeparator /> */}
-                        {/* <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive"
-                          onClick={() => handleDelete(brand.id, brand.name)}
+                          onClick={() => handleDelete(brand._id, brand.name)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
-                        </DropdownMenuItem> */}
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

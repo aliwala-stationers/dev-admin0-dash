@@ -1,69 +1,53 @@
 "use client";
 
+import { use, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ChevronLeft, Save, Plus, Upload } from "lucide-react";
+import { ChevronLeft, Save, Plus } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useEffect, useState, use, useRef } from "react";
-import { useData } from "@/lib/data-context";
+import { useBrand, useUpdateBrand } from "@/hooks/api/useBrands"; // Hooks
 
+// ... (Imports: UI Components same as above)
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const brandSchema = z.object({
-  name: z.string().min(2, {
-    message: "Brand name must be at least 2 characters.",
-  }),
-  slug: z.string().min(2, {
-    message: "Slug must be at least 2 characters.",
-  }).regex(/^[a-z0-9-]+$/, {
-    message: "Slug can only contain lowercase letters, numbers, and hyphens.",
-  }),
-  description: z.string().min(10, {
-    message: "Description must be at least 10 characters.",
-  }),
+  name: z.string().min(2),
+  slug: z.string().min(2),
+  description: z.string().min(10),
   status: z.boolean(),
   logo: z.string().optional(),
 });
-
 type BrandFormValues = z.infer<typeof brandSchema>;
 
 export default function EditBrandPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { getBrand, updateBrand } = useData();
+  
+  // React Query: Fetch Data
+  const { data: brand, isLoading } = useBrand(id);
+  const updateMutation = useUpdateBrand();
+  
+  // File Upload State
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<BrandFormValues>({
     resolver: zodResolver(brandSchema),
-    defaultValues: {
-      name: "",
-      slug: "",
-      description: "",
-      status: true,
-      logo: "",
-    },
+    defaultValues: { name: "", slug: "", description: "", status: true, logo: "" },
   });
 
+  // Sync DB data to Form
   useEffect(() => {
-    const brand = getBrand(id);
     if (brand) {
       form.reset({
         name: brand.name,
@@ -73,197 +57,116 @@ export default function EditBrandPage({ params }: { params: Promise<{ id: string
         logo: brand.logo || "",
       });
       setLogoPreview(brand.logo || null);
-      setIsLoading(false);
-    } else {
-      router.push("/admin/brands");
     }
-  }, [id, getBrand, form, router]);
-
-  const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    form.setValue("name", name, { shouldValidate: true });
-    const slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    form.setValue("slug", slug, { shouldValidate: true });
-  };
+  }, [brand, form]);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setFileToUpload(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setLogoPreview(result);
-        form.setValue("logo", result);
-      };
+      reader.onloadend = () => setLogoPreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
 
-  function onSubmit(values: BrandFormValues) {
-    updateBrand(id, values);
-    toast.success("Brand updated", {
-      description: `${values.name} has been successfully updated.`,
-    });
-    router.push("/admin/brands");
+  async function onSubmit(values: BrandFormValues) {
+    try {
+      let finalLogoUrl = values.logo;
+
+      // Only upload if a NEW file was selected
+      if (fileToUpload) {
+        setIsUploading(true);
+        const presignRes = await fetch("/api/uploads/presign", {
+            method: "POST",
+            body: JSON.stringify({ contentType: fileToUpload.type, folder: "brands" }),
+        });
+        const { uploadUrl, publicUrl } = await presignRes.json();
+
+        await fetch(uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": fileToUpload.type },
+            body: fileToUpload,
+        });
+
+        finalLogoUrl = publicUrl;
+      }
+
+      await updateMutation.mutateAsync({ id, data: { ...values, logo: finalLogoUrl } });
+      
+      toast.success("Brand updated");
+      router.push("/admin/brands");
+    } catch (error) {
+      toast.error("Failed to update brand");
+    } finally {
+        setIsUploading(false);
+    }
   }
 
-  if (isLoading) {
-    return <div className="p-6 flex items-center justify-center">Loading...</div>;
-  }
+  if (isLoading) return <div className="p-6">Loading...</div>;
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+       {/* Header */}
+       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/admin/brands">
-              <ChevronLeft className="h-5 w-5" />
-            </Link>
+            <Link href="/admin/brands"><ChevronLeft className="h-5 w-5" /></Link>
           </Button>
-          <div>
-            <h1 className="text-3xl font-semibold">Edit Brand</h1>
-            <p className="text-muted-foreground mt-1">
-              Update details for {form.getValues("name")}
-            </p>
-          </div>
+          <h1 className="text-3xl font-semibold">Edit Brand</h1>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" asChild>
-            <Link href="/admin/brands">Cancel</Link>
-          </Button>
-          <Button 
+        <Button 
             className="bg-accent-blue hover:bg-accent-blue-hover"
             type="button"
+            disabled={isUploading}
             onClick={form.handleSubmit(onSubmit)}
           >
             <Save className="mr-2 h-4 w-4" />
-            Update Brand
+            {isUploading ? "Uploading..." : "Update Brand"}
           </Button>
-        </div>
       </div>
 
-      <Form {...form}>
+       {/* Form Body (Same Structure) */}
+       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <div className="grid gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Brand Logo</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle>Brand Logo</CardTitle></CardHeader>
               <CardContent className="flex flex-col items-center justify-center">
                 <div 
-                  className="relative h-32 w-32 rounded-lg border-2 border-dashed border-muted flex items-center justify-center bg-muted/30 overflow-hidden cursor-pointer group hover:bg-muted/50 transition-colors"
+                  className="relative h-32 w-32 rounded-lg border-2 border-dashed border-muted flex items-center justify-center bg-muted/30 overflow-hidden cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {logoPreview ? (
-                    <>
-                      <img src={logoPreview} alt="Logo preview" className="h-full w-full object-contain p-2" />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Upload className="h-6 w-6 text-white" />
-                      </div>
-                    </>
+                    <img src={logoPreview} className="h-full w-full object-contain p-2" />
                   ) : (
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <Plus className="h-8 w-8" />
-                      <span className="text-xs font-medium uppercase">Upload Logo</span>
-                    </div>
+                    <Plus className="h-8 w-8 text-muted-foreground" />
                   )}
                 </div>
-                <Input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  ref={fileInputRef}
-                  onChange={handleLogoChange}
-                />
+                <Input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleLogoChange} />
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Brand Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Brand Name</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="e.g. Sony" 
-                          {...field} 
-                          onChange={(e) => {
-                            field.onChange(e);
-                            onNameChange(e);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="slug"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Slug</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. sony" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        URL identifier for the brand.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Describe this brand..." 
-                          className="min-h-[120px]"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
+               {/* Same text fields as Add Page */}
+               <CardContent className="space-y-6 pt-6">
+                <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem><FormLabel>Brand Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                )}/>
+                <FormField control={form.control} name="slug" render={({ field }) => (
+                    <FormItem><FormLabel>Slug</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                )}/>
+                 <FormField control={form.control} name="description" render={({ field }) => (
+                    <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea className="min-h-[120px]" {...field} /></FormControl></FormItem>
+                )}/>
+                <FormField control={form.control} name="status" render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Active Status</FormLabel>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
+                      <FormLabel>Active Status</FormLabel><Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormItem>
-                  )}
-                />
-              </CardContent>
+                )}/>
+               </CardContent>
             </Card>
-          </div>
         </form>
-      </Form>
+       </Form>
     </div>
   );
 }
