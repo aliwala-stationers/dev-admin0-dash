@@ -7,14 +7,16 @@ export interface Product {
   name: string;
   category: string;
   brand: string;
-  price: string;
-  stock: string;
+  price: number; // Changed to number
+  stock: number; // Changed to number
   sku: string;
   description: string;
   status: boolean;
   images: string[];
   createdAt: string;
 }
+
+// Category and Brand interfaces look good as they are!
 
 export interface Category {
   id: string;
@@ -135,8 +137,8 @@ const initialProducts: Product[] = [
     name: "Wireless Headphones",
     category: "Electronics",
     brand: "Sony",
-    price: "99.99",
-    stock: "45",
+    price: 99.99,
+    stock: 45,
     sku: "WH-001",
     description: "Premium wireless headphones with noise-canceling technology and 40-hour battery life.",
     status: true,
