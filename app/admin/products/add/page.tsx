@@ -7,9 +7,9 @@ import * as z from "zod";
 import { ChevronLeft, Save, Plus, X, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useState, useRef, use } from "react";
+import { useState, useRef } from "react";
 
-// NEW HOOKS
+// DATA HOOKS
 import { useCreateProduct } from "@/hooks/api/useProducts";
 import { useCategories } from "@/hooks/api/useCategories";
 import { useBrands } from "@/hooks/api/useBrands";
@@ -45,6 +45,7 @@ const productSchema = z.object({
   stock: z.string().regex(/^\d+$/, "Stock must be a whole number."),
   sku: z.string().min(3, "SKU must be at least 3 characters."),
   status: z.boolean(),
+  // We allow blob URLs initially, then replace with real URLs on submit
   images: z.array(z.string()).min(1, "At least 1 image is required.").max(5, "Maximum 5 images."),
 });
 
@@ -53,13 +54,16 @@ type ProductFormValues = z.infer<typeof productSchema>;
 export default function AddProductPage() {
   const router = useRouter();
   
-  // 1. DATA HOOKS
-  const { mutate: createProduct, isPending } = useCreateProduct();
+  // Data & Mutation
+  const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
   const { data: categories = [] } = useCategories();
   const { data: brands = [] } = useBrands();
 
+  // File Upload State
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -78,44 +82,103 @@ export default function AddProductPage() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const currentImages = form.getValues("images");
+    if (files.length === 0) return;
 
-    if (currentImages.length + files.length > 5) {
-      toast.error("Limit exceeded", { description: "Max 5 images allowed." });
+    // Validation: Max 5 images total
+    if (selectedFiles.length + files.length > 5) {
+      toast.error("Limit exceeded", { description: "You can only upload a maximum of 5 images." });
       return;
     }
 
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setPreviews((prev) => [...prev, result]);
-        form.setValue("images", [...form.getValues("images"), result], { shouldValidate: true });
-      };
-      reader.readAsDataURL(file);
-    });
+    // 1. Generate Previews
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
+    
+    // 2. Update State
+    setPreviews((prev) => [...prev, ...newPreviews]);
+    setSelectedFiles((prev) => [...prev, ...files]);
+
+    // 3. Update Form (so Zod knows we have images)
+    // We combine existing form images + new preview URLs
+    const currentFormImages = form.getValues("images");
+    form.setValue("images", [...currentFormImages, ...newPreviews], { shouldValidate: true });
   };
 
   const removeImage = (index: number) => {
-    const updatedImages = form.getValues("images").filter((_, i) => i !== index);
-    setPreviews(updatedImages);
-    form.setValue("images", updatedImages, { shouldValidate: true });
+    // Revoke the object URL to avoid memory leaks
+    URL.revokeObjectURL(previews[index]);
+
+    const updatedPreviews = previews.filter((_, i) => i !== index);
+    const updatedFiles = selectedFiles.filter((_, i) => i !== index);
+
+    setPreviews(updatedPreviews);
+    setSelectedFiles(updatedFiles);
+    
+    // Update form state matches the preview array
+    form.setValue("images", updatedPreviews, { shouldValidate: true });
   };
 
-  // 2. FORM SUBMISSION
   async function onSubmit(values: ProductFormValues) {
-    const formattedProduct = {
-      ...values,
-      price: parseFloat(values.price),
-      stock: parseInt(values.stock, 10),
-    };
+    setIsUploading(true);
+    try {
+      // 1. UPLOAD IMAGES (Parallel)
+      // We map over selectedFiles and upload each one
+      const uploadPromises = selectedFiles.map(async (file) => {
+        // Step A: Get Presigned URL
+        const presignRes = await fetch("/api/uploads/presign", {
+          method: "POST",
+          body: JSON.stringify({ 
+            contentType: file.type, 
+            folder: "products" // Organize in a subfolder
+          }),
+        });
+        
+        if (!presignRes.ok) throw new Error("Failed to get upload URL");
+        const { uploadUrl, publicUrl } = await presignRes.json();
 
-    createProduct(formattedProduct, {
-      onSuccess: () => {
-        router.push("/admin/products");
-      }
-    });
+        // Step B: Upload File
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+
+        if (!uploadRes.ok) throw new Error(`Failed to upload ${file.name}`);
+        
+        return publicUrl;
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+
+      // 2. PREPARE FINAL DATA
+      const formattedProduct = {
+        ...values,
+        price: parseFloat(values.price),
+        stock: parseInt(values.stock, 10),
+        images: uploadedUrls, // Replace blob URLs with real S3 URLs
+      };
+
+      // 3. CREATE PRODUCT IN DB
+      createProduct(formattedProduct, {
+        onSuccess: () => {
+          // Cleanup previews
+          previews.forEach(url => URL.revokeObjectURL(url));
+          router.push("/admin/products");
+        },
+        onError: (err) => {
+           console.error(err);
+           // Toast handled by hook usually, but ensure user knows
+        }
+      });
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Upload failed", { description: "Some images could not be uploaded." });
+    } finally {
+      setIsUploading(false);
+    }
   }
+
+  const isBusy = isUploading || isCreating;
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -132,22 +195,23 @@ export default function AddProductPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="ghost" asChild disabled={isPending}>
+          <Button variant="ghost" asChild disabled={isBusy}>
             <Link href="/admin/products">Cancel</Link>
           </Button>
           <Button 
             className="bg-blue-600 hover:bg-blue-700"
-            disabled={isPending}
+            disabled={isBusy}
             onClick={form.handleSubmit(onSubmit)}
           >
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Save Product
+            {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {isUploading ? "Uploading Images..." : isCreating ? "Saving..." : "Save Product"}
           </Button>
         </div>
       </div>
 
       <Form {...form}>
         <form className="grid gap-6 md:grid-cols-3">
+          {/* LEFT COLUMN */}
           <div className="md:col-span-2 space-y-6">
             <Card>
               <CardHeader><CardTitle>General Information</CardTitle></CardHeader>
@@ -217,6 +281,7 @@ export default function AddProductPage() {
             </Card>
           </div>
 
+          {/* RIGHT COLUMN */}
           <div className="space-y-6">
             <Card>
               <CardHeader><CardTitle>Organization</CardTitle></CardHeader>
@@ -231,7 +296,6 @@ export default function AddProductPage() {
                         <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
                         <SelectContent>
                           {categories.map((cat) => (
-                            // Use _id for value, name for display
                             <SelectItem key={cat._id} value={cat._id}>
                               {cat.name}
                             </SelectItem>
@@ -300,14 +364,23 @@ export default function AddProductPage() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="aspect-square border-2 border-dashed rounded flex flex-col items-center justify-center text-muted-foreground hover:bg-muted"
+                      className="aspect-square border-2 border-dashed rounded flex flex-col items-center justify-center text-muted-foreground hover:bg-muted cursor-pointer transition-colors"
                     >
                       <Plus className="h-5 w-5 mb-1" />
                       <span className="text-[10px] font-bold">ADD</span>
                     </button>
                   )}
                 </div>
-                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" multiple onChange={handleImageChange} />
+                
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  multiple 
+                  onChange={handleImageChange} 
+                />
+                
                 {form.formState.errors.images && (
                   <p className="text-xs text-red-500 mt-2">{form.formState.errors.images.message}</p>
                 )}
