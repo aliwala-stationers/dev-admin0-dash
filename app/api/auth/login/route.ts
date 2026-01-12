@@ -25,6 +25,8 @@ export async function POST(req: Request) {
     // 2. Connect DB
     await connectDB();
 
+    const users = await User.find()
+    console.log("users",users)
     // 3. Find User (Explicitly select password)
     const user = await User.findOne({ email }).select("+password");
 
