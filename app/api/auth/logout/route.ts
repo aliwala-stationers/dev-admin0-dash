@@ -5,17 +5,17 @@ import connectDB from "@/lib/db";
 import LoginHistory from "@/models/LoginHistory";
 
 const COOKIE_NAME = "aliwala_admin_token";
-const JWT_SECRET = process.env.JWT_SECRET!;
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET!;
 
 export async function POST(req: Request) {
   const cookieStore = cookies();
   const token = (await cookieStore).get(COOKIE_NAME)?.value;
-
+  console.log("token", token);
   // 1. If we have a token, log the logout event
   if (token) {
     try {
       // We perform a "Silent Verification" just to get the ID
-      const secret = new TextEncoder().encode(JWT_SECRET);
+      const secret = new TextEncoder().encode(ADMIN_JWT_SECRET);
       const { payload } = await jwtVerify(token, secret);
       const userId = payload.sub;
 
