@@ -17,8 +17,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sign In - Your App",
-  description: "Sign in to your account",
+  title: {
+    default: "Aliwala Admin",
+    template: "%s | Aliwala Admin",
+  },
+  description: "Professional dashboard for managing inventory and orders.",
+  icons: {
+    icon: "/favicon.ico", // Ensure this file exists in your /public folder
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
