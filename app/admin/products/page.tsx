@@ -27,41 +27,62 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Filter, Trash2, Building2, Package } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Filter, Trash2, Building2, Package, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useData } from "@/lib/data-context";
-import { toast } from "sonner";
+import { useProducts, useDeleteProduct } from "@/hooks/api/useProducts"; // Updated import
+// import { toast } from "sonner";
 
 export default function ProductsPage() {
-  const { products, deleteProduct } = useData();
+  // 1. Fetching data with React Query
+  const { data: products = [], isLoading } = useProducts();
+  const deleteMutation = useDeleteProduct();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  // 1. Get unique categories dynamically from the data
+  // Helper to handle both populated and unpopulated fields
+  const getLabel = (field: any) => (typeof field === "object" ? field?.name : field);
+
+  // 2. Dynamic Categories from DB products
   const categories = useMemo(() => {
-    const unique = new Set(products.map((p) => p.category));
-    return Array.from(unique).sort();
+    const unique = new Set(products.map((p) => getLabel(p.category)));
+    return Array.from(unique).filter(Boolean).sort();
   }, [products]);
 
-  // 2. Optimized filtering
+  // 3. Filtering logic
   const filteredProducts = products.filter((product) => {
+    const name = product.name.toLowerCase();
+    const brand = getLabel(product.brand)?.toLowerCase() || "";
+    const category = getLabel(product.category);
+
     const matchesSearch = 
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.brand.toLowerCase().includes(searchQuery.toLowerCase());
+      name.includes(searchQuery.toLowerCase()) ||
+      brand.includes(searchQuery.toLowerCase());
     
     const matchesCategory =
-      categoryFilter === "all" || product.category === categoryFilter;
+      categoryFilter === "all" || category === categoryFilter;
     
     return matchesSearch && matchesCategory;
   });
 
-  const handleDelete = (id: string, name: string) => {
-    // Note: Consider replacing window.confirm with a Radix UI Dialog later for better UX
+  const handleDelete = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete ${name}?`)) {
-      deleteProduct(id);
-      toast.success(`${name} has been removed.`);
+      try {
+        await deleteMutation.mutateAsync(id);
+        // Toast is handled in the hook's onSuccess
+      } catch (error) {
+        // Error is handled in the hook's onError
+      }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-[60vh] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -69,7 +90,7 @@ export default function ProductsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
           <p className="text-muted-foreground">
-            Manage your inventory and product listings ({filteredProducts.length} showing)
+            Manage your inventory ({filteredProducts.length} showing)
           </p>
         </div>
         <Button className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
@@ -123,17 +144,17 @@ export default function ProductsPage() {
                 <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Package className="h-8 w-8 opacity-20" />
-                    <p>No products found matching your criteria.</p>
+                    <p>No products found.</p>
                   </div>
                 </TableCell>
               </TableRow>
             ) : (
               filteredProducts.map((product) => (
-                <TableRow key={product.id} className="hover:bg-muted/50 transition-colors">
+                <TableRow key={product._id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">
                     <Link 
-                      href={`/admin/products/${product.id}`} 
-                      className="text-blue-600 hover:text-blue-800 transition-colors"
+                      href={`/admin/products/${product._id}`} 
+                      className="text-blue-600 hover:underline"
                     >
                       {product.name}
                     </Link>
@@ -141,52 +162,49 @@ export default function ProductsPage() {
                   <TableCell>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Building2 className="h-3.5 w-3.5" />
-                      <span className="text-sm">{product.brand}</span>
+                      <span className="text-sm">{getLabel(product.brand)}</span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-800">
-                      {product.category}
-                    </span>
+                    <Badge variant="outline" className="font-normal">
+                      {getLabel(product.category)}
+                    </Badge>
                   </TableCell>
                   <TableCell className="font-mono">
-                    ${Number(product.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </TableCell>
                   <TableCell>
-                    <span className={product.stock < 10 ? "text-orange-600 font-bold" : ""}>
+                    <span className={product.stock < 10 ? "text-red-600 font-bold" : ""}>
                       {product.stock}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      className="capitalize"
-                      variant={product.status ? "success" : "secondary"}
-                    >
+                    <Badge variant={product.status ? "success" : "secondary"}>
                       {product.status ? "Active" : "Inactive"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="hover:bg-blue-50">
-                          <MoreHorizontal className="h-4 w-4 text-blue-600" />
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuLabel>Options</DropdownMenuLabel>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/products/${product.id}`}>View Details</Link>
+                          <Link href={`/admin/products/${product._id}`}>View Details</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/products/edit/${product.id}`}>Edit Product</Link>
+                          <Link href={`/admin/products/edit/${product._id}`}>Edit</Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
                           className="text-destructive focus:bg-destructive/10"
-                          onClick={() => handleDelete(product.id, product.name)}
+                          disabled={deleteMutation.isPending}
+                          onClick={() => handleDelete(product._id, product.name)}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          {deleteMutation.isPending ? "Deleting..." : "Delete"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

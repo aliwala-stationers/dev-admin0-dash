@@ -4,17 +4,20 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ChevronLeft, Save, Plus, X, Image as ImageIcon, Loader2 } from "lucide-react";
+import { ChevronLeft, Save, Plus, X, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useState, useRef, useEffect, use } from "react";
-import { useData } from "@/lib/data-context";
+
+// NEW HOOKS
+import { useProduct, useUpdateProduct } from "@/hooks/api/useProducts";
+import { useCategories } from "@/hooks/api/useCategories";
+import { useBrands } from "@/hooks/api/useBrands";
 
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -49,10 +52,14 @@ type ProductFormValues = z.infer<typeof productSchema>;
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { products, updateProduct, categories, brands } = useData();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+
+  // 1. DATA FETCHING HOOKS
+  const { data: product, isLoading: isProductLoading } = useProduct(id);
+  const { data: categories = [] } = useCategories();
+  const { data: brands = [] } = useBrands();
+  const updateMutation = useUpdateProduct();
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -69,25 +76,24 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     },
   });
 
+  // 2. SYNC DB DATA TO FORM
   useEffect(() => {
-    // Find product from context
-    const product = products.find((p) => p.id === id);
-    
     if (product) {
       form.reset({
-        ...product,
-        // Convert numbers to strings for the form inputs
+        name: product.name,
+        description: product.description,
+        sku: product.sku,
         price: product.price.toString(),
         stock: product.stock.toString(),
+        status: product.status,
+        // Extract _id if category/brand are populated objects, otherwise use the string
+        category: typeof product.category === 'object' ? product.category._id : product.category,
+        brand: typeof product.brand === 'object' ? product.brand._id : product.brand,
+        images: product.images,
       });
       setPreviews(product.images);
-      setIsLoading(false);
-    } else if (products.length > 0) {
-      // If products are loaded but this ID isn't found
-      toast.error("Product not found");
-      router.push("/admin/products");
     }
-  }, [id, products, form, router]);
+  }, [product, form]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -115,22 +121,27 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     form.setValue("images", updatedImages, { shouldValidate: true });
   };
 
-  function onSubmit(values: ProductFormValues) {
-    // Transform back to numbers before updating context
-    const updatedProduct = {
+  // 3. SUBMIT WITH MUTATION
+  async function onSubmit(values: ProductFormValues) {
+    const payload = {
       ...values,
       price: parseFloat(values.price),
       stock: parseInt(values.stock, 10),
     };
 
-    updateProduct(id, updatedProduct);
-    toast.success("Changes saved successfully");
-    router.push("/admin/products");
+    updateMutation.mutate(
+      { id, data: payload },
+      {
+        onSuccess: () => {
+          router.push("/admin/products");
+        },
+      }
+    );
   }
 
-  if (isLoading) {
+  if (isProductLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="h-[60vh] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
@@ -151,11 +162,19 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
         <div className="flex gap-3">
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" asChild disabled={updateMutation.isPending}>
             <Link href="/admin/products">Cancel</Link>
           </Button>
-          <Button onClick={form.handleSubmit(onSubmit)} className="bg-blue-600 hover:bg-blue-700">
-            <Save className="mr-2 h-4 w-4" />
+          <Button 
+            onClick={form.handleSubmit(onSubmit)} 
+            className="bg-blue-600 hover:bg-blue-700"
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
             Save Changes
           </Button>
         </div>
@@ -243,11 +262,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <FormItem>
                       <FormLabel>Category</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger></FormControl>
                         <SelectContent>
-                          {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                          {categories.map(c => (
+                            <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -258,11 +280,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <FormItem>
                       <FormLabel>Brand</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select Brand" /></SelectTrigger></FormControl>
                         <SelectContent>
-                          {brands.map(b => <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>)}
+                          {brands.map(b => (
+                            <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />

@@ -1,38 +1,43 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use } from "react";
 import Link from "next/link";
-import {
-  ChevronLeft,
-  Edit,
-  Package,
-  Tag,
-  Layers,
-  Clock,
-  Eye,
-  Building2,
+import { 
+  ChevronLeft, 
+  Edit, 
+  Package, 
+  Tag, 
+  Layers, 
+  Clock, 
+  Eye, 
+  Building2, 
   AlertTriangle,
+  Loader2 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useData, Product } from "@/lib/data-context";
 
-export default function ViewProductPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+// NEW HOOK
+import { useProduct } from "@/hooks/api/useProducts";
+
+export default function ViewProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { products } = useData();
-  const [product, setProduct] = useState<Product | undefined>(undefined);
+  
+  // 1. FETCH SINGLE PRODUCT
+  const { data: product, isLoading } = useProduct(id);
 
-  useEffect(() => {
-    // Finding product directly from the context array
-    const found = products.find((p) => p.id === id);
-    setProduct(found);
-  }, [id, products]);
+  // Helper to handle populated objects or ID strings
+  const getLabel = (field: any) => (typeof field === "object" && field !== null ? field.name : field);
+
+  if (isLoading) {
+    return (
+      <div className="h-[60vh] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -48,7 +53,7 @@ export default function ViewProductPage({
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
-      {/* Header Section */}
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
@@ -57,22 +62,18 @@ export default function ViewProductPage({
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {product.name}
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant={product.status ? "success" : "secondary"}>
                 {product.status ? "ACTIVE" : "INACTIVE"}
               </Badge>
-              <span className="text-sm text-muted-foreground font-mono">
-                SKU: {product.sku}
-              </span>
+              <span className="text-sm text-muted-foreground font-mono">SKU: {product.sku}</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" asChild>
-            <Link href={`/admin/products/edit/${id}`}>
+            <Link href={`/admin/products/edit/${product._id}`}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
             </Link>
@@ -85,27 +86,24 @@ export default function ViewProductPage({
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main Content Area */}
+        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Enhanced Image Gallery */}
           <Card className="overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                Product Gallery
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Product Gallery</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {product.images.map((url, index) => (
-                  <div
-                    key={index}
+                  <div 
+                    key={index} 
                     className={`rounded-lg overflow-hidden border bg-muted flex items-center justify-center 
                       ${index === 0 && product.images.length % 2 !== 0 ? "sm:col-span-2 aspect-[21/9]" : "aspect-square"}`}
                   >
-                    <img
-                      src={url}
-                      alt={`${product.name} view ${index + 1}`}
-                      className="h-full w-full object-cover hover:scale-105 transition-transform duration-300"
+                    <img 
+                      src={url} 
+                      alt={`${product.name} view ${index + 1}`} 
+                      className="h-full w-full object-cover hover:scale-105 transition-transform duration-300" 
                     />
                   </div>
                 ))}
@@ -115,20 +113,17 @@ export default function ViewProductPage({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                Detailed Description
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Detailed Description</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                {product.description ||
-                  "No description provided for this product."}
+                {product.description || "No description provided."}
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Sticky Sidebar Information */}
+        {/* Sidebar */}
         <div className="space-y-6">
           <Card className="border-t-4 border-t-blue-600">
             <CardHeader>
@@ -141,46 +136,35 @@ export default function ViewProductPage({
                   <span className="text-sm">Unit Price</span>
                 </div>
                 <span className="font-bold text-2xl text-blue-600">
-                  $
-                  {product.price.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                  })}
+                  ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
-
               <Separator />
-
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Building2 className="h-4 w-4" />
                   <span className="text-sm">Brand</span>
                 </div>
-                <span className="font-medium">{product.brand}</span>
+                {/* 2. SAFE RENDER of Brand Object */}
+                <span className="font-medium">{getLabel(product.brand)}</span>
               </div>
-
               <Separator />
-
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Layers className="h-4 w-4" />
                   <span className="text-sm">Category</span>
                 </div>
-                <Badge variant="outline" className="font-normal">
-                  {product.category}
-                </Badge>
+                {/* 3. SAFE RENDER of Category Object */}
+                <Badge variant="outline" className="font-normal">{getLabel(product.category)}</Badge>
               </div>
-
               <Separator />
-
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Package className="h-4 w-4" />
                   <span className="text-sm">Stock Level</span>
                 </div>
                 <div className="text-right">
-                  <span
-                    className={`font-bold ${product.stock < 10 ? "text-red-500" : "text-green-600"}`}
-                  >
+                  <span className={`font-bold ${product.stock < 10 ? "text-red-500" : "text-green-600"}`}>
                     {product.stock} units
                   </span>
                   {product.stock < 10 && (
