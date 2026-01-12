@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const CategorySchema = new Schema(
   {
@@ -11,7 +11,7 @@ const CategorySchema = new Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Category = models.Category || model("Category", CategorySchema);
