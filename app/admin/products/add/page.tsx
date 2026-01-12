@@ -9,7 +9,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
 
-// DATA HOOKS
+// YOUR HOOKS
 import { useCreateProduct } from "@/hooks/api/useProducts";
 import { useCategories } from "@/hooks/api/useCategories";
 import { useBrands } from "@/hooks/api/useBrands";
@@ -38,31 +38,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // Validation Schema
 const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
-  description: z.string().min(10, "Description must be at least 10 characters."),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters."),
   category: z.string().min(1, "Please select a category."),
   brand: z.string().min(1, "Please select a brand."),
-  price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid price format (e.g., 29.99)."),
+  price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid price format."),
   stock: z.string().regex(/^\d+$/, "Stock must be a whole number."),
   sku: z.string().min(3, "SKU must be at least 3 characters."),
   status: z.boolean(),
-  // We allow blob URLs initially, then replace with real URLs on submit
-  images: z.array(z.string()).min(1, "At least 1 image is required.").max(5, "Maximum 5 images."),
+  // We allow strings here, but we will ensure they are valid URLs before DB save
+  images: z.array(z.string()).min(1, "At least 1 image is required."),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
 export default function AddProductPage() {
   const router = useRouter();
-  
-  // Data & Mutation
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
   const { data: categories = [] } = useCategories();
   const { data: brands = [] } = useBrands();
 
-  // File Upload State
+  // STATE: Keep track of raw files separately from form values
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
+  const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]); // Base64 strings for UI
   const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<ProductFormValues>({
@@ -80,99 +80,121 @@ export default function AddProductPage() {
     },
   });
 
+  // 1. HANDLE IMAGE SELECTION
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    // Validation: Max 5 images total
-    if (selectedFiles.length + files.length > 5) {
-      toast.error("Limit exceeded", { description: "You can only upload a maximum of 5 images." });
+    if (filesToUpload.length + files.length > 5) {
+      toast.error("Limit exceeded", {
+        description: "Maximum 5 images allowed.",
+      });
       return;
     }
 
-    // 1. Generate Previews
-    const newPreviews = files.map((file) => URL.createObjectURL(file));
-    
-    // 2. Update State
-    setPreviews((prev) => [...prev, ...newPreviews]);
-    setSelectedFiles((prev) => [...prev, ...files]);
+    // Add actual files to state for later upload
+    setFilesToUpload((prev) => [...prev, ...files]);
 
-    // 3. Update Form (so Zod knows we have images)
-    // We combine existing form images + new preview URLs
-    const currentFormImages = form.getValues("images");
-    form.setValue("images", [...currentFormImages, ...newPreviews], { shouldValidate: true });
+    // Generate Base64 previews for UI
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+
+        // Update local preview state
+        setPreviews((prev) => [...prev, base64String]);
+
+        // Update form validation state (so Zod knows we have "something")
+        const currentImages = form.getValues("images");
+        form.setValue("images", [...currentImages, base64String], {
+          shouldValidate: true,
+        });
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
+  // 2. REMOVE IMAGE
   const removeImage = (index: number) => {
-    // Revoke the object URL to avoid memory leaks
-    URL.revokeObjectURL(previews[index]);
+    // Remove from Files array
+    const updatedFiles = filesToUpload.filter((_, i) => i !== index);
+    setFilesToUpload(updatedFiles);
 
+    // Remove from Previews array
     const updatedPreviews = previews.filter((_, i) => i !== index);
-    const updatedFiles = selectedFiles.filter((_, i) => i !== index);
-
     setPreviews(updatedPreviews);
-    setSelectedFiles(updatedFiles);
-    
-    // Update form state matches the preview array
+
+    // Sync with Form
     form.setValue("images", updatedPreviews, { shouldValidate: true });
   };
 
+  // 3. UPLOAD HELPER FUNCTION
+  const uploadFile = async (file: File) => {
+    // A. Get Presigned URL
+    const presignRes = await fetch("/api/uploads/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contentType: file.type,
+        folder: "products",
+      }),
+    });
+
+    if (!presignRes.ok) throw new Error("Failed to get presigned URL");
+    const { uploadUrl, publicUrl } = await presignRes.json();
+
+    // B. Upload to R2/S3
+    // IMPORTANT: 'Content-Type' must match exactly what was sent to presign
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+
+    if (!uploadRes.ok) throw new Error(`Upload failed for ${file.name}`);
+    return publicUrl;
+  };
+
+  // 4. MAIN SUBMIT
   async function onSubmit(values: ProductFormValues) {
+    if (filesToUpload.length === 0) {
+      toast.error("Please select at least one image");
+      return;
+    }
+
     setIsUploading(true);
     try {
-      // 1. UPLOAD IMAGES (Parallel)
-      // We map over selectedFiles and upload each one
-      const uploadPromises = selectedFiles.map(async (file) => {
-        // Step A: Get Presigned URL
-        const presignRes = await fetch("/api/uploads/presign", {
-          method: "POST",
-          body: JSON.stringify({ 
-            contentType: file.type, 
-            folder: "products" // Organize in a subfolder
-          }),
-        });
-        
-        if (!presignRes.ok) throw new Error("Failed to get upload URL");
-        const { uploadUrl, publicUrl } = await presignRes.json();
-
-        // Step B: Upload File
-        const uploadRes = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-
-        if (!uploadRes.ok) throw new Error(`Failed to upload ${file.name}`);
-        
-        return publicUrl;
-      });
-
-      const uploadedUrls = await Promise.all(uploadPromises);
-
-      // 2. PREPARE FINAL DATA
-      const formattedProduct = {
+      // Step A: Upload all files in parallel
+      // console.log("start upload test 1");
+      const uploadedUrls = await Promise.all(
+        filesToUpload.map((file) => uploadFile(file)),
+      );
+      // console.log("end upload test 1");
+      // console.log("uploadUrls", uploadedUrls);
+      // Step B: Replace the Base64 strings in form values with real URLs
+      const finalProductData = {
         ...values,
         price: parseFloat(values.price),
         stock: parseInt(values.stock, 10),
-        images: uploadedUrls, // Replace blob URLs with real S3 URLs
+        images: uploadedUrls, // <--- CRITICAL: Overwriting base64 with HTTP URLs
       };
 
-      // 3. CREATE PRODUCT IN DB
-      createProduct(formattedProduct, {
+      // Step C: Save to Database
+      createProduct(finalProductData, {
         onSuccess: () => {
-          // Cleanup previews
-          previews.forEach(url => URL.revokeObjectURL(url));
+          toast.success("Product created successfully");
           router.push("/admin/products");
         },
         onError: (err) => {
-           console.error(err);
-           // Toast handled by hook usually, but ensure user knows
-        }
+          console.error(err);
+          toast.error("Failed to save product to database.");
+        },
       });
-
     } catch (error) {
-      console.error(error);
-      toast.error("Upload failed", { description: "Some images could not be uploaded." });
+      console.error("Upload Error:", error);
+      toast.error(
+        "Image upload failed. Check your connection or CORS settings.",
+      );
     } finally {
       setIsUploading(false);
     }
@@ -190,31 +212,41 @@ export default function AddProductPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Add New Product</h1>
-            <p className="text-sm text-muted-foreground">Fill in the details to list a new item</p>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Add New Product
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Fill in the details to list a new item
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" asChild disabled={isBusy}>
             <Link href="/admin/products">Cancel</Link>
           </Button>
-          <Button 
+          <Button
             className="bg-blue-600 hover:bg-blue-700"
             disabled={isBusy}
             onClick={form.handleSubmit(onSubmit)}
           >
-            {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            {isUploading ? "Uploading Images..." : isCreating ? "Saving..." : "Save Product"}
+            {isBusy ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            {isUploading ? "Uploading Images..." : "Save Product"}
           </Button>
         </div>
       </div>
 
       <Form {...form}>
         <form className="grid gap-6 md:grid-cols-3">
-          {/* LEFT COLUMN */}
+          {/* LEFT COL */}
           <div className="md:col-span-2 space-y-6">
             <Card>
-              <CardHeader><CardTitle>General Information</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle>General Information</CardTitle>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
@@ -222,7 +254,12 @@ export default function AddProductPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Product Name</FormLabel>
-                      <FormControl><Input placeholder="e.g. Ultra Wireless Headphones" {...field} /></FormControl>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g. Ultra Wireless Headphones"
+                          {...field}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -233,7 +270,13 @@ export default function AddProductPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Description</FormLabel>
-                      <FormControl><Textarea className="min-h-[150px]" placeholder="Product highlights..." {...field} /></FormControl>
+                      <FormControl>
+                        <Textarea
+                          className="min-h-[150px]"
+                          placeholder="Product highlights..."
+                          {...field}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -242,7 +285,9 @@ export default function AddProductPage() {
             </Card>
 
             <Card>
-              <CardHeader><CardTitle>Pricing & Stock</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle>Pricing & Stock</CardTitle>
+              </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-3">
                 <FormField
                   control={form.control}
@@ -250,7 +295,9 @@ export default function AddProductPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>SKU</FormLabel>
-                      <FormControl><Input placeholder="WH-001" {...field} /></FormControl>
+                      <FormControl>
+                        <Input placeholder="WH-001" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -261,7 +308,9 @@ export default function AddProductPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Price ($)</FormLabel>
-                      <FormControl><Input placeholder="0.00" {...field} /></FormControl>
+                      <FormControl>
+                        <Input placeholder="0.00" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -272,7 +321,9 @@ export default function AddProductPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Quantity</FormLabel>
-                      <FormControl><Input placeholder="0" {...field} /></FormControl>
+                      <FormControl>
+                        <Input placeholder="0" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -281,10 +332,12 @@ export default function AddProductPage() {
             </Card>
           </div>
 
-          {/* RIGHT COLUMN */}
+          {/* RIGHT COL */}
           <div className="space-y-6">
             <Card>
-              <CardHeader><CardTitle>Organization</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle>Organization</CardTitle>
+              </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
                   control={form.control}
@@ -292,8 +345,15 @@ export default function AddProductPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
                         <SelectContent>
                           {categories.map((cat) => (
                             <SelectItem key={cat._id} value={cat._id}>
@@ -313,8 +373,15 @@ export default function AddProductPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Brand</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger></FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                        </FormControl>
                         <SelectContent>
                           {brands.map((brand) => (
                             <SelectItem key={brand._id} value={brand._id}>
@@ -333,8 +400,15 @@ export default function AddProductPage() {
                   name="status"
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between border rounded-lg p-3">
-                      <FormLabel className="m-0 text-sm">Active Status</FormLabel>
-                      <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                      <FormLabel className="m-0 text-sm">
+                        Active Status
+                      </FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                 />
@@ -344,15 +418,25 @@ export default function AddProductPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle>Media</CardTitle>
-                <span className="text-xs text-muted-foreground">{previews.length}/5</span>
+                <span className="text-xs text-muted-foreground">
+                  {previews.length}/5
+                </span>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-2">
                   {previews.map((url, i) => (
-                    <div key={i} className="relative aspect-square border rounded group overflow-hidden">
-                      <img src={url} alt="upload" className="w-full h-full object-cover" />
-                      <button 
-                        type="button" 
+                    <div
+                      key={i}
+                      className="relative aspect-square border rounded group overflow-hidden"
+                    >
+                      {/* PREVIEW IMAGE (Base64) */}
+                      <img
+                        src={url}
+                        alt="upload"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
                         onClick={() => removeImage(i)}
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all"
                       >
@@ -364,25 +448,27 @@ export default function AddProductPage() {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="aspect-square border-2 border-dashed rounded flex flex-col items-center justify-center text-muted-foreground hover:bg-muted cursor-pointer transition-colors"
+                      className="aspect-square border-2 border-dashed rounded flex flex-col items-center justify-center text-muted-foreground hover:bg-muted cursor-pointer"
                     >
                       <Plus className="h-5 w-5 mb-1" />
                       <span className="text-[10px] font-bold">ADD</span>
                     </button>
                   )}
                 </div>
-                
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept="image/*" 
-                  multiple 
-                  onChange={handleImageChange} 
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageChange}
                 />
-                
+
                 {form.formState.errors.images && (
-                  <p className="text-xs text-red-500 mt-2">{form.formState.errors.images.message}</p>
+                  <p className="text-xs text-red-500 mt-2">
+                    {form.formState.errors.images.message}
+                  </p>
                 )}
               </CardContent>
             </Card>
