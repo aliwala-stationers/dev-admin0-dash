@@ -4,6 +4,7 @@ import { createSecretKey } from "crypto";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import LoginHistory from "@/models/LoginHistory";
 
 const JWT_SECRET = process.env.ADMIN_JWT_SECRET || "fallback-secret";
 const COOKIE_NAME = "aliwala_admin_token";
@@ -25,8 +26,8 @@ export async function POST(req: Request) {
     // 2. Connect DB
     await connectDB();
 
-    const users = await User.find()
-    console.log("users",users)
+    const users = await User.find();
+    console.log("users", users);
     // 3. Find User (Explicitly select password)
     const user = await User.findOne({ email }).select("+password");
 
@@ -66,6 +67,25 @@ export async function POST(req: Request) {
       .setExpirationTime(expInSec)
       .sign(secret);
 
+    // [INJECT HERE] ---------------------------------------------
+    // Fire-and-forget logging (or await it if you want strict auditing)
+    try {
+      const ip = req.headers.get("x-forwarded-for") || "unknown";
+      const userAgent = req.headers.get("user-agent") || "unknown";
+
+      // We await this to ensure the serverless function doesn't freeze
+      // before the write completes.
+      await LoginHistory.create({
+        userId: user._id,
+        event: "LOGIN",
+        ipAddress: ip,
+        device: userAgent,
+      });
+    } catch (logError) {
+      // Critical: Do NOT fail the login if logging fails.
+      // Just print it to console and move on.
+      console.error("Failed to write login log:", logError);
+    }
     // 7. Prepare Response
     const userPayload = {
       id: user._id,
