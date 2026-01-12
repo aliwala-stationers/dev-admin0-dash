@@ -1,7 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner"; // Assuming you use Sonner
 
 interface User {
   id: string;
@@ -14,54 +16,71 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (credentials: any) => Promise<void>; // Using mutation
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Fetcher function
+const fetchUser = async () => {
+  const res = await fetch("/api/auth/me");
+  if (!res.ok) throw new Error("Not authenticated");
+  return res.json();
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
+  // 1. QUERY: Check Session on Mount / Interval
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["currentUser"],
+    queryFn: fetchUser,
+    retry: false, // Don't retry 401s
+    staleTime: 1000 * 60 * 5, // 5 mins
+  });
 
-  const login = async (email: string, password: string) => {
-    // PATCH: Strict credential check
-    // in production, this would call an API
-    if (email === "info@aliwala.in" && password === "adminAliwala32") {
-      const mockUser: User = {
-        id: "1",
-        name: "Admin User",
-        email: email, // Carry the email over
-        role: "admin",
-      };
-      setUser(mockUser);
-      localStorage.setItem("user", JSON.stringify(mockUser));
-      // Note: You have a router.push here AND in the page useEffect. 
-      // This ensures the redirect happens immediately after state update.
+  const user = isError ? null : data?.user;
+
+  // 2. MUTATION: Login
+  const loginMutation = useMutation({
+    mutationFn: async ({ email, password }: any) => {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Login failed");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      // Update React Query Cache immediately
+      queryClient.setQueryData(["currentUser"], { user: data.user });
+      toast.success("Welcome back");
       router.push("/admin/dashboard");
-    } else {
-      // Logic branch for failure
-      throw new Error("Invalid credentials");
-    }
-  };
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
 
-  const logout = () => {
-    // Clear user data
-    setUser(null);
-    localStorage.removeItem("user");
-    // Redirect to login page
-    router.push("/");
-  };
+  // 3. MUTATION: Logout
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      // Need a logout API route to clear cookie!
+      await fetch("/api/auth/logout", { method: "POST" }); 
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(["currentUser"], null);
+      router.push("/admin/login");
+      toast.success("Logged out");
+    },
+  });
 
   return (
     <AuthContext.Provider
@@ -69,8 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isAuthenticated: !!user,
         isLoading,
-        login,
-        logout,
+        login: loginMutation.mutateAsync,
+        logout: logoutMutation.mutate,
       }}
     >
       {children}
