@@ -68,6 +68,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
                 {product.status ? "ACTIVE" : "INACTIVE"}
               </Badge>
               <span className="text-sm text-muted-foreground font-mono">SKU: {product.sku}</span>
+              <span className="text-sm text-muted-foreground italic font-mono">/{product.slug}</span>
             </div>
           </div>
         </div>

@@ -37,6 +37,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
+  slug: z.string().min(2, "Slug is required and must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters."),
   category: z.string().min(1, "Please select a category."),
   brand: z.string().min(1, "Please select a brand."),
@@ -65,6 +66,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "",
+      slug: "",
       description: "",
       sku: "",
       price: "",
@@ -81,6 +83,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     if (product) {
       form.reset({
         name: product.name,
+        slug: product.slug,
         description: product.description,
         sku: product.sku,
         price: product.price.toString(),
@@ -192,6 +195,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Product Name</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Slug</FormLabel>
                       <FormControl><Input {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
