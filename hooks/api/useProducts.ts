@@ -1,27 +1,41 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+// Helper types for populated fields
+type PopulatedRef = { _id: string; name: string; slug?: string; logo?: string };
+
 export interface Product {
   _id: string;
   name: string;
-  category: string | { _id: string; name: string }; // Can be ID or Populated object
-  brand: string | { _id: string; name: string };    // Can be ID or Populated object
-  price: number;
-  stock: number;
+  slug: string; // <--- ADDED
   sku: string;
   description: string;
+
+  // These can be ID strings OR Objects depending on API population
+  category: string | PopulatedRef;
+  brand: string | PopulatedRef;
+
+  price: number;
+  salePrice?: number; // <--- ADDED
+  stock: number;
   status: boolean;
+
   images: string[];
+  specs?: Record<string, string>; // <--- ADDED (e.g. { Color: "Red" })
+  isFeatured?: boolean;
+
   createdAt: string;
   updatedAt: string;
 }
 
 // 1. FETCH ALL PRODUCTS
-export const useProducts = () => {
+// Optional: Accept filters like ?category=...
+export const useProducts = (filters?: string) => {
   return useQuery({
-    queryKey: ["products"],
+    queryKey: ["products", filters], // Key changes when filter changes
     queryFn: async (): Promise<Product[]> => {
-      const res = await fetch("/api/products");
+      const queryString = filters ? `?${filters}` : "";
+      const res = await fetch(`/api/products${queryString}`);
       if (!res.ok) throw new Error("Failed to fetch products");
       return res.json();
     },
@@ -63,7 +77,7 @@ export const useCreateProduct = () => {
     },
     onError: (error: Error) => {
       toast.error(error.message);
-    }
+    },
   });
 };
 
@@ -71,7 +85,13 @@ export const useCreateProduct = () => {
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Product> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Product>;
+    }) => {
       const res = await fetch(`/api/products/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -84,13 +104,14 @@ export const useUpdateProduct = () => {
       return res.json();
     },
     onSuccess: (data, variables) => {
+      // Invalidate list AND the specific item
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["products", variables.id] });
       toast.success("Product updated successfully");
     },
     onError: (error: Error) => {
       toast.error(error.message);
-    }
+    },
   });
 };
 
@@ -100,7 +121,10 @@ export const useDeleteProduct = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete product");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete product");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -108,6 +132,6 @@ export const useDeleteProduct = () => {
     },
     onError: (error: Error) => {
       toast.error("Delete failed: " + error.message);
-    }
+    },
   });
 };

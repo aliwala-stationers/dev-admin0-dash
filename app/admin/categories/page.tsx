@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, MoreHorizontal, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useCategories, useDeleteCategory } from "@/hooks/api/useCategories"; // <--- NEW HOOKS
+import { useCategories, useDeleteCategory } from "@/hooks/api/useCategories"; // Correct Hook Path
 
 export default function CategoriesPage() {
   const { data: categories = [], isLoading } = useCategories();
@@ -63,6 +63,7 @@ export default function CategoriesPage() {
               <TableHead>Category Name</TableHead>
               <TableHead>Slug</TableHead>
               <TableHead>Description</TableHead>
+              <TableHead>Products</TableHead> {/* <--- ADDED COLUMN */}
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -70,7 +71,7 @@ export default function CategoriesPage() {
           <TableBody>
             {filteredCategories.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   No categories found.
                 </TableCell>
               </TableRow>
@@ -84,6 +85,12 @@ export default function CategoriesPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">/{category.slug}</TableCell>
                   <TableCell className="max-w-xs truncate">{category.description}</TableCell>
+                  
+                  {/* <--- ADDED DATA CELL */}
+                  <TableCell className="font-medium">
+                    {category.productCount || 0}
+                  </TableCell>
+
                   <TableCell>
                     <Badge variant={category.status ? "default" : "secondary"}>
                       {category.status ? "Active" : "Inactive"}

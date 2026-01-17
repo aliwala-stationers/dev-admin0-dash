@@ -7,6 +7,7 @@ export interface Category {
   slug: string;
   description: string;
   status: boolean;
+  productCount?: number; // <--- ADDED: Calculated field from API
   createdAt: string;
   updatedAt: string;
 }
@@ -43,6 +44,7 @@ export const useCreateCategory = () => {
     mutationFn: async (data: Partial<Category>) => {
       const res = await fetch("/api/categories", {
         method: "POST",
+        headers: { "Content-Type": "application/json" }, // <--- ADDED HEADER
         body: JSON.stringify(data),
       });
       if (!res.ok) {
@@ -53,7 +55,9 @@ export const useCreateCategory = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      toast.success("Category created successfully");
     },
+    onError: (error: Error) => toast.error(error.message),
   });
 };
 
@@ -61,9 +65,16 @@ export const useCreateCategory = () => {
 export const useUpdateCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Category> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Partial<Category>;
+    }) => {
       const res = await fetch(`/api/categories/${id}`, {
         method: "PUT",
+        headers: { "Content-Type": "application/json" }, // <--- ADDED HEADER
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error("Failed to update category");
@@ -72,7 +83,9 @@ export const useUpdateCategory = () => {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["categories", variables.id] });
+      toast.success("Category updated");
     },
+    onError: (error: Error) => toast.error(error.message),
   });
 };
 
@@ -82,11 +95,15 @@ export const useDeleteCategory = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete category");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to delete category");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       toast.success("Category deleted");
     },
+    onError: (error: Error) => toast.error(error.message),
   });
 };

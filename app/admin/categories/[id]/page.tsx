@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useCategory } from "@/hooks/api/useCategories"; // <--- HOOK
+import { useCategory } from "@/hooks/api/useCategories"; // Correct Hook Path
 
 export default function ViewCategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -15,10 +15,6 @@ export default function ViewCategoryPage({ params }: { params: Promise<{ id: str
 
   if (isLoading) return <div className="p-6">Loading...</div>;
   if (!category) return <div className="p-6">Category not found</div>;
-
-  // NOTE: Once we build the Products module, we will add a 
-  // const { data: products } = useProducts({ category: category.name }) here.
-  const categoryProducts: any[] = []; 
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -56,12 +52,23 @@ export default function ViewCategoryPage({ params }: { params: Promise<{ id: str
             </CardContent>
           </Card>
 
+          {/* Optional: Add a "Recent Products" list here later */}
           <Card>
             <CardHeader><CardTitle>Products</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Products module integration pending.
-              </p>
+               {category.productCount && category.productCount > 0 ? (
+                 <div className="flex items-center justify-between">
+                    <p className="text-sm">This category contains <strong>{category.productCount}</strong> products.</p>
+                    <Button variant="link" asChild>
+                        {/* We will build this filter page next */}
+                        <Link href={`/admin/products?category=${category._id}`}>View All</Link> 
+                    </Button>
+                 </div>
+               ) : (
+                 <p className="text-sm text-muted-foreground text-center py-4">
+                    No products assigned to this category yet.
+                 </p>
+               )}
             </CardContent>
           </Card>
         </div>
@@ -75,7 +82,8 @@ export default function ViewCategoryPage({ params }: { params: Promise<{ id: str
                   <FolderTree className="h-4 w-4" />
                   <span className="text-sm">Total Products</span>
                 </div>
-                <span className="font-semibold">{categoryProducts.length}</span>
+                {/* <--- FIX: Use the API field */}
+                <span className="font-semibold">{category.productCount || 0}</span>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
