@@ -13,7 +13,7 @@ export async function GET() {
     // Now populate will work because Category and Brand are registered
     const products = await Product.find({})
       .populate("category", "name") 
-      .populate("brand", "name")
+      .populate("brand", "name logo")
       .sort({ createdAt: -1 });
       
     return NextResponse.json(products);

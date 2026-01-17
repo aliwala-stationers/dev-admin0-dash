@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -165,9 +166,22 @@ export default function ProductsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Building2 className="h-3.5 w-3.5" />
-                      <span className="text-sm">{getLabel(product.brand)}</span>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8 rounded-lg border bg-muted">
+                        {typeof product.brand === "object" && product.brand.logo ? (
+                          <AvatarImage 
+                            src={product.brand.logo} 
+                            alt={product.brand.name} 
+                            className="object-contain p-1"
+                          />
+                        ) : null}
+                        <AvatarFallback className="rounded-lg bg-transparent">
+                          <Building2 className="h-4 w-4 text-muted-foreground/50" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {getLabel(product.brand)}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
