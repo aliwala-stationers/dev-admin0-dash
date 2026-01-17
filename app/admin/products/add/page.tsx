@@ -47,6 +47,8 @@ const productSchema = z.object({
   price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid price format."),
   stock: z.string().regex(/^\d+$/, "Stock must be a whole number."),
   sku: z.string().min(3, "SKU must be at least 3 characters."),
+  hsn: z.string().optional(),
+  tax: z.string().optional(),
   status: z.boolean(),
   // We allow strings here, but we will ensure they are valid URLs before DB save
   images: z.array(z.string()).min(1, "At least 1 image is required."),
@@ -75,6 +77,8 @@ export default function AddProductPage() {
       sku: "",
       price: "",
       stock: "",
+      hsn: "",
+      tax: "0",
       status: true,
       category: "",
       brand: "",
@@ -178,6 +182,7 @@ export default function AddProductPage() {
         ...values,
         price: parseFloat(values.price),
         stock: parseInt(values.stock, 10),
+        tax: values.tax ? parseFloat(values.tax) : 0,
         images: uploadedUrls, // <--- CRITICAL: Overwriting base64 with HTTP URLs
       };
 
@@ -355,6 +360,40 @@ export default function AddProductPage() {
                       <FormLabel>Quantity</FormLabel>
                       <FormControl>
                         <Input placeholder="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Taxation Details</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="hsn"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>HSN Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. 8518" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tax"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GST (%)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="18" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

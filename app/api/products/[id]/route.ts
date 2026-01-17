@@ -32,6 +32,26 @@ export async function PUT(req: Request, { params }: RouteContext) {
     await connectDB();
     const { id } = await params;
     const body = await req.json();
+
+    // --- VALIDATION START ---
+    // Check if SKU or Slug is being used by a DIFFERENT product
+    // The query checks: (SKU matches OR Slug matches) AND (ID is NOT this product)
+    const conflict = await Product.findOne({
+      $and: [
+        { _id: { $ne: id } }, // Exclude current product from check
+        { $or: [{ sku: body.sku }, { slug: body.slug }] }
+      ]
+    });
+
+    if (conflict) {
+      if (conflict.sku === body.sku) {
+        return NextResponse.json({ error: "SKU is already used by another product" }, { status: 400 });
+      }
+      if (conflict.slug === body.slug) {
+        return NextResponse.json({ error: "Slug is already used by another product" }, { status: 400 });
+      }
+    }
+    // --- VALIDATION END ---
     
     const product = await Product.findByIdAndUpdate(id, body, { 
       new: true, 

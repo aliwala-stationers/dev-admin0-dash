@@ -43,7 +43,7 @@ export default function RootLayout({
           <AuthProvider>
             <DataProvider>
               {children}
-              <Toaster richColors visibleToasts={2} theme="light" />
+              <Toaster richColors visibleToasts={4} theme="light" expand={true}/>
             </DataProvider>
           </AuthProvider>
         </Providers>

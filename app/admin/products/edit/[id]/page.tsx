@@ -44,6 +44,8 @@ const productSchema = z.object({
   price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid price format (e.g. 99.99)."),
   stock: z.string().regex(/^\d+$/, "Stock must be a whole number."),
   sku: z.string().min(3, "SKU must be at least 3 characters."),
+  hsn: z.string().optional(),
+  tax: z.string().optional(),
   status: z.boolean(),
   images: z.array(z.string()).min(1, "At least 1 image is required.").max(5, "Max 5 images."),
 });
@@ -71,6 +73,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       sku: "",
       price: "",
       stock: "",
+      hsn: "",
+      tax: "0",
       status: true,
       category: "",
       brand: "",
@@ -86,6 +90,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         slug: product.slug,
         description: product.description,
         sku: product.sku,
+        hsn: product.hsn || "",
+        tax: (product.tax ?? 0).toString(),
         price: product.price.toString(),
         stock: product.stock.toString(),
         status: product.status,
@@ -130,6 +136,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       ...values,
       price: parseFloat(values.price),
       stock: parseInt(values.stock, 10),
+      tax: values.tax ? parseFloat(values.tax) : 0,
     };
 
     updateMutation.mutate(
@@ -257,6 +264,34 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <FormItem>
                       <FormLabel>Stock</FormLabel>
                       <FormControl><Input type="text" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle>Taxation Details</CardTitle></CardHeader>
+              <CardContent className="grid sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="hsn"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>HSN Code</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tax"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>GST (%)</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

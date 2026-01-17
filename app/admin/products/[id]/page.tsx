@@ -136,9 +136,15 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
                   <Tag className="h-4 w-4" />
                   <span className="text-sm">Unit Price</span>
                 </div>
-                <span className="font-bold text-2xl text-blue-600">
-                  ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </span>
+                <div className="text-right">
+                  <span className="font-bold text-2xl text-blue-600">
+                    ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                  <div className="flex flex-col text-[10px] text-muted-foreground uppercase font-bold mt-1">
+                    {product.hsn && <span>HSN: {product.hsn}</span>}
+                    {product.tax !== undefined && <span>GST: {product.tax}%</span>}
+                  </div>
+                </div>
               </div>
               <Separator />
               <div className="flex items-center justify-between">

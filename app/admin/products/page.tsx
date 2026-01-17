@@ -133,7 +133,7 @@ export default function ProductsPage() {
               <TableHead className="w-[300px]">Product Name</TableHead>
               <TableHead>Brand</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Price</TableHead>
+              <TableHead>Financials</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -189,8 +189,22 @@ export default function ProductsPage() {
                       {getLabel(product.category)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="font-mono">
-                    ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-mono font-bold">
+                        ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </span>
+                      {product.hsn && (
+                        <span className="text-[10px] text-muted-foreground uppercase font-medium">
+                          HSN: {product.hsn}
+                        </span>
+                      )}
+                      {product.tax !== undefined && (
+                        <span className="text-[10px] text-muted-foreground font-medium">
+                          GST: {product.tax}%
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className={product.stock < 10 ? "text-red-600 font-bold" : ""}>

@@ -20,6 +20,8 @@ const ProductSchema = new Schema(
       unique: true,
       uppercase: true
     },
+    hsn: { type: String },
+    tax: { type: Number, default: 0 },
     
     // --- RELATIONS (Strict Reference) ---
     // We use ObjectId to link strictly to the Category/Brand documents

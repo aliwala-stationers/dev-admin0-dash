@@ -16,7 +16,9 @@ export interface Product {
   brand: string | PopulatedRef;
 
   price: number;
-  salePrice?: number; // <--- ADDED
+  salePrice?: number;
+  hsn?: string;
+  tax?: number;
   stock: number;
   status: boolean;
 
