@@ -152,12 +152,17 @@ export default function ProductsPage() {
               filteredProducts.map((product) => (
                 <TableRow key={product._id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">
-                    <Link 
-                      href={`/admin/products/${product._id}`} 
-                      className="text-blue-600 hover:underline"
-                    >
-                      {product.name}
-                    </Link>
+                    <div className="flex flex-col">
+                      <Link 
+                        href={`/admin/products/${product._id}`} 
+                        className="text-blue-600 hover:underline"
+                      >
+                        {product.name}
+                      </Link>
+                      <span className="text-xs text-muted-foreground font-normal">
+                        {product.slug}
+                      </span>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2 text-muted-foreground">
