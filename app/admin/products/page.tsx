@@ -133,7 +133,7 @@ export default function ProductsPage() {
               <TableHead className="w-[300px]">Product Name</TableHead>
               <TableHead>Brand</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Financials</TableHead>
+              <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -191,8 +191,8 @@ export default function ProductsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="font-mono font-bold">
-                        ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      <span className=" font-medium">
+                        &#8377;{product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </span>
                       {product.hsn && (
                         <span className="text-[10px] text-muted-foreground uppercase font-medium">

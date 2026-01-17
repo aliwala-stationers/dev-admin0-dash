@@ -44,8 +44,8 @@ const productSchema = z.object({
   price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid price format (e.g. 99.99)."),
   stock: z.string().regex(/^\d+$/, "Stock must be a whole number."),
   sku: z.string().min(3, "SKU must be at least 3 characters."),
-  hsn: z.string().optional(),
-  tax: z.string().optional(),
+  hsn: z.string(),
+  tax: z.string(),
   status: z.boolean(),
   images: z.array(z.string()).min(1, "At least 1 image is required.").max(5, "Max 5 images."),
 });
@@ -134,9 +134,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   async function onSubmit(values: ProductFormValues) {
     const payload = {
       ...values,
+      hsn: values.hsn || "",
+      tax: values.tax ? parseFloat(values.tax) : 0,
       price: parseFloat(values.price),
       stock: parseInt(values.stock, 10),
-      tax: values.tax ? parseFloat(values.tax) : 0,
     };
 
     updateMutation.mutate(

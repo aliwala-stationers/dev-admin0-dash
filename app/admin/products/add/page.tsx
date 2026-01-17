@@ -47,8 +47,8 @@ const productSchema = z.object({
   price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid price format."),
   stock: z.string().regex(/^\d+$/, "Stock must be a whole number."),
   sku: z.string().min(3, "SKU must be at least 3 characters."),
-  hsn: z.string().optional(),
-  tax: z.string().optional(),
+  hsn: z.string(),
+  tax: z.string(),
   status: z.boolean(),
   // We allow strings here, but we will ensure they are valid URLs before DB save
   images: z.array(z.string()).min(1, "At least 1 image is required."),
@@ -180,10 +180,11 @@ export default function AddProductPage() {
       // Step B: Replace the Base64 strings in form values with real URLs
       const finalProductData = {
         ...values,
+        hsn: values.hsn || "",
+        tax: values.tax ? parseFloat(values.tax) : 0,
         price: parseFloat(values.price),
         stock: parseInt(values.stock, 10),
-        tax: values.tax ? parseFloat(values.tax) : 0,
-        images: uploadedUrls, // <--- CRITICAL: Overwriting base64 with HTTP URLs
+        images: uploadedUrls,
       };
 
       // Step C: Save to Database
