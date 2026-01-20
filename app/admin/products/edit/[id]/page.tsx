@@ -46,6 +46,8 @@ const productSchema = z.object({
   sku: z.string().min(3, "SKU must be at least 3 characters."),
   hsn: z.string(),
   tax: z.string(),
+  upc: z.string().optional(),
+  barcode: z.string().optional(),
   status: z.boolean(),
   images: z.array(z.string()).min(1, "At least 1 image is required.").max(5, "Max 5 images."),
 });
@@ -75,6 +77,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       stock: "",
       hsn: "",
       tax: "0",
+      upc: "",
+      barcode: "",
       status: true,
       category: "",
       brand: "",
@@ -92,6 +96,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         sku: product.sku,
         hsn: product.hsn || "",
         tax: (product.tax ?? 0).toString(),
+        upc: product.upc || "",
+        barcode: product.barcode || "",
         price: product.price.toString(),
         stock: product.stock.toString(),
         status: product.status,
@@ -103,6 +109,29 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       setPreviews(product.images);
     }
   }, [product, form]);
+
+  const uploadFile = async (file: File) => {
+    const presignRes = await fetch("/api/uploads/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contentType: file.type,
+        folder: "products",
+      }),
+    });
+
+    if (!presignRes.ok) throw new Error("Failed to get presigned URL");
+    const { uploadUrl, publicUrl } = await presignRes.json();
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+
+    if (!uploadRes.ok) throw new Error(`Upload failed for ${file.name}`);
+    return publicUrl;
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -249,6 +278,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 />
                 <FormField
                   control={form.control}
+                  name="upc"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>UPC</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="price"
                   render={({ field }) => (
                     <FormItem>
@@ -348,6 +388,65 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <FormItem className="flex items-center justify-between border rounded-lg p-3">
                       <FormLabel>Active Status</FormLabel>
                       <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Barcode Image</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="barcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="flex flex-col items-center gap-4">
+                          {field.value ? (
+                            <div className="relative w-full aspect-[3/1] border rounded-lg overflow-hidden group">
+                              <img src={field.value} alt="barcode" className="w-full h-full object-contain p-2" />
+                              <button 
+                                type="button" 
+                                onClick={() => field.onChange("")}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const input = document.createElement("input");
+                                input.type = "file";
+                                input.accept = "image/*";
+                                input.onchange = async (e) => {
+                                  const file = (e.target as HTMLInputElement).files?.[0];
+                                  if (file) {
+                                    updateMutation.mutateAsync({ id, data: { status: product?.status } }) // Dummy to show loading if needed, or use separate state
+                                    try {
+                                      const url = await uploadFile(file);
+                                      field.onChange(url);
+                                    } catch (err) {
+                                      toast.error("Barcode upload failed");
+                                    }
+                                  }
+                                };
+                                input.click();
+                              }}
+                              className="w-full aspect-[3/1] border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted"
+                            >
+                              <Plus className="h-5 w-5 mb-1" />
+                              <span className="text-xs font-bold uppercase tracking-wider">Upload Barcode</span>
+                            </button>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />

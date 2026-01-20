@@ -49,6 +49,8 @@ const productSchema = z.object({
   sku: z.string().min(3, "SKU must be at least 3 characters."),
   hsn: z.string(),
   tax: z.string(),
+  upc: z.string().optional(),
+  barcode: z.string().optional(),
   status: z.boolean(),
   // We allow strings here, but we will ensure they are valid URLs before DB save
   images: z.array(z.string()).min(1, "At least 1 image is required."),
@@ -79,6 +81,8 @@ export default function AddProductPage() {
       stock: "",
       hsn: "",
       tax: "0",
+      upc: "",
+      barcode: "",
       status: true,
       category: "",
       brand: "",
@@ -342,6 +346,19 @@ export default function AddProductPage() {
                 />
                 <FormField
                   control={form.control}
+                  name="upc"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>UPC</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123456789012" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="price"
                   render={({ field }) => (
                     <FormItem>
@@ -481,6 +498,67 @@ export default function AddProductPage() {
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Barcode Image</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="barcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="flex flex-col items-center gap-4">
+                          {field.value ? (
+                            <div className="relative w-full aspect-[3/1] border rounded-lg overflow-hidden group">
+                              <img src={field.value} alt="barcode" className="w-full h-full object-contain p-2" />
+                              <button 
+                                type="button" 
+                                onClick={() => field.onChange("")}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const input = document.createElement("input");
+                                input.type = "file";
+                                input.accept = "image/*";
+                                input.onchange = async (e) => {
+                                  const file = (e.target as HTMLInputElement).files?.[0];
+                                  if (file) {
+                                    setIsUploading(true);
+                                    try {
+                                      const url = await uploadFile(file);
+                                      field.onChange(url);
+                                    } catch (err) {
+                                      toast.error("Barcode upload failed");
+                                    } finally {
+                                      setIsUploading(false);
+                                    }
+                                  }
+                                };
+                                input.click();
+                              }}
+                              className="w-full aspect-[3/1] border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted"
+                            >
+                              <Plus className="h-5 w-5 mb-1" />
+                              <span className="text-xs font-bold uppercase tracking-wider">Upload Barcode</span>
+                            </button>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />

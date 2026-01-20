@@ -67,7 +67,12 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
               <Badge variant={product.status ? "success" : "secondary"}>
                 {product.status ? "ACTIVE" : "INACTIVE"}
               </Badge>
-              <span className="text-sm text-muted-foreground font-mono">SKU: {product.sku}</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="text-sm text-muted-foreground font-mono">SKU: {product.sku}</span>
+                {product.upc && (
+                  <span className="text-sm text-muted-foreground font-mono">UPC: {product.upc}</span>
+                )}
+              </div>
               <span className="text-sm text-muted-foreground italic font-mono">/{product.slug}</span>
             </div>
           </div>
@@ -122,6 +127,17 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
               </p>
             </CardContent>
           </Card>
+
+          {product.barcode && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Barcode</CardTitle>
+              </CardHeader>
+              <CardContent className="flex justify-center bg-white rounded-b-lg p-6">
+                <img src={product.barcode} alt="Barcode" className="max-h-24 object-contain" />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar */}

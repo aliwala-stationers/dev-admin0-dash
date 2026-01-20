@@ -19,6 +19,8 @@ export interface Product {
   salePrice?: number;
   hsn?: string;
   tax?: number;
+  upc?: string;
+  barcode?: string;
   stock: number;
   status: boolean;
 

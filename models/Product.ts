@@ -22,6 +22,8 @@ const ProductSchema = new Schema(
     },
     hsn: { type: String },
     tax: { type: Number, default: 0 },
+    upc: { type: String },
+    barcode: { type: String }, // URL to barcode image
     
     // --- RELATIONS (Strict Reference) ---
     // We use ObjectId to link strictly to the Category/Brand documents
