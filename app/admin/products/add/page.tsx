@@ -362,7 +362,7 @@ export default function AddProductPage() {
                   name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price ($)</FormLabel>
+                      <FormLabel>Price (&#8377;)</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" {...field} />
                       </FormControl>

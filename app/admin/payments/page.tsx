@@ -123,7 +123,7 @@ export default function PaymentsPage() {
                 <TableCell>{payment.customer}</TableCell>
                 <TableCell>{payment.date}</TableCell>
                 <TableCell className="font-medium">
-                  ${payment.amount.toFixed(2)}
+                  &#8377;{payment.amount.toFixed(2)}
                 </TableCell>
                 <TableCell>
                   {methodLabels[payment.method as keyof typeof methodLabels]}

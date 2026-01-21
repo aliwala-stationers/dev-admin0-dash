@@ -170,7 +170,15 @@ export default function OrdersPage() {
             <ArrowUpDown className="h-4 w-4" />
           </button>
         ),
-        cell: ({ row }) => `$${row.original.total.toFixed(2)}`,
+        cell: ({ row }) => {
+          // Ensure the value is a number before formatting
+          const amount = row.original.total;
+
+          return amount.toLocaleString("en-IN", {
+            style: "currency",
+            currency: "INR",
+          });
+        },
       },
       {
         accessorKey: "status",
@@ -224,7 +232,7 @@ export default function OrdersPage() {
         ),
       },
     ],
-    []
+    [],
   );
 
   const table = useReactTable({
@@ -239,7 +247,9 @@ export default function OrdersPage() {
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: (row, _columnId, filterValue) => {
-      const q = String(filterValue ?? "").toLowerCase().trim();
+      const q = String(filterValue ?? "")
+        .toLowerCase()
+        .trim();
       if (!q) return true;
       const id = String(row.original.id ?? "").toLowerCase();
       const customer = String(row.original.customer ?? "").toLowerCase();
@@ -284,9 +294,15 @@ export default function OrdersPage() {
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="order_placed">Order Placed</SelectItem>
-            <SelectItem value="accepted_order_by_seller">Accepted Order by Seller</SelectItem>
-            <SelectItem value="order_rejected_by_seller">Order Rejected by Seller</SelectItem>
-            <SelectItem value="order_cancelled_by_customer">Order Cancelled by Customer</SelectItem>
+            <SelectItem value="accepted_order_by_seller">
+              Accepted Order by Seller
+            </SelectItem>
+            <SelectItem value="order_rejected_by_seller">
+              Order Rejected by Seller
+            </SelectItem>
+            <SelectItem value="order_cancelled_by_customer">
+              Order Cancelled by Customer
+            </SelectItem>
             <SelectItem value="order_packed">Order Packed</SelectItem>
             <SelectItem value="order_shipped">Order Shipped</SelectItem>
             <SelectItem value="order_delivered">Order Delivered</SelectItem>
@@ -310,7 +326,7 @@ export default function OrdersPage() {
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -320,7 +336,10 @@ export default function OrdersPage() {
           <TableBody>
             {table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No orders found.
                 </TableCell>
               </TableRow>
@@ -336,7 +355,7 @@ export default function OrdersPage() {
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}

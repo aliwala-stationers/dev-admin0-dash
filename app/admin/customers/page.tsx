@@ -96,7 +96,7 @@ export default function CustomersPage() {
                   {customer.phone}
                 </TableCell>
                 <TableCell>{customer.orders}</TableCell>
-                <TableCell>${customer.totalSpent.toFixed(2)}</TableCell>
+                <TableCell>&#8377;{customer.totalSpent.toFixed(2)}</TableCell>
                 <TableCell>{customer.joinedDate}</TableCell>
                 <TableCell>
                   <Badge

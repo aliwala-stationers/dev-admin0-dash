@@ -77,7 +77,12 @@ export default function DashboardPage() {
   const stats = [
     {
       title: "Total Inventory Value",
-      value: `$${inventoryData.totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      value: `${inventoryData.totalValue.toLocaleString("en-IN", {
+        style: "currency",
+        currency: "INR",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
       change: "Real-time",
       trend: "up" as const,
       icon: DollarSign, // Changed from Revenue to Inventory Value
@@ -222,7 +227,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium">
-                      ${order.total.toFixed(2)}
+                      &#8377;{order.total.toFixed(2)}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {order.date}
@@ -270,7 +275,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-sm font-bold">${product.price}</span>
+                    <span className="text-sm font-medium">&#8377;{product.price}</span>
                   </div>
                 </div>
               ))}

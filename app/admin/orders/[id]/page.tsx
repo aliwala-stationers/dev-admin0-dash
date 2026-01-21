@@ -303,8 +303,8 @@ export default function OrderDetailPage() {
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell className="text-center">{item.quantity}</TableCell>
-                      <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">${(item.quantity * item.price).toFixed(2)}</TableCell>
+                      <TableCell className="text-right">&#8377;{item.price.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">&#8377;{(item.quantity * item.price).toFixed(2)}</TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/20 font-semibold">
@@ -474,15 +474,15 @@ export default function OrderDetailPage() {
             <CardContent className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>${order.total.toFixed(2)}</span>
+                <span>&#8377;{order.total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping</span>
-                <span>$0.00</span>
+                <span>&#8377;0.00</span>
               </div>
               <div className="border-t pt-2 flex justify-between font-semibold">
                 <span>Total</span>
-                <span>${order.total.toFixed(2)}</span>
+                <span>&#8377;{order.total.toFixed(2)}</span>
               </div>
               <div className="mt-4">
                 <Badge variant="outline" className="w-full justify-center py-1">

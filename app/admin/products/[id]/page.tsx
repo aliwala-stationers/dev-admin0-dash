@@ -154,7 +154,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div className="text-right">
                   <span className="font-bold text-2xl text-blue-600">
-                    ${product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    &#8377;{product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
                   <div className="flex flex-col text-[10px] text-muted-foreground uppercase font-bold mt-1">
                     {product.hsn && <span>HSN: {product.hsn}</span>}
