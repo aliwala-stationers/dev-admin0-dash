@@ -123,7 +123,7 @@ export default function NewsletterPage() {
                   <TableHead>Email Address</TableHead>
                   <TableHead>Subscribed Date</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  {/* <TableHead className="text-right">Actions</TableHead> */}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -144,7 +144,7 @@ export default function NewsletterPage() {
                           {subscriber.status.charAt(0).toUpperCase() + subscriber.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      {/* <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-blue-600">
@@ -172,7 +172,7 @@ export default function NewsletterPage() {
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   ))
                 ) : (
@@ -208,7 +208,7 @@ export default function NewsletterPage() {
                       Joined {subscriber.createdAt}
                     </div>
                   </CardContent>
-                  <CardFooter className="pt-4 border-t flex justify-end gap-2">
+                  {/* <CardFooter className="pt-4 border-t flex justify-end gap-2">
                     <Button 
                       variant="ghost" 
                       size="sm" 
@@ -229,7 +229,7 @@ export default function NewsletterPage() {
                     >
                       {subscriber.status === 'active' ? 'Unsubscribe' : 'Re-activate'}
                     </Button>
-                  </CardFooter>
+                  </CardFooter> */}
                 </Card>
               ))
             ) : (
