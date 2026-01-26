@@ -20,31 +20,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { 
-  MoreHorizontal, 
   Search, 
-  Trash2, 
   Mail, 
   LayoutList, 
   LayoutGrid,
-  CheckCircle2,
-  XCircle,
   Calendar,
   Download
 } from "lucide-react";
-import { useData } from "@/lib/data-context";
-import { cn } from "@/lib/utils";
+import {
+  useNewsletter,
+  useDeleteNewsletterSubscriber,
+  useUpdateNewsletterSubscriber,
+} from "@/hooks/api/useNewsletter";
 
 const statusVariants = {
   active: "default",
@@ -52,7 +45,9 @@ const statusVariants = {
 } as const;
 
 export default function NewsletterPage() {
-  const { newsletterSubscribers, deleteSubscriber, updateSubscriberStatus } = useData();
+  const { data: newsletterSubscribers = [], isLoading } = useNewsletter();
+  const deleteMutation = useDeleteNewsletterSubscriber();
+  const updateMutation = useUpdateNewsletterSubscriber();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
@@ -70,6 +65,8 @@ export default function NewsletterPage() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  if (isLoading) return <div className="p-6">Loading subscribers...</div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -129,7 +126,7 @@ export default function NewsletterPage() {
               <TableBody>
                 {filteredSubscribers.length > 0 ? (
                   filteredSubscribers.map((subscriber) => (
-                    <TableRow key={subscriber.id}>
+                    <TableRow key={subscriber._id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
@@ -137,11 +134,15 @@ export default function NewsletterPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {subscriber.createdAt}
+                        {new Date(subscriber.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusVariants[subscriber.status]}>
-                          {subscriber.status.charAt(0).toUpperCase() + subscriber.status.slice(1)}
+                        <Badge
+                          variant={
+                            statusVariants[subscriber.isActive ? "active" : "unsubscribed"]
+                          }
+                        >
+                          {subscriber.isActive ? "Active" : "Unsubscribed"}
                         </Badge>
                       </TableCell>
                       {/* <TableCell className="text-right">
@@ -152,20 +153,20 @@ export default function NewsletterPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {subscriber.status === "unsubscribed" ? (
-                              <DropdownMenuItem onClick={() => updateSubscriberStatus(subscriber.id, "active")}>
-                                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
-                                Re-activate
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem onClick={() => updateSubscriberStatus(subscriber.id, "unsubscribed")}>
+                            {subscriber.isActive ? (
+                              <DropdownMenuItem onClick={() => updateMutation.mutate({ id: subscriber._id, data: { isActive: false } })}>
                                 <XCircle className="mr-2 h-4 w-4 text-destructive" />
                                 Unsubscribe
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem onClick={() => updateMutation.mutate({ id: subscriber._id, data: { isActive: true } })}>
+                                <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
+                                Re-activate
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem 
                               className="text-destructive focus:text-destructive"
-                              onClick={() => deleteSubscriber(subscriber.id)}
+                              onClick={() => deleteMutation.mutate(subscriber._id)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Remove
@@ -191,21 +192,26 @@ export default function NewsletterPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSubscribers.length > 0 ? (
               filteredSubscribers.map((subscriber) => (
-                <Card key={subscriber.id} className="flex flex-col">
+                <Card key={subscriber._id} className="flex flex-col">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between gap-4">
                       <CardTitle className="text-base truncate">
                         {subscriber.email}
                       </CardTitle>
-                      <Badge variant={statusVariants[subscriber.status]} className="shrink-0">
-                        {subscriber.status.charAt(0).toUpperCase() + subscriber.status.slice(1)}
+                      <Badge
+                        variant={
+                          statusVariants[subscriber.isActive ? "active" : "unsubscribed"]
+                        }
+                        className="shrink-0"
+                      >
+                        {subscriber.isActive ? "Active" : "Unsubscribed"}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 pb-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
-                      Joined {subscriber.createdAt}
+                      Joined {new Date(subscriber.createdAt).toLocaleDateString()}
                     </div>
                   </CardContent>
                   {/* <CardFooter className="pt-4 border-t flex justify-end gap-2">
@@ -213,7 +219,7 @@ export default function NewsletterPage() {
                       variant="ghost" 
                       size="sm" 
                       className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => deleteSubscriber(subscriber.id)}
+                      onClick={() => deleteMutation.mutate(subscriber._id)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Remove
@@ -223,11 +229,13 @@ export default function NewsletterPage() {
                       size="sm" 
                       className="h-8"
                       onClick={() => {
-                        const newStatus = subscriber.status === 'active' ? 'unsubscribed' : 'active';
-                        updateSubscriberStatus(subscriber.id, newStatus);
+                        updateMutation.mutate({
+                          id: subscriber._id,
+                          data: { isActive: !subscriber.isActive },
+                        });
                       }}
                     >
-                      {subscriber.status === 'active' ? 'Unsubscribe' : 'Re-activate'}
+                      {subscriber.isActive ? "Unsubscribe" : "Re-activate"}
                     </Button>
                   </CardFooter> */}
                 </Card>
