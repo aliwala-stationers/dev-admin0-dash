@@ -1,19 +1,15 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema, models } from "mongoose";
 
 const NewsletterSchema = new Schema(
   {
-    // --- IDENTITY ---
     email: {
       type: String,
       required: [true, "Email is required"],
       unique: true,
       trim: true,
       lowercase: true,
-      index: true // Crucial for preventing duplicate subscriptions
+      index: true 
     },
-
-    // --- METADATA ---
-    // structured object for tracking origin (e.g. landing-page, footer, popup)
     meta: {
       source: {
         type: String,
@@ -21,9 +17,6 @@ const NewsletterSchema = new Schema(
         trim: true
       },
     },
-
-    // --- STATUS ---
-    // Useful for soft unsubscribes without deleting the record
     isActive: { 
       type: Boolean, 
       default: true 
@@ -34,7 +27,22 @@ const NewsletterSchema = new Schema(
   }
 );
 
-// Prevent Next.js Hot Reload Recompilation Error
-const Newsletter = models.Newsletter || model("Newsletter", NewsletterSchema);
+/**
+ * SYSTEMS ARCHITECT NOTE:
+ * We are using the "useDb" strategy here.
+ * Instead of creating a whole new connection (expensive), we fork the 
+ * existing default connection to target the 'user-website-enquiry' database.
+ * * This shares the underlying socket pool (efficient) but isolates the data.
+ */
+
+// 1. Grab the default mongoose connection (singleton)
+const defaultConn = mongoose.connection;
+
+// 2. Fork it to the specific database
+// { useCache: true } ensures we reuse the connection object if called multiple times
+const targetDB = defaultConn.useDb("user-website-enquiry", { useCache: true });
+
+// 3. Register the model on the TARGET database, not the default one
+const Newsletter =  targetDB.model("newsletter_subscribers", NewsletterSchema);
 
 export default Newsletter;
