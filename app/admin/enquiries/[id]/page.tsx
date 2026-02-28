@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Archive,
   Clock,
+  RotateCcw,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -81,6 +82,7 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
 
   const markAsRead = () => updateMutation.mutate({ id: enquiry._id, data: { status: "read" } });
   const markContacted = () => updateMutation.mutate({ id: enquiry._id, data: { status: "contacted" } });
+  const markAsUnread = () => updateMutation.mutate({ id: enquiry._id, data: { status: "new" } });
 
   return (
     <div className="flex flex-col h-full bg-card">
@@ -90,16 +92,22 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <Separator orientation="vertical" className="h-6 mx-2" />
-          <Button variant="ghost" size="icon" onClick={markAsRead}>
-            <Archive className="h-4 w-4" />
-          </Button>
-          {/* <Button variant="ghost" size="icon" onClick={handleDelete} className="text-destructive">
-            <Trash2 className="h-4 w-4" />
-          </Button> */}
+          {enquiry.status !== "new" && (
+            <Button variant="ghost" size="icon" onClick={markAsUnread}>
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
+          {enquiry.status !== "read" && (
+            <Button variant="ghost" size="icon" onClick={markAsRead}>
+              <Archive className="h-4 w-4" />
+            </Button>
+          )}
           <Separator orientation="vertical" className="h-6 mx-2" />
-          <Button variant="ghost" size="icon" onClick={markContacted}>
-            <Mail className="h-4 w-4" />
-          </Button>
+          {enquiry.status !== "contacted" && (
+            <Button variant="ghost" size="icon" onClick={markContacted}>
+              <Mail className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <span className="text-xs text-muted-foreground mr-4">
@@ -157,8 +165,24 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={markAsRead}>Mark as Read</DropdownMenuItem>
-                      <DropdownMenuItem onClick={markContacted}>Mark as Contacted</DropdownMenuItem>
+                      {enquiry.status !== "read" && (
+                        <DropdownMenuItem onClick={markAsRead}>
+                          <Archive className="mr-2 h-4 w-4" />
+                          Mark as Read
+                        </DropdownMenuItem>
+                      )}
+                      {enquiry.status !== "contacted" && (
+                        <DropdownMenuItem onClick={markContacted}>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Mark as Contacted
+                        </DropdownMenuItem>
+                      )}
+                      {enquiry.status !== "new" && (
+                        <DropdownMenuItem onClick={markAsUnread}>
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          Mark as Unread
+                        </DropdownMenuItem>
+                      )}
                       {/* <DropdownMenuItem className="text-destructive" onClick={handleDelete}>Delete</DropdownMenuItem> */}
                     </DropdownMenuContent>
                   </DropdownMenu>
