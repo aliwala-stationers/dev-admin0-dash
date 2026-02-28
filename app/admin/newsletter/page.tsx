@@ -31,13 +31,18 @@ import {
   LayoutList, 
   LayoutGrid,
   Calendar,
-  Download
+  Download,
+  MoreHorizontal,
+  XCircle,
+  CheckCircle2,
+  Trash2
 } from "lucide-react";
 import {
   useNewsletter,
   useDeleteNewsletterSubscriber,
   useUpdateNewsletterSubscriber,
 } from "@/hooks/api/useNewsletter";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const statusVariants = {
   active: "default",
@@ -120,7 +125,7 @@ export default function NewsletterPage() {
                   <TableHead>Email Address</TableHead>
                   <TableHead>Subscribed Date</TableHead>
                   <TableHead>Status</TableHead>
-                  {/* <TableHead className="text-right">Actions</TableHead> */}
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -145,7 +150,7 @@ export default function NewsletterPage() {
                           {subscriber.isActive ? "Active" : "Unsubscribed"}
                         </Badge>
                       </TableCell>
-                      {/* <TableCell className="text-right">
+                      <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-blue-600">
@@ -164,16 +169,16 @@ export default function NewsletterPage() {
                                 Re-activate
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem 
+                            {/* <DropdownMenuItem 
                               className="text-destructive focus:text-destructive"
                               onClick={() => deleteMutation.mutate(subscriber._id)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Remove
-                            </DropdownMenuItem>
+                            </DropdownMenuItem> */}
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      </TableCell> */}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -198,14 +203,7 @@ export default function NewsletterPage() {
                       <CardTitle className="text-base truncate">
                         {subscriber.email}
                       </CardTitle>
-                      <Badge
-                        variant={
-                          statusVariants[subscriber.isActive ? "active" : "unsubscribed"]
-                        }
-                        className="shrink-0"
-                      >
-                        {subscriber.isActive ? "Active" : "Unsubscribed"}
-                      </Badge>
+                      
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 pb-4">
@@ -214,8 +212,8 @@ export default function NewsletterPage() {
                       Joined {new Date(subscriber.createdAt).toLocaleDateString()}
                     </div>
                   </CardContent>
-                  {/* <CardFooter className="pt-4 border-t flex justify-end gap-2">
-                    <Button 
+                  <CardFooter className="pt-4 border-t flex justify-between items-center gap-2">
+                    {/* <Button 
                       variant="ghost" 
                       size="sm" 
                       className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -223,7 +221,15 @@ export default function NewsletterPage() {
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Remove
-                    </Button>
+                    </Button> */}
+                    <Badge
+                        variant={
+                          statusVariants[subscriber.isActive ? "active" : "unsubscribed"]
+                        }
+                        className="shrink-0"
+                      >
+                        {subscriber.isActive ? "Active" : "Unsubscribed"}
+                      </Badge>
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -237,7 +243,7 @@ export default function NewsletterPage() {
                     >
                       {subscriber.isActive ? "Unsubscribe" : "Re-activate"}
                     </Button>
-                  </CardFooter> */}
+                  </CardFooter>
                 </Card>
               ))
             ) : (
