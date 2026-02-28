@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/lib/auth-context";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function AdminHeader() {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ export function AdminHeader() {
         </div> */}
       </div>
       <div className="flex items-center gap-3">
+        <ThemeToggle />
         <Button variant="ghost" size="icon" className="h-9 w-9">
           <Bell className="h-4 w-4" />
         </Button>
