@@ -260,14 +260,14 @@ export default function EnquiriesPage() {
                       <Eye className="mr-2 h-4 w-4" />
                       View
                     </Button>
-                    <Button
+                    {/* <Button
                       variant="destructive"
                       size="sm"
                       className="h-8"
                       onClick={() => deleteMutation.mutate(e._id)}
                     >
                       <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </Button> */}
                   </CardFooter>
                 </Card>
               ))
