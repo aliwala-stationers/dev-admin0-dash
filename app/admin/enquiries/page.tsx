@@ -43,6 +43,7 @@ import {
   CheckCircle2,
   Clock,
   Eye,
+  RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -171,21 +172,24 @@ export default function EnquiriesPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "read" } })}>
-                              <CheckCircle2 className="mr-2 h-4 w-4" />
-                              Mark as Read
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "contacted" } })}>
-                              <Mail className="mr-2 h-4 w-4" />
-                              Mark Contacted
-                            </DropdownMenuItem>
-                            {/* <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => deleteMutation.mutate(e._id)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem> */}
+                            {e.status !== "read" && (
+                              <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "read" } })}>
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Mark as Read
+                              </DropdownMenuItem>
+                            )}
+                            {e.status !== "contacted" && (
+                              <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "contacted" } })}>
+                                <Mail className="mr-2 h-4 w-4" />
+                                Mark Contacted
+                              </DropdownMenuItem>
+                            )}
+                            {e.status !== "new" && (
+                              <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "new" } })}>
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                                Mark as Unread
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -258,16 +262,39 @@ export default function EnquiriesPage() {
                       onClick={() => router.push(`/admin/enquiries/${e._id}`)}
                     >
                       <Eye className="mr-2 h-4 w-4" />
-                      View
+                      View Details
                     </Button>
-                    {/* <Button
-                      variant="destructive"
-                      size="sm"
-                      className="h-8"
-                      onClick={() => deleteMutation.mutate(e._id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button> */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {/* <DropdownMenuItem onClick={() => router.push(`/admin/enquiries/${e._id}`)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </DropdownMenuItem> */}
+                        {e.status !== "read" && (
+                          <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "read" } })}>
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Mark as Read
+                          </DropdownMenuItem>
+                        )}
+                        {e.status !== "contacted" && (
+                          <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "contacted" } })}>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Mark Contacted
+                          </DropdownMenuItem>
+                        )}
+                        {e.status !== "new" && (
+                          <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "new" } })}>
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Mark as Unread
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </CardFooter>
                 </Card>
               ))
