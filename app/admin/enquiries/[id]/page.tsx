@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { useMemo, use } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useDeleteEnquiry, useEnquiry, useUpdateEnquiry } from "@/hooks/api/useEnquiries";
+import { useDeleteEnquiry, useEnquiry, useUpdateEnquiry, useEnquiries } from "@/hooks/api/useEnquiries";
 
 const statusVariants = {
   new: "default",
@@ -36,10 +36,23 @@ const statusVariants = {
 export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-
+  
   const { data: enquiry } = useEnquiry(id);
+  const { data: enquiries = [] } = useEnquiries();
   const deleteMutation = useDeleteEnquiry();
   const updateMutation = useUpdateEnquiry();
+
+  const { currentIndex, totalEnquiries, prevId, nextId } = useMemo(() => {
+    if (!enquiries.length || !id) return { currentIndex: -1, totalEnquiries: 0, prevId: null, nextId: null };
+    
+    const index = enquiries.findIndex((e) => e._id === id);
+    return {
+      currentIndex: index,
+      totalEnquiries: enquiries.length,
+      prevId: index > 0 ? enquiries[index - 1]._id : null,
+      nextId: index < enquiries.length - 1 ? enquiries[index + 1]._id : null,
+    };
+  }, [enquiries, id]);
 
   if (!enquiry) {
     return (
@@ -89,11 +102,23 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
           </Button>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-xs text-muted-foreground mr-4">Details</span>
-          <Button variant="ghost" size="icon" disabled>
+          <span className="text-xs text-muted-foreground mr-4">
+            {currentIndex !== -1 ? `${currentIndex + 1} / ${totalEnquiries}` : "Details"}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={!prevId}
+            onClick={() => prevId && router.push(`/admin/enquiries/${prevId}`)}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" disabled>
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={!nextId}
+            onClick={() => nextId && router.push(`/admin/enquiries/${nextId}`)}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
