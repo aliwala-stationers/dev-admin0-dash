@@ -80,9 +80,9 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
           <Button variant="ghost" size="icon" onClick={markAsRead}>
             <Archive className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={handleDelete} className="text-destructive">
+          {/* <Button variant="ghost" size="icon" onClick={handleDelete} className="text-destructive">
             <Trash2 className="h-4 w-4" />
-          </Button>
+          </Button> */}
           <Separator orientation="vertical" className="h-6 mx-2" />
           <Button variant="ghost" size="icon" onClick={markContacted}>
             <Mail className="h-4 w-4" />
@@ -134,7 +134,7 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={markAsRead}>Mark as Read</DropdownMenuItem>
                       <DropdownMenuItem onClick={markContacted}>Mark as Contacted</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={handleDelete}>Delete</DropdownMenuItem>
+                      {/* <DropdownMenuItem className="text-destructive" onClick={handleDelete}>Delete</DropdownMenuItem> */}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
