@@ -29,7 +29,7 @@ export default function ChangelogPage() {
                 Latest Update: Feb 2026
               </div>
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-foreground mb-6">
-                What's New in <span className="text-accent-blue">Aliwala</span>
+                What's New in <span className="text-accent-blue">Aliwala Admin Panel</span>
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl">
                 Stay updated with our journey as we build the most powerful inventory and management suite for modern businesses.
@@ -66,8 +66,8 @@ export default function ChangelogPage() {
                   <div className="p-5 rounded-2xl bg-accent-blue/5 border border-accent-blue/10 space-y-4">
                     <h4 className="font-bold text-sm">Need help?</h4>
                     <p className="text-xs text-muted-foreground">Check out our documentation for detailed guides on these features.</p>
-                    <Button variant="link" size="sm" className="px-0 h-auto text-accent-blue font-semibold">
-                      Visit Documentation <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                    <Button variant="link" disabled size="sm" className=" px-0 h-auto text-accent-blue text-xs font-semibold">
+                      {/* Visit  */}Documentation coming soon{/* <ArrowRight className="ml-1.5 h-3.5 w-3.5" /> */}
                     </Button>
                   </div>
                 </div>
@@ -91,7 +91,7 @@ export default function ChangelogPage() {
         </section>
 
         {/* Newsletter / CTA Section */}
-        <section className="py-20 bg-muted/30 border-y border-border/40">
+        {/* <section className="py-20 bg-muted/30 border-y border-border/40">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-2xl">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent-blue/10 text-accent-blue mb-6">
               <Mail className="h-6 w-6" />
@@ -115,10 +115,10 @@ export default function ChangelogPage() {
               No spam, ever. Unsubscribe at any time.
             </p>
           </div>
-        </section>
+        </section> */}
       </main>
 
-      <SiteFooter />
+      {/* <SiteFooter /> */}
     </div>
   );
 }
