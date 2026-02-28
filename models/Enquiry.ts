@@ -1,17 +1,32 @@
 import mongoose, { Schema } from "mongoose";
 
-// 1. Define the Schema
-// (Adjust fields based on what your enquiry form actually collects)
 const EnquirySchema = new Schema(
   {
-    name: { type: String, required: true },
-    email: { type: String, required: true },
-    phone: { type: String },
-    message: { type: String },
+    name: { 
+      type: String, 
+      required: [true, "Name is required"],
+      trim: true 
+    },
+    email: { 
+      type: String, 
+      required: [true, "Email is required"],
+      trim: true,
+      lowercase: true,
+      index: true // Optimization for looking up user history
+    },
+    phone: { 
+      type: String,
+      trim: true 
+    },
+    message: { 
+      type: String,
+      trim: true 
+    },
     status: { 
       type: String, 
       enum: ["new", "read", "contacted"],
-      default: "new" 
+      default: "new",
+      index: true // Optimization for dashboard filtering
     }
   },
   {
@@ -20,24 +35,22 @@ const EnquirySchema = new Schema(
 );
 
 /**
- * 2. The Context Switcher (Sidecar)
- * This function ensures we get the model attached to 'user-website-enquiry'
- * NOT the default 'admin-dashboard'.
+ * SYSTEMS ARCHITECT NOTE:
+ * Standardization Protocol:
+ * Replicating the "useDb" fork strategy to target 'user-website-enquiry'.
+ * * This maintains connection pooling efficiency while strictly isolating 
+ * the enquiry data from the main application/admin DB.
  */
-export const getEnquiryModel = () => {
-  // Safety check: Ensure connection is alive
-  if (!mongoose.connection.readyState) {
-    throw new Error("Mongoose is not connected. Call connectDB() first.");
-  }
 
-  // Switch context to the secondary database
-  // useCache: true prevents memory leaks by reusing the connection object
-  const enquiryDb = mongoose.connection.useDb("user-website-enquiry", {
-    useCache: true,
-  });
+// 1. Grab the default mongoose connection (singleton)
+const defaultConn = mongoose.connection;
 
-  // Return the model from that specific DB instance
-  return (
-    enquiryDb.models.Enquiry || enquiryDb.model("Enquiry", EnquirySchema)
-  );
-};
+// 2. Fork it to the specific database
+// { useCache: true } prevents memory leaks by reusing the connection instance
+const targetDB = defaultConn.useDb("user-website-enquiry", { useCache: true });
+
+// 3. Register the model on the TARGET database
+// Explicitly naming the collection 'enquiries' to match the snake_case/plural convention
+const Enquiry = targetDB.model("contact_messages", EnquirySchema);
+
+export default Enquiry;

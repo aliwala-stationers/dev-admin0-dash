@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -32,42 +32,55 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { 
-  MoreHorizontal, 
-  Search, 
-  Trash2, 
-  Mail, 
-  User, 
-  LayoutList, 
+import {
+  MoreHorizontal,
+  Search,
+  Trash2,
+  Mail,
+  User,
+  LayoutList,
   LayoutGrid,
   CheckCircle2,
   Clock,
-  Eye
+  Eye,
 } from "lucide-react";
-import { useData } from "@/lib/data-context";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import {
+  useEnquiries,
+  useDeleteEnquiry,
+  useUpdateEnquiry,
+  type Enquiry,
+} from "@/hooks/api/useEnquiries";
 
-const statusVariants = {
+const statusVariants: Record<Enquiry["status"], any> = {
   new: "default",
   read: "secondary",
-  replied: "outline",
-} as const;
+  contacted: "outline",
+};
 
 export default function EnquiriesPage() {
-  const { enquiries, deleteEnquiry, updateEnquiryStatus } = useData();
   const router = useRouter();
+  const { data: enquiries = [], isLoading } = useEnquiries();
+  const deleteMutation = useDeleteEnquiry();
+  const updateMutation = useUpdateEnquiry();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
-  const filteredEnquiries = enquiries.filter((enquiry) => {
-    const matchesSearch =
-      enquiry.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      enquiry.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      enquiry.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      enquiry.message.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
+  const filteredEnquiries = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    return enquiries.filter((e) => {
+      return (
+        e.name.toLowerCase().includes(q) ||
+        e.email.toLowerCase().includes(q) ||
+        (e.message || "").toLowerCase().includes(q) ||
+        (e.phone || "").toLowerCase().includes(q)
+      );
+    });
+  }, [enquiries, searchQuery]);
+
+  if (isLoading) return <div className="p-6">Loading enquiries...</div>;
 
   return (
     <div className="p-6 space-y-6">
@@ -80,9 +93,9 @@ export default function EnquiriesPage() {
         </div>
       </div>
 
-      <Tabs 
-        defaultValue="table" 
-        value={viewMode} 
+      <Tabs
+        defaultValue="table"
+        value={viewMode}
         onValueChange={(v) => setViewMode(v as "table" | "card")}
         className="w-full space-y-6"
       >
@@ -96,7 +109,7 @@ export default function EnquiriesPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          
+
           <TabsList className="grid w-fit grid-cols-2">
             <TabsTrigger value="table" className="gap-2">
               <LayoutList className="h-4 w-4" />
@@ -115,8 +128,8 @@ export default function EnquiriesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead className="max-w-[300px]">Message</TableHead>
+                  <TableHead>Message</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -124,34 +137,29 @@ export default function EnquiriesPage() {
               </TableHeader>
               <TableBody>
                 {filteredEnquiries.length > 0 ? (
-                  filteredEnquiries.map((enquiry) => (
-                    <TableRow 
-                      key={enquiry.id} 
+                  filteredEnquiries.map((e) => (
+                    <TableRow
+                      key={e._id}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => {
-                        updateEnquiryStatus(enquiry.id, "read");
-                        router.push(`/admin/enquiries/${enquiry.id}`);
-                      }}
+                      onClick={() => router.push(`/admin/enquiries/${e._id}`)}
                     >
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="font-medium">{enquiry.name}</span>
-                          <span className="text-xs text-muted-foreground">{enquiry.email}</span>
+                          <span className="font-medium">{e.name}</span>
+                          <span className="text-xs text-muted-foreground">{e.email}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="font-medium">{enquiry.subject}</TableCell>
-                      <TableCell className="max-w-[300px] truncate">
-                        {enquiry.message}
-                      </TableCell>
+                      <TableCell className="max-w-[300px] truncate">{e.message}</TableCell>
+                      <TableCell className="text-muted-foreground whitespace-nowrap">{e.phone || "-"}</TableCell>
                       <TableCell className="text-muted-foreground whitespace-nowrap">
-                        {enquiry.createdAt}
+                        {new Date(e.createdAt).toLocaleString()}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusVariants[enquiry.status]}>
-                          {enquiry.status.charAt(0).toUpperCase() + enquiry.status.slice(1)}
+                        <Badge variant={statusVariants[e.status] || "default"}>
+                          {e.status.charAt(0).toUpperCase() + e.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-blue-600">
@@ -159,21 +167,21 @@ export default function EnquiriesPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/admin/enquiries/${enquiry.id}`)}>
+                            <DropdownMenuItem onClick={() => router.push(`/admin/enquiries/${e._id}`)}>
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateEnquiryStatus(enquiry.id, "read")}>
+                            <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "read" } })}>
                               <CheckCircle2 className="mr-2 h-4 w-4" />
                               Mark as Read
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateEnquiryStatus(enquiry.id, "replied")}>
+                            <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "contacted" } })}>
                               <Mail className="mr-2 h-4 w-4" />
-                              Mark as Replied
+                              Mark Contacted
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() => deleteEnquiry(enquiry.id)}
+                              onClick={() => deleteMutation.mutate(e._id)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
@@ -198,27 +206,30 @@ export default function EnquiriesPage() {
         <TabsContent value="card" className="m-0">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredEnquiries.length > 0 ? (
-              filteredEnquiries.map((enquiry) => (
-                <Card key={enquiry.id} className={cn(
-                  "flex flex-col",
-                  enquiry.status === "new" && "border-blue-500/50 shadow-blue-500/10"
-                )}>
+              filteredEnquiries.map((e) => (
+                <Card
+                  key={e._id}
+                  className={cn(
+                    "flex flex-col",
+                    e.status === "new" && "border-blue-500/50 shadow-blue-500/10"
+                  )}
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <CardTitle className="text-lg flex items-center gap-2">
-                          {enquiry.subject}
-                          {enquiry.status === "new" && (
+                          {e.name}
+                          {e.status === "new" && (
                             <span className="flex h-2 w-2 rounded-full bg-blue-600" />
                           )}
                         </CardTitle>
                         <CardDescription className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {enquiry.createdAt}
+                          {new Date(e.createdAt).toLocaleString()}
                         </CardDescription>
                       </div>
-                      <Badge variant={statusVariants[enquiry.status]}>
-                        {enquiry.status.charAt(0).toUpperCase() + enquiry.status.slice(1)}
+                      <Badge variant={statusVariants[e.status] || "default"}>
+                        {e.status.charAt(0).toUpperCase() + e.status.slice(1)}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -227,33 +238,33 @@ export default function EnquiriesPage() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 text-sm font-medium">
                           <User className="h-3.5 w-3.5" />
-                          {enquiry.name}
+                          {e.name}
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Mail className="h-3.5 w-3.5" />
-                          {enquiry.email}
+                          {e.email}
                         </div>
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed italic">
-                        "{enquiry.message}"
+                        "{e.message}"
                       </p>
                     </div>
                   </CardContent>
                   <CardFooter className="pt-4 border-t flex justify-end gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="h-8"
-                      onClick={() => router.push(`/admin/enquiries/${enquiry.id}`)}
+                      onClick={() => router.push(`/admin/enquiries/${e._id}`)}
                     >
                       <Eye className="mr-2 h-4 w-4" />
                       View
                     </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
+                    <Button
+                      variant="destructive"
+                      size="sm"
                       className="h-8"
-                      onClick={() => deleteEnquiry(enquiry.id)}
+                      onClick={() => deleteMutation.mutate(e._id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

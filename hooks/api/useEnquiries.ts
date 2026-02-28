@@ -23,6 +23,18 @@ export const useEnquiries = () => {
   });
 };
 
+export const useEnquiry = (id?: string) => {
+  return useQuery({
+    queryKey: ["enquiries", id],
+    enabled: Boolean(id),
+    queryFn: async (): Promise<Enquiry> => {
+      const res = await fetch(`/api/enquiries/${id}`);
+      if (!res.ok) throw new Error("Failed to fetch enquiry");
+      return res.json();
+    },
+  });
+};
+
 export const useCreateEnquiry = () => {
   const queryClient = useQueryClient();
   return useMutation({

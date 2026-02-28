@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
-import { getEnquiryModel } from "@/models/Enquiry";
+import Enquiry from "@/models/Enquiry";
 
 export async function GET(
   _req: Request,
@@ -8,8 +8,9 @@ export async function GET(
 ) {
   await connectDB();
   const { id } = await params;
-  const Enquiry = getEnquiryModel();
+  
   const record = await Enquiry.findById(id);
+  
   if (!record) {
     return NextResponse.json({ error: "Enquiry not found" }, { status: 404 });
   }
@@ -23,9 +24,11 @@ export async function PUT(
   try {
     await connectDB();
     const { id } = await params;
-    const Enquiry = getEnquiryModel();
     const body = await req.json();
+    
+    // Using direct model reference
     const updated = await Enquiry.findByIdAndUpdate(id, body, { new: true });
+    
     if (!updated) {
       return NextResponse.json({ error: "Enquiry not found" }, { status: 404 });
     }
@@ -42,8 +45,9 @@ export async function DELETE(
   try {
     await connectDB();
     const { id } = await params;
-    const Enquiry = getEnquiryModel();
+    
     await Enquiry.findByIdAndDelete(id);
+    
     return NextResponse.json({ ok: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });
