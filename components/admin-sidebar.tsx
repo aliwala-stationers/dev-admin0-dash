@@ -11,6 +11,8 @@ import {
   Tag,
   MessageSquare,
   Mail,
+  History,
+  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -64,7 +66,7 @@ export function AdminSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {menuItems.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -82,7 +84,14 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-4 gap-2">
+        <Link 
+          href="/changelog" 
+          className="flex w-full items-end gap-2 px-2 py-1.5 text-sm italic font-light text-accent-blue hover:text-foreground transition-colors"
+        >
+          {/* <History className="h-4 w-4 opacity-70" /> */}
+          <span>View Changelog</span> <ArrowRight className="h-4 w-4" />
+        </Link>
         <Button
           variant="outline"
           className="w-full justify-start"
