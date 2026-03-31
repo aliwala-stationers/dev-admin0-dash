@@ -5,8 +5,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Trash2 } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Trash2, FolderTree } from "lucide-react";
 import Link from "next/link";
 import { useCategories, useDeleteCategory } from "@/hooks/api/useCategories"; // Correct Hook Path
 
@@ -78,9 +79,21 @@ export default function CategoriesPage() {
             ) : (
               filteredCategories.map((category) => (
                 <TableRow key={category._id}>
-                  <TableCell className="font-medium">
-                    <Link href={`/admin/categories/${category._id}`} className="text-blue-600 hover:underline">
-                        {category.name}
+                  <TableCell>
+                    <Link
+                      href={`/admin/categories/${category._id}`}
+                      className="text-blue-600 flex items-center gap-3"
+                    >
+                      <Avatar className="h-10 w-10 border rounded-md">
+                        <AvatarImage
+                          src={category.image}
+                          className="object-contain p-1"
+                        />
+                        <AvatarFallback className="rounded-md">
+                          <FolderTree className="h-5 w-5 text-muted-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{category.name}</span>
                     </Link>
                   </TableCell>
                   <TableCell className="text-muted-foreground">/{category.slug}</TableCell>

@@ -34,14 +34,21 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await connectDB();
-    const body = await req.json();
-    
-    const exists = await Category.findOne({ slug: body.slug });
+    const { name, slug, description, status, image, parentId } = await req.json();
+
+    const exists = await Category.findOne({ slug });
     if (exists) {
       return NextResponse.json({ error: "Slug already exists" }, { status: 400 });
     }
 
-    const category = await Category.create(body);
+    const category = await Category.create({
+      name,
+      slug,
+      description,
+      status,
+      image,
+      parentId
+    });
     return NextResponse.json(category, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 400 });

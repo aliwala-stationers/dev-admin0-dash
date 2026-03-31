@@ -7,6 +7,7 @@ export interface Category {
   slug: string;
   description: string;
   status: boolean;
+  image?: string; // <--- ADDED: Category Image URL
   productCount?: number; // <--- ADDED: Calculated field from API
   createdAt: string;
   updatedAt: string;

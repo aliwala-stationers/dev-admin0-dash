@@ -6,6 +6,7 @@ const CategorySchema = new Schema(
     slug: { type: String, required: true, unique: true },
     description: { type: String },
     status: { type: Boolean, default: true },
+    image: { type: String }, // URL from R2
     // Future proofing: You might want a parent category for sub-categories later
     parentId: { type: Schema.Types.ObjectId, ref: "Category", default: null },
   },

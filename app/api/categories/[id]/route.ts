@@ -24,12 +24,25 @@ export async function GET(req: Request, { params }: RouteContext) {
 }
 
 export async function PUT(req: Request, { params }: RouteContext) {
-  await connectDB();
-  const { id } = await params;
-  const body = await req.json();
-  
-  const category = await Category.findByIdAndUpdate(id, body, { new: true });
-  return NextResponse.json(category);
+  try {
+    await connectDB();
+    const { id } = await params;
+    const { name, slug, description, status, image, parentId } = await req.json();
+
+    const category = await Category.findByIdAndUpdate(
+      id,
+      { name, slug, description, status, image, parentId },
+      { new: true, runValidators: true }
+    );
+
+    if (!category) {
+      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(category);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
 }
 
 export async function DELETE(req: Request, { params }: RouteContext) {
