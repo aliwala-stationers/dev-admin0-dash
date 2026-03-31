@@ -27,8 +27,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Filter, Download } from "lucide-react";
+import { MoreHorizontal, Search, Filter, Download, Eye, IndianRupee, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import Link from "next/link";
 import { useData } from "@/lib/data-context";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 
 const statusVariants = {
   completed: "default",
@@ -43,12 +46,27 @@ const methodLabels = {
   debit_card: "Debit Card",
   paypal: "PayPal",
   bank_transfer: "Bank Transfer",
+  upi: "UPI Payment",
 } as const;
 
 export default function PaymentsPage() {
   const { payments } = useData();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const analytics = useMemo(() => {
+    const completed = payments.filter(p => p.status === 'completed');
+    const pending = payments.filter(p => p.status === 'pending' || p.status === 'processing');
+    const failed = payments.filter(p => p.status === 'failed');
+    
+    return {
+      totalRevenue: completed.reduce((sum, p) => sum + p.amount, 0),
+      pendingAmount: pending.reduce((sum, p) => sum + p.amount, 0),
+      failedAmount: failed.reduce((sum, p) => sum + p.amount, 0),
+      count: payments.length,
+      successRate: payments.length ? (completed.length / (payments.length - pending.length || 1)) * 100 : 0
+    };
+  }, [payments]);
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch =
@@ -73,6 +91,49 @@ export default function PaymentsPage() {
           <Download className="mr-2 h-4 w-4" />
           Export
         </Button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">&#8377;{analytics.totalRevenue.toLocaleString('en-IN')}</div>
+            <p className="text-xs text-muted-foreground mt-1">From completed transactions</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Volume</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">&#8377;{analytics.pendingAmount.toLocaleString('en-IN')}</div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting verification</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Failed Payments</CardTitle>
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">&#8377;{analytics.failedAmount.toLocaleString('en-IN')}</div>
+            <p className="text-xs text-muted-foreground mt-1">Lost or rejected revenue</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Success Rate</CardTitle>
+            <IndianRupee className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.successRate.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground mt-1">Of processed transactions</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex items-center gap-4">
@@ -143,8 +204,17 @@ export default function PaymentsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>View Details</DropdownMenuItem>
-                      <DropdownMenuItem>View Order</DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/payments/${payment.id}`}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View Details
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/orders/${payment.orderId}`}>
+                          View Order
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem>Download Receipt</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive">

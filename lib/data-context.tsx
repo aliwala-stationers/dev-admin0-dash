@@ -99,9 +99,22 @@ export interface Payment {
   customer: string
   date: string
   amount: number
-  method: 'credit_card' | 'debit_card' | 'paypal' | 'bank_transfer'
+  method: 'credit_card' | 'debit_card' | 'paypal' | 'bank_transfer' | 'upi'
   status: 'completed' | 'pending' | 'processing' | 'failed' | 'refunded'
   transactionId: string
+  details?: {
+    brand?: string
+    last4?: string
+    expiry?: string
+    bankName?: string
+    accountNumber?: string
+    ifscCode?: string
+    utrNumber?: string
+    upiId?: string
+    screenshotUrl?: string
+    reason?: string
+    customerEmail?: string
+  }
 }
 
 export interface Enquiry {
@@ -359,6 +372,12 @@ const initialPayments: Payment[] = [
     method: 'credit_card',
     status: 'completed',
     transactionId: 'txn_1A2B3C4D5E',
+    details: {
+      brand: 'Visa',
+      last4: '4242',
+      expiry: '12/25',
+      customerEmail: 'john.doe@example.com'
+    }
   },
   {
     id: 'PAY-1002',
@@ -369,6 +388,9 @@ const initialPayments: Payment[] = [
     method: 'paypal',
     status: 'pending',
     transactionId: 'txn_2B3C4D5E6F',
+    details: {
+      customerEmail: 'jane.smith@example.com'
+    }
   },
   {
     id: 'PAY-1003',
@@ -379,6 +401,12 @@ const initialPayments: Payment[] = [
     method: 'credit_card',
     status: 'completed',
     transactionId: 'txn_3C4D5E6F7G',
+    details: {
+      brand: 'Mastercard',
+      last4: '9876',
+      expiry: '08/24',
+      customerEmail: 'bob.johnson@example.com'
+    }
   },
   {
     id: 'PAY-1004',
@@ -389,6 +417,12 @@ const initialPayments: Payment[] = [
     method: 'debit_card',
     status: 'processing',
     transactionId: 'txn_4D5E6F7G8H',
+    details: {
+      brand: 'Visa',
+      last4: '1234',
+      expiry: '05/26',
+      customerEmail: 'alice.williams@example.com'
+    }
   },
   {
     id: 'PAY-1005',
@@ -399,6 +433,45 @@ const initialPayments: Payment[] = [
     method: 'credit_card',
     status: 'failed',
     transactionId: 'txn_5E6F7G8H9I',
+    details: {
+      brand: 'Amex',
+      last4: '1001',
+      expiry: '03/24',
+      reason: 'Insufficient funds',
+      customerEmail: 'charlie.brown@example.com'
+    }
+  },
+  {
+    id: 'PAY-1006',
+    orderId: 'ORD-1001',
+    customer: 'John Doe',
+    date: '2024-01-05',
+    amount: 500.00,
+    method: 'upi',
+    status: 'completed',
+    transactionId: 'upi_txn_987654321',
+    details: {
+      upiId: 'john.doe@okaxis',
+      utrNumber: 'UTR123456789',
+      screenshotUrl: 'https://picsum.photos/400/600.jpg'
+    }
+  },
+  {
+    id: 'PAY-1007',
+    orderId: 'ORD-1002',
+    customer: 'Jane Smith',
+    date: '2024-01-06',
+    amount: 1500.00,
+    method: 'bank_transfer',
+    status: 'processing',
+    transactionId: 'bank_ref_11223344',
+    details: {
+      bankName: 'State Bank of India',
+      accountNumber: '•••• 8899',
+      ifscCode: 'SBIN0001234',
+      utrNumber: 'NEFT000998877',
+      screenshotUrl: 'https://picsum.photos/400/600.jpg'
+    }
   },
 ]
 
@@ -505,7 +578,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
           }))
         : initialCustomers,
     )
-    setPayments(storedPayments ? JSON.parse(storedPayments) : initialPayments)
+    setPayments(
+      storedPayments
+        ? JSON.parse(storedPayments).map((p: any) => ({
+            ...p,
+            details:
+              p.details ||
+              initialPayments.find((ip) => ip.id === p.id)?.details,
+          }))
+        : initialPayments,
+    )
     setEnquiries(
       storedEnquiries ? JSON.parse(storedEnquiries) : initialEnquiries,
     )

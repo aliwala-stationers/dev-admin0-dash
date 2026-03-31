@@ -247,7 +247,11 @@ export default function CustomerDetailPage() {
                   {customerOrders.length > 0 ? (
                     customerOrders.map((order) => (
                       <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.id}</TableCell>
+                        <TableCell className="font-medium">
+                          <Link className="text-blue-600" href={`/admin/orders/${order.id}`}>
+                            {order.id}
+                          </Link>
+                        </TableCell>
                         <TableCell>{order.date}</TableCell>
                         <TableCell>
                           <Badge variant="outline">{order.status.replace(/_/g, ' ')}</Badge>

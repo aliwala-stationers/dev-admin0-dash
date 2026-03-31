@@ -7,14 +7,29 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Trash2, FolderTree } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Trash2, FolderTree, Layers, CheckCircle2, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useCategories, useDeleteCategory } from "@/hooks/api/useCategories"; // Correct Hook Path
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 
 export default function CategoriesPage() {
   const { data: categories = [], isLoading } = useCategories();
   const deleteMutation = useDeleteCategory();
   const [searchQuery, setSearchQuery] = useState("");
+
+  const analytics = useMemo(() => {
+    const active = categories.filter(c => c.status).length;
+    const totalProducts = categories.reduce((sum, c) => sum + (c.productCount || 0), 0);
+    const topCategory = [...categories].sort((a, b) => (b.productCount || 0) - (a.productCount || 0))[0];
+
+    return {
+      total: categories.length,
+      active,
+      totalProducts,
+      topCategory: topCategory?.name || 'N/A'
+    };
+  }, [categories]);
 
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -43,6 +58,49 @@ export default function CategoriesPage() {
             Add Category
           </Link>
         </Button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Categories</CardTitle>
+            <FolderTree className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Product groupings</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Categories</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.active}</div>
+            <p className="text-xs text-muted-foreground mt-1">Enabled for catalog</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Linked Products</CardTitle>
+            <Layers className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.totalProducts}</div>
+            <p className="text-xs text-muted-foreground mt-1">Items with categories</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Top Category</CardTitle>
+            <TrendingUp className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold truncate">{analytics.topCategory}</div>
+            <p className="text-xs text-muted-foreground mt-1">Most items linked</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex items-center gap-4">

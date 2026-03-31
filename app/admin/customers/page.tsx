@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,13 +22,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search } from "lucide-react";
+import { MoreHorizontal, Search, Users, UserCheck, IndianRupee, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useData } from "@/lib/data-context";
 
 export default function CustomersPage() {
   const { customers } = useData();
   const [searchQuery, setSearchQuery] = useState("");
+
+  const analytics = useMemo(() => {
+    const active = customers.filter(c => c.status === 'active').length;
+    const totalSpent = customers.reduce((sum, c) => sum + c.totalSpent, 0);
+    const avgSpent = customers.length ? totalSpent / customers.length : 0;
+
+    return {
+      total: customers.length,
+      active,
+      totalSpent,
+      avgSpent
+    };
+  }, [customers]);
 
   const filteredCustomers = customers.filter(
     (customer) =>
@@ -44,6 +58,49 @@ export default function CustomersPage() {
             Manage your customer base
           </p>
         </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Customers</CardTitle>
+            <Users className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Lifetime registrations</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Customers</CardTitle>
+            <UserCheck className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.active}</div>
+            <p className="text-xs text-muted-foreground mt-1">Current active accounts</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Customer Value</CardTitle>
+            <IndianRupee className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">&#8377;{analytics.totalSpent.toLocaleString('en-IN')}</div>
+            <p className="text-xs text-muted-foreground mt-1">Cumulative revenue</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Value per User</CardTitle>
+            <TrendingUp className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">&#8377;{analytics.avgSpent.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+            <p className="text-xs text-muted-foreground mt-1">Average lifetime spend</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex items-center gap-4">

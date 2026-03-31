@@ -28,9 +28,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Filter, Trash2, Building2, Package, Loader2 } from "lucide-react";
+import { Plus, MoreHorizontal, Search, Filter, Trash2, Building2, Package, Loader2, IndianRupee, AlertTriangle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useProducts, useDeleteProduct } from "@/hooks/api/useProducts"; // Updated import
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { toast } from "sonner";
 
 export default function ProductsPage() {
@@ -40,6 +41,19 @@ export default function ProductsPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+
+  const analytics = useMemo(() => {
+    const totalValue = products.reduce((sum, p) => sum + (p.price || 0) * (p.stock || 0), 0);
+    const lowStock = products.filter(p => p.stock < 10).length;
+    const active = products.filter(p => p.status).length;
+
+    return {
+      total: products.length,
+      totalValue,
+      lowStock,
+      active
+    };
+  }, [products]);
 
   // Helper to handle both populated and unpopulated fields
   const getLabel = (field: any) => (typeof field === "object" ? field?.name : field);
@@ -100,6 +114,49 @@ export default function ProductsPage() {
             Add Product
           </Link>
         </Button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Products</CardTitle>
+            <Package className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Unique items in catalog</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Inventory Value</CardTitle>
+            <IndianRupee className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">&#8377;{analytics.totalValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+            <p className="text-xs text-muted-foreground mt-1">Total value of stock</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Low Stock Alerts</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.lowStock}</div>
+            <p className="text-xs text-muted-foreground mt-1">Items below threshold</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Listings</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.active}</div>
+            <p className="text-xs text-muted-foreground mt-1">Visible to customers</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4">

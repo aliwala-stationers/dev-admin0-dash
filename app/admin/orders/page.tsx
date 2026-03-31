@@ -25,9 +25,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Filter, Eye, ArrowUpDown } from "lucide-react";
+import { MoreHorizontal, Search, Filter, Eye, ArrowUpDown, ShoppingBag, Clock, CheckCircle2, IndianRupee } from "lucide-react";
 import Link from "next/link";
 import { useData } from "@/lib/data-context";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -72,6 +73,19 @@ type OrderRow = {
 export default function OrdersPage() {
   const { orders } = useData();
   const data = useMemo(() => orders as OrderRow[], [orders]);
+  
+  const analytics = useMemo(() => {
+    const delivered = orders.filter(o => o.status === 'order_delivered');
+    const pending = orders.filter(o => !['order_delivered', 'order_rejected_by_seller', 'order_cancelled_by_customer'].includes(o.status));
+    
+    return {
+      total: orders.length,
+      delivered: delivered.length,
+      pending: pending.length,
+      totalValue: orders.reduce((sum, o) => sum + o.total, 0)
+    };
+  }, [orders]);
+
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -274,6 +288,49 @@ export default function OrdersPage() {
             Track and manage customer orders
           </p>
         </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Orders</CardTitle>
+            <ShoppingBag className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Lifetime orders</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Orders</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.pending}</div>
+            <p className="text-xs text-muted-foreground mt-1">In processing/fulfillment</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Completed Orders</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.delivered}</div>
+            <p className="text-xs text-muted-foreground mt-1">Delivered successfully</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Gross Merchandise Value</CardTitle>
+            <IndianRupee className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">&#8377;{analytics.totalValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+            <p className="text-xs text-muted-foreground mt-1">Cumulative sales value</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="flex items-center gap-4">

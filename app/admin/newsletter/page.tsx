@@ -35,7 +35,10 @@ import {
   MoreHorizontal,
   XCircle,
   CheckCircle2,
-  Trash2
+  Trash2,
+  Users,
+  UserCheck,
+  UserMinus
 } from "lucide-react";
 import {
   useNewsletter,
@@ -43,6 +46,7 @@ import {
   useUpdateNewsletterSubscriber,
 } from "@/hooks/api/useNewsletter";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useMemo } from "react";
 
 const statusVariants = {
   active: "default",
@@ -55,6 +59,14 @@ export default function NewsletterPage() {
   const updateMutation = useUpdateNewsletterSubscriber();
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
+
+  const analytics = useMemo(() => {
+    return {
+      total: newsletterSubscribers.length,
+      active: newsletterSubscribers.filter(s => s.isActive).length,
+      unsubscribed: newsletterSubscribers.filter(s => !s.isActive).length,
+    };
+  }, [newsletterSubscribers]);
 
   const filteredSubscribers = newsletterSubscribers.filter((subscriber) => {
     return subscriber.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -86,6 +98,39 @@ export default function NewsletterPage() {
           <Download className="h-4 w-4" />
           Export Emails
         </Button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Subscribers</CardTitle>
+            <Users className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">Overall email reach</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Members</CardTitle>
+            <UserCheck className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.active}</div>
+            <p className="text-xs text-muted-foreground mt-1">Ready for updates</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Unsubscribed</CardTitle>
+            <UserMinus className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.unsubscribed}</div>
+            <p className="text-xs text-muted-foreground mt-1">Opted out of marketing</p>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs 

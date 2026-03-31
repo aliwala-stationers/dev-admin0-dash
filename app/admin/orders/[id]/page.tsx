@@ -1,16 +1,16 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -18,15 +18,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -34,78 +34,78 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { 
-  ArrowLeft, 
-  CheckCircle2, 
-  XCircle, 
-  Package, 
-  User, 
-  Calendar, 
+} from '@/components/ui/dialog'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  Package,
+  User,
+  Calendar,
   CreditCard,
   Printer,
   Clock,
   Truck,
-  CheckCircle
-} from "lucide-react";
-import Link from "next/link";
-import { useData, OrderStatus } from "@/lib/data-context";
-import { toast } from "sonner";
+  CheckCircle,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useData, OrderStatus } from '@/lib/data-context'
+import { toast } from 'sonner'
 
 // Expanded mock data for detail view
 const mockOrderDetails = {
-  "ORD-1001": {
-    id: "ORD-1001",
-    customer: "John Doe",
-    email: "john@example.com",
-    phone: "+1 (555) 123-4567",
-    date: "2024-01-05",
+  'ORD-1001': {
+    id: 'ORD-1001',
+    customer: 'John Doe',
+    email: 'john@example.com',
+    phone: '+1 (555) 123-4567',
+    date: '2024-01-05',
     total: 249.99,
-    status: "order_delivered" as OrderStatus,
-    paymentStatus: "paid",
-    shippingAddress: "123 Main St, New York, NY 10001",
+    status: 'order_delivered' as OrderStatus,
+    paymentStatus: 'paid',
+    shippingAddress: '123 Main St, New York, NY 10001',
     items: [
-      { id: 1, name: "Wireless Headphones", quantity: 1, price: 99.99 },
-      { id: 2, name: "Phone Case", quantity: 2, price: 25.00 },
-      { id: 3, name: "USB-C Cable", quantity: 1, price: 100.00 },
+      { id: 1, name: 'Wireless Headphones', quantity: 1, price: 99.99 },
+      { id: 2, name: 'Phone Case', quantity: 2, price: 25.0 },
+      { id: 3, name: 'USB-C Cable', quantity: 1, price: 100.0 },
     ],
   },
-  "ORD-1002": {
-    id: "ORD-1002",
-    customer: "Jane Smith",
-    email: "jane@example.com",
-    phone: "+1 (555) 987-6543",
-    date: "2024-01-05",
+  'ORD-1002': {
+    id: 'ORD-1002',
+    customer: 'Jane Smith',
+    email: 'jane@example.com',
+    phone: '+1 (555) 987-6543',
+    date: '2024-01-05',
     total: 149.99,
-    status: "accepted_order_by_seller" as OrderStatus,
-    paymentStatus: "paid",
-    shippingAddress: "456 Oak Ave, Los Angeles, CA 90001",
+    status: 'accepted_order_by_seller' as OrderStatus,
+    paymentStatus: 'paid',
+    shippingAddress: '456 Oak Ave, Los Angeles, CA 90001',
     items: [
-      { id: 4, name: "Running Shoes", quantity: 1, price: 120.00 },
-      { id: 5, name: "Sports Socks", quantity: 3, price: 10.00 },
+      { id: 4, name: 'Running Shoes', quantity: 1, price: 120.0 },
+      { id: 5, name: 'Sports Socks', quantity: 3, price: 10.0 },
     ],
   },
-};
+}
 
 const statusVariants = {
-  order_placed: "secondary",
-  accepted_order_by_seller: "default",
-  order_rejected_by_seller: "destructive",
-  order_cancelled_by_customer: "destructive",
-  order_packed: "default",
-  order_shipped: "default",
-  order_delivered: "default",
-} as const;
+  order_placed: 'secondary',
+  accepted_order_by_seller: 'default',
+  order_rejected_by_seller: 'destructive',
+  order_cancelled_by_customer: 'destructive',
+  order_packed: 'default',
+  order_shipped: 'default',
+  order_delivered: 'default',
+} as const
 
 const statusLabels = {
-  order_placed: "Order Placed",
-  accepted_order_by_seller: "Accepted by Seller",
-  order_rejected_by_seller: "Rejected by Seller",
-  order_cancelled_by_customer: "Cancelled by Customer",
-  order_packed: "Order Packed",
-  order_shipped: "Order Shipped",
-  order_delivered: "Order Delivered",
-} as const;
+  order_placed: 'Order Placed',
+  accepted_order_by_seller: 'Accepted by Seller',
+  order_rejected_by_seller: 'Rejected by Seller',
+  order_cancelled_by_customer: 'Cancelled by Customer',
+  order_packed: 'Order Packed',
+  order_shipped: 'Order Shipped',
+  order_delivered: 'Order Delivered',
+} as const
 
 const statusIcons = {
   order_placed: Clock,
@@ -115,108 +115,108 @@ const statusIcons = {
   order_packed: Package,
   order_shipped: Truck,
   order_delivered: CheckCircle,
-} as const;
+} as const
 
 const STATUS_ORDER: OrderStatus[] = [
-  "order_placed",
-  "accepted_order_by_seller",
-  "order_packed",
-  "order_shipped",
-  "order_delivered"
-];
+  'order_placed',
+  'accepted_order_by_seller',
+  'order_packed',
+  'order_shipped',
+  'order_delivered',
+]
 
 export default function OrderDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { orders, updateOrderStatus } = useData();
-  const orderId = params.id as string;
-  
-  const orderFromContext = orders.find(o => o.id === orderId);
-  
+  const params = useParams()
+  const router = useRouter()
+  const { orders, updateOrderStatus } = useData()
+  const orderId = params.id as string
+
+  const orderFromContext = orders.find((o) => o.id === orderId)
+
   // In a real app, you'd fetch this data
   const order = {
     ...(mockOrderDetails[orderId as keyof typeof mockOrderDetails] || {
       id: orderId,
-      customer: "Unknown Customer",
-      email: "-",
-      phone: "-",
-      date: "-",
+      customer: 'Unknown Customer',
+      email: '-',
+      phone: '-',
+      date: '-',
       total: 0,
-      status: "order_placed" as OrderStatus,
-      paymentStatus: "pending",
-      shippingAddress: "-",
+      status: 'order_placed' as OrderStatus,
+      paymentStatus: 'pending',
+      shippingAddress: '-',
       items: [],
     }),
-    status: orderFromContext?.status || "order_placed" as OrderStatus,
+    status: orderFromContext?.status || ('order_placed' as OrderStatus),
     history: orderFromContext?.history || [],
-    customer: orderFromContext?.customer || "Unknown Customer",
+    customer: orderFromContext?.customer || 'Unknown Customer',
     total: orderFromContext?.total || 0,
-    date: orderFromContext?.date || "-",
-    lastUpdated: orderFromContext?.lastUpdated || orderFromContext?.date || "-",
-  };
+    date: orderFromContext?.date || '-',
+    lastUpdated: orderFromContext?.lastUpdated || orderFromContext?.date || '-',
+  }
 
-  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order.status);
-  const [isSaving, setIsSaving] = useState(false);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
-  const [customReason, setCustomReason] = useState("");
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order.status)
+  const [isSaving, setIsSaving] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [customReason, setCustomReason] = useState('')
 
   const rejectionOptions = [
-    "Out of Stock",
-    "Delivery not available in this area",
-    "Incorrect pricing",
-    "Customer requested cancellation",
-    "Other"
-  ];
+    'Out of Stock',
+    'Delivery not available in this area',
+    'Incorrect pricing',
+    'Customer requested cancellation',
+    'Other',
+  ]
 
   useEffect(() => {
-    setCurrentStatus(order.status);
-  }, [order.status]);
+    setCurrentStatus(order.status)
+  }, [order.status])
 
   const handleStatusUpdate = (newStatus: OrderStatus) => {
-    setCurrentStatus(newStatus);
-  };
+    setCurrentStatus(newStatus)
+  }
 
   const handleSaveChanges = () => {
-    setIsSaving(true);
+    setIsSaving(true)
     // Simulate API delay
     setTimeout(() => {
-      updateOrderStatus(order.id, currentStatus);
-      setIsSaving(false);
-      toast.success("Order status updated successfully");
-    }, 500);
-  };
+      updateOrderStatus(order.id, currentStatus)
+      setIsSaving(false)
+      toast.success('Order status updated successfully')
+    }, 500)
+  }
 
   const handlePrint = () => {
-    window.print();
-  };
+    window.print()
+  }
 
   const handleAccept = () => {
-    setCurrentStatus("accepted_order_by_seller");
-    updateOrderStatus(order.id, "accepted_order_by_seller");
-    toast.success("Order accepted. Tracking history updated.");
-  };
+    setCurrentStatus('accepted_order_by_seller')
+    updateOrderStatus(order.id, 'accepted_order_by_seller')
+    toast.success('Order accepted. Tracking history updated.')
+  }
 
   const handleConfirmReject = () => {
     if (!rejectReason) {
-      toast.error("Please select a reason for rejection");
-      return;
-    }
-    
-    const finalReason = rejectReason === "Other" ? customReason : rejectReason;
-    
-    if (rejectReason === "Other" && !customReason.trim()) {
-      toast.error("Please provide a custom reason");
-      return;
+      toast.error('Please select a reason for rejection')
+      return
     }
 
-    setCurrentStatus("order_rejected_by_seller");
-    updateOrderStatus(order.id, "order_rejected_by_seller", finalReason);
-    setShowRejectModal(false);
-    setRejectReason("");
-    setCustomReason("");
-    toast.error("Order rejected. Reason: " + finalReason);
-  };
+    const finalReason = rejectReason === 'Other' ? customReason : rejectReason
+
+    if (rejectReason === 'Other' && !customReason.trim()) {
+      toast.error('Please provide a custom reason')
+      return
+    }
+
+    setCurrentStatus('order_rejected_by_seller')
+    updateOrderStatus(order.id, 'order_rejected_by_seller', finalReason)
+    setShowRejectModal(false)
+    setRejectReason('')
+    setCustomReason('')
+    toast.error('Order rejected. Reason: ' + finalReason)
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -224,8 +224,12 @@ export default function OrderDetailPage() {
       <div className="print-only mb-8">
         <div className="flex justify-between items-start border-b-2 pb-6">
           <div>
-            <h1 className="text-4xl font-bold uppercase tracking-tighter">Aliwala</h1>
-            <p className="text-sm text-muted-foreground mt-1">Marketplace Admin Panel</p>
+            <h1 className="text-4xl font-bold uppercase tracking-tighter">
+              Aliwala
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Marketplace Admin Panel
+            </p>
           </div>
           <div className="text-right">
             <h2 className="text-2xl font-semibold">INVOICE</h2>
@@ -245,7 +249,11 @@ export default function OrderDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-semibold">Order {order.id}</h1>
-              <Badge variant={statusVariants[currentStatus as keyof typeof statusVariants]}>
+              <Badge
+                variant={
+                  statusVariants[currentStatus as keyof typeof statusVariants]
+                }
+              >
                 {statusLabels[currentStatus as keyof typeof statusLabels]}
               </Badge>
             </div>
@@ -264,13 +272,19 @@ export default function OrderDetailPage() {
             <Printer className="mr-2 h-4 w-4" />
             Print Invoice
           </Button>
-          {order.status === "order_placed" && (
+          {order.status === 'order_placed' && (
             <>
-              <Button variant="destructive" onClick={() => setShowRejectModal(true)}>
+              <Button
+                variant="destructive"
+                onClick={() => setShowRejectModal(true)}
+              >
                 <XCircle className="mr-2 h-4 w-4" />
                 Reject
               </Button>
-              <Button className="bg-green-600 hover:bg-green-700" onClick={handleAccept}>
+              <Button
+                className="bg-green-600 hover:bg-green-700"
+                onClick={handleAccept}
+              >
                 <CheckCircle2 className="mr-2 h-4 w-4" />
                 Accept Order
               </Button>
@@ -302,60 +316,102 @@ export default function OrderDetailPage() {
                   {order.items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell className="text-center">{item.quantity}</TableCell>
-                      <TableCell className="text-right">&#8377;{item.price.toFixed(2)}</TableCell>
-                      <TableCell className="text-right">&#8377;{(item.quantity * item.price).toFixed(2)}</TableCell>
+                      <TableCell className="text-center">
+                        {item.quantity}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        &#8377;{item.price.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        &#8377;{(item.quantity * item.price).toFixed(2)}
+                      </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="bg-muted/20 font-semibold">
-                    <TableCell colSpan={3} className="text-right">Total Amount</TableCell>
-                    <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                    <TableCell colSpan={3} className="text-right">
+                      Total Amount
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ${order.total.toFixed(2)}
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
 
-          {["accepted_order_by_seller", "order_packed", "order_shipped"].includes(order.status) && (
-            <Card className="no-print border-accent-blue/20">
-              <CardHeader>
-                <CardTitle className="text-lg">Update Status</CardTitle>
-                <CardDescription>Progress the order through fulfillment stages</CardDescription>
+          {/* 1. ACTIVE FULFILLMENT STATE */}
+          {/* Active Status Update Block */}
+          {[
+            'accepted_order_by_seller',
+            'order_packed',
+            'order_shipped',
+          ].includes(order.status) && (
+            <Card className="no-print relative overflow-hidden border-accent-blue/30 dark:border-accent-blue/40 bg-gradient-to-br from-background via-background to-accent-blue/5 dark:to-accent-blue/10 shadow-sm transition-all duration-300">
+              {/* Decorative background glow */}
+              <div className="absolute -top-12 -right-12 w-40 h-40 bg-accent-blue/10 dark:bg-accent-blue/20 blur-3xl rounded-full pointer-events-none" />
+
+              <CardHeader className="relative z-10 pb-4">
+                <CardTitle className="text-lg text-accent-blue dark:text-accent-blue-hover flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-accent-blue animate-pulse" />
+                  Update Status
+                </CardTitle>
+                <CardDescription>
+                  Progress the order through fulfillment stages
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4">
-                  <Select value={currentStatus} onValueChange={(v) => handleStatusUpdate(v as OrderStatus)}>
-                    <SelectTrigger className="w-[200px]">
+              <CardContent className="relative z-10">
+                <div className="flex flex-wrap items-center gap-4">
+                  <Select
+                    value={currentStatus}
+                    onValueChange={(v) => handleStatusUpdate(v as OrderStatus)}
+                  >
+                    <SelectTrigger className="w-[200px] border-accent-blue/30 hover:border-accent-blue/50 focus:ring-accent-blue/50 bg-background/80 backdrop-blur-sm transition-colors">
                       <SelectValue placeholder="Change status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="accepted_order_by_seller" disabled>Accepted by Seller</SelectItem>
-                      <SelectItem 
-                        value="order_packed" 
-                        disabled={STATUS_ORDER.indexOf(order.status) >= STATUS_ORDER.indexOf("order_packed")}
+                      <SelectItem value="accepted_order_by_seller" disabled>
+                        Accepted by Seller
+                      </SelectItem>
+                      <SelectItem
+                        value="order_packed"
+                        disabled={
+                          STATUS_ORDER.indexOf(order.status) >=
+                          STATUS_ORDER.indexOf('order_packed')
+                        }
                       >
                         Order Packed
                       </SelectItem>
-                      <SelectItem 
-                        value="order_shipped" 
-                        disabled={STATUS_ORDER.indexOf(order.status) >= STATUS_ORDER.indexOf("order_shipped")}
+                      <SelectItem
+                        value="order_shipped"
+                        disabled={
+                          STATUS_ORDER.indexOf(order.status) >=
+                          STATUS_ORDER.indexOf('order_shipped')
+                        }
                       >
                         Order Shipped
                       </SelectItem>
-                      <SelectItem 
-                        value="order_delivered" 
-                        disabled={STATUS_ORDER.indexOf(order.status) >= STATUS_ORDER.indexOf("order_delivered")}
+                      <SelectItem
+                        value="order_delivered"
+                        disabled={
+                          STATUS_ORDER.indexOf(order.status) >=
+                          STATUS_ORDER.indexOf('order_delivered')
+                        }
                       >
                         Order Delivered
                       </SelectItem>
                     </SelectContent>
                   </Select>
                   {currentStatus !== order.status && (
-                    <Button onClick={handleSaveChanges} disabled={isSaving}>
-                      {isSaving ? "Saving..." : "Save Changes"}
+                    <Button
+                      onClick={handleSaveChanges}
+                      disabled={isSaving}
+                      className="bg-accent-blue text-white hover:bg-accent-blue-hover shadow-md shadow-accent-blue/20 dark:shadow-accent-blue/30"
+                    >
+                      {isSaving ? 'Saving...' : 'Save Changes'}
                     </Button>
                   )}
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground ml-auto md:ml-0">
                     Last updated: {order.lastUpdated}
                   </p>
                 </div>
@@ -363,24 +419,36 @@ export default function OrderDetailPage() {
             </Card>
           )}
 
-          {order.status === "order_delivered" && (
-            <Card className="no-print border-green-200 bg-green-50/30">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 text-green-700">
+          {/* Locked State: Delivered */}
+          {order.status === 'order_delivered' && (
+            <Card className="no-print relative overflow-hidden border-emerald-500/20 dark:border-emerald-500/30 bg-gradient-to-r from-emerald-500/5 to-transparent dark:from-emerald-500/10">
+              <div className="absolute -left-8 -top-8 w-24 h-24 bg-emerald-500/20 dark:bg-emerald-500/20 blur-2xl rounded-full pointer-events-none" />
+              <CardContent className="pt-6 relative z-10">
+                <div className="flex items-center gap-3 text-emerald-700 dark:text-emerald-400">
                   <CheckCircle2 className="h-5 w-5" />
-                  <p className="font-medium">Order delivered successfully. Status updates are now locked.</p>
+                  <p className="font-medium">
+                    Order delivered successfully. Status updates are now locked.
+                  </p>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {["order_rejected_by_seller", "order_cancelled_by_customer"].includes(order.status) && (
-            <Card className="no-print border-destructive/20 bg-destructive/5">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3 text-destructive">
+          {/* Locked State: Rejected / Cancelled */}
+          {['order_rejected_by_seller', 'order_cancelled_by_customer'].includes(
+            order.status,
+          ) && (
+            <Card className="no-print relative overflow-hidden border-destructive/20 dark:border-destructive/30 bg-gradient-to-r from-destructive/5 to-transparent dark:from-destructive/10">
+              <div className="absolute -left-8 -top-8 w-24 h-24 bg-destructive/20 dark:bg-destructive/20 blur-2xl rounded-full pointer-events-none" />
+              <CardContent className="pt-6 relative z-10">
+                <div className="flex items-center gap-3 text-destructive dark:text-red-400">
                   <XCircle className="h-5 w-5" />
                   <p className="font-medium">
-                    Order {order.status === "order_rejected_by_seller" ? "Rejected" : "Cancelled"}. No further actions can be taken.
+                    Order{' '}
+                    {order.status === 'order_rejected_by_seller'
+                      ? 'Rejected'
+                      : 'Cancelled'}
+                    . No further actions can be taken.
                   </p>
                 </div>
               </CardContent>
@@ -400,7 +468,9 @@ export default function OrderDetailPage() {
               <div className="space-y-6 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-muted">
                 {order.history && order.history.length > 0 ? (
                   [...order.history].reverse().map((event, index) => {
-                    const Icon = statusIcons[event.status as keyof typeof statusIcons] || Clock;
+                    const Icon =
+                      statusIcons[event.status as keyof typeof statusIcons] ||
+                      Clock
                     return (
                       <div key={index} className="relative pl-8">
                         <div className="absolute left-0 top-1 p-1 bg-background border rounded-full z-10">
@@ -408,9 +478,15 @@ export default function OrderDetailPage() {
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm font-medium leading-none">
-                            {statusLabels[event.status as keyof typeof statusLabels]}
+                            {
+                              statusLabels[
+                                event.status as keyof typeof statusLabels
+                              ]
+                            }
                           </p>
-                          <p className="text-xs text-muted-foreground">{event.date}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {event.date}
+                          </p>
                           {event.reason && (
                             <p className="text-xs text-destructive font-medium mt-1 bg-destructive/5 px-2 py-1 rounded w-fit">
                               Reason: {event.reason}
@@ -418,10 +494,12 @@ export default function OrderDetailPage() {
                           )}
                         </div>
                       </div>
-                    );
+                    )
                   })
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">No history available</p>
+                  <p className="text-sm text-muted-foreground italic">
+                    No history available
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -437,7 +515,9 @@ export default function OrderDetailPage() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium">Name</p>
-                <p className="text-sm text-muted-foreground">{order.customer}</p>
+                <p className="text-sm text-muted-foreground">
+                  {order.customer}
+                </p>
               </div>
               <div>
                 <p className="text-sm font-medium">Email</p>
@@ -499,7 +579,8 @@ export default function OrderDetailPage() {
           <DialogHeader>
             <DialogTitle>Reject Order</DialogTitle>
             <DialogDescription>
-              Please provide a reason for rejecting this order. This will be visible to the customer.
+              Please provide a reason for rejecting this order. This will be
+              visible to the customer.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -516,7 +597,7 @@ export default function OrderDetailPage() {
               </SelectContent>
             </Select>
 
-            {rejectReason === "Other" && (
+            {rejectReason === 'Other' && (
               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                 <Textarea
                   placeholder="Enter custom rejection reason..."
@@ -528,11 +609,15 @@ export default function OrderDetailPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectModal(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleConfirmReject}>Confirm Rejection</Button>
+            <Button variant="outline" onClick={() => setShowRejectModal(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmReject}>
+              Confirm Rejection
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }

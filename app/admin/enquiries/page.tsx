@@ -44,6 +44,7 @@ import {
   Clock,
   Eye,
   RotateCcw,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -69,6 +70,15 @@ export default function EnquiriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
+  const analytics = useMemo(() => {
+    return {
+      total: enquiries.length,
+      new: enquiries.filter(e => e.status === 'new').length,
+      read: enquiries.filter(e => e.status === 'read').length,
+      contacted: enquiries.filter(e => e.status === 'contacted').length,
+    };
+  }, [enquiries]);
+
   const filteredEnquiries = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return enquiries.filter((e) => {
@@ -92,6 +102,49 @@ export default function EnquiriesPage() {
             Manage messages and enquiries from your website users
           </p>
         </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Enquiries</CardTitle>
+            <MessageSquare className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">All time messages</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">New / Unread</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.new}</div>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting attention</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Read</CardTitle>
+            <Eye className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.read}</div>
+            <p className="text-xs text-muted-foreground mt-1">Reviewed by team</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Contacted</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analytics.contacted}</div>
+            <p className="text-xs text-muted-foreground mt-1">Resolution in progress</p>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs
