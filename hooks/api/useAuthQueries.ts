@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 
 // --- TYPES ---
@@ -69,6 +69,7 @@ export const useLogin = () => {
 export const useLogout = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const pathname = usePathname();
 
   return useMutation({
     mutationFn: async () => {
@@ -80,7 +81,12 @@ export const useLogout = () => {
       queryClient.clear(); // Optional: clears all other data
       
       // 2. Redirect
-      router.push("/admin/login");
+      // If we're on the changelog page, stay there.
+      // Otherwise, redirect to login.
+      if (pathname !== "/changelog") {
+        router.push("/admin/login");
+      }
+      
       toast.success("Logged out");
     },
   });
