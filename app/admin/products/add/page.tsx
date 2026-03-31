@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ChevronLeft, Save, Plus, X, Loader2 } from "lucide-react";
+import { ChevronLeft, Save, Plus, X, Loader2, Video, Film } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
@@ -54,6 +54,7 @@ const productSchema = z.object({
   status: z.boolean(),
   // We allow strings here, but we will ensure they are valid URLs before DB save
   images: z.array(z.string()).min(1, "At least 1 image is required."),
+  videoUrl: z.string().optional().nullable(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -66,8 +67,11 @@ export default function AddProductPage() {
 
   // STATE: Keep track of raw files separately from form values
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]); // Base64 strings for UI
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<ProductFormValues>({
@@ -87,6 +91,7 @@ export default function AddProductPage() {
       category: "",
       brand: "",
       images: [],
+      videoUrl: null,
     },
   });
 
@@ -124,6 +129,36 @@ export default function AddProductPage() {
     });
   };
 
+  // HANDLE VIDEO SELECTION
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("video/")) {
+      toast.error("Invalid file type", {
+        description: "Please select a video file.",
+      });
+      return;
+    }
+
+    // Limit video size (e.g., 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File too large", {
+        description: "Video size should be less than 50MB.",
+      });
+      return;
+    }
+
+    setVideoFile(file);
+
+    // Generate preview
+    const url = URL.createObjectURL(file);
+    setVideoPreview(url);
+
+    // Update form state
+    form.setValue("videoUrl", "pending-upload", { shouldValidate: true });
+  };
+
   // 2. REMOVE IMAGE
   const removeImage = (index: number) => {
     // Remove from Files array
@@ -136,6 +171,13 @@ export default function AddProductPage() {
 
     // Sync with Form
     form.setValue("images", updatedPreviews, { shouldValidate: true });
+  };
+
+  // REMOVE VIDEO
+  const removeVideo = () => {
+    setVideoFile(null);
+    setVideoPreview(null);
+    form.setValue("videoUrl", null, { shouldValidate: true });
   };
 
   // 3. UPLOAD HELPER FUNCTION
@@ -174,14 +216,18 @@ export default function AddProductPage() {
 
     setIsUploading(true);
     try {
-      // Step A: Upload all files in parallel
-      // console.log("start upload test 1");
+      // Step A: Upload all images in parallel
       const uploadedUrls = await Promise.all(
         filesToUpload.map((file) => uploadFile(file)),
       );
-      // console.log("end upload test 1");
-      // console.log("uploadUrls", uploadedUrls);
-      // Step B: Replace the Base64 strings in form values with real URLs
+
+      // Step B: Upload video if exists
+      let uploadedVideoUrl = null;
+      if (videoFile) {
+        uploadedVideoUrl = await uploadFile(videoFile);
+      }
+
+      // Step C: Replace the Base64 strings in form values with real URLs
       const finalProductData = {
         ...values,
         hsn: values.hsn || "",
@@ -189,9 +235,10 @@ export default function AddProductPage() {
         price: parseFloat(values.price),
         stock: parseInt(values.stock, 10),
         images: uploadedUrls,
+        videoUrl: uploadedVideoUrl,
       };
 
-      // Step C: Save to Database
+      // Step D: Save to Database
       createProduct(finalProductData, {
         onSuccess: () => {
           toast.success("Product created successfully");
@@ -246,7 +293,7 @@ export default function AddProductPage() {
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}
-            {isUploading ? "Uploading Images..." : "Save Product"}
+            {isUploading ? "Uploading Files..." : "Save Product"}
           </Button>
         </div>
       </div>
@@ -620,6 +667,51 @@ export default function AddProductPage() {
                     {form.formState.errors.images.message}
                   </p>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* VIDEO SECTION */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Video className="h-4 w-4" />
+                  Product Video (Optional)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {videoPreview ? (
+                  <div className="relative aspect-video border rounded-lg overflow-hidden group bg-black">
+                    <video 
+                      src={videoPreview} 
+                      className="w-full h-full" 
+                      controls 
+                    />
+                    <button
+                      type="button"
+                      onClick={removeVideo}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all shadow-lg z-10"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    className="w-full aspect-video border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    <Film className="h-8 w-8 mb-2 opacity-20" />
+                    <span className="text-sm font-medium">Upload Video</span>
+                    <span className="text-[10px] mt-1 text-muted-foreground/60 uppercase font-bold tracking-wider">MP4, WebM (Max 50MB)</span>
+                  </button>
+                )}
+                <input
+                  type="file"
+                  ref={videoInputRef}
+                  className="hidden"
+                  accept="video/*"
+                  onChange={handleVideoChange}
+                />
               </CardContent>
             </Card>
           </div>

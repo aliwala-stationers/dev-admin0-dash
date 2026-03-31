@@ -57,6 +57,10 @@ const ProductSchema = new Schema(
       type: [String], 
       default: [] 
     },
+    videoUrl: { 
+      type: String, 
+      default: null 
+    },
 
     // --- ATTRIBUTES (Flexible) ---
     // Allows dynamic key-values like { "Color": "Red", "RAM": "16GB" }

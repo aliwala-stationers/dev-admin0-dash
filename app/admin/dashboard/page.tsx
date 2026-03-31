@@ -17,17 +17,24 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react";
+import Link from "next/link";
 
 // IMPORT REAL DATA HOOKS
 import { useProducts } from "@/hooks/api/useProducts";
 import { useCategories } from "@/hooks/api/useCategories";
 import { useBrands } from "@/hooks/api/useBrands";
+import { useEnquiries } from "@/hooks/api/useEnquiries";
+import { useNewsletter } from "@/hooks/api/useNewsletter";
+import { useData } from "@/lib/data-context";
 
 export default function DashboardPage() {
   // 1. Fetch Real Data
   const { data: products = [], isLoading: pLoading } = useProducts();
   const { data: categories = [], isLoading: cLoading } = useCategories();
   const { data: brands = [], isLoading: bLoading } = useBrands();
+  const { data: enquiries = [], isLoading: eLoading } = useEnquiries();
+  const { data: newsletterSubscribers = [], isLoading: nLoading } = useNewsletter();
+  const { orders, customers, payments } = useData();
 
   // 2. Calculate Real Metrics
   const inventoryData = useMemo(() => {
@@ -46,26 +53,22 @@ export default function DashboardPage() {
     return { totalValue, lowStockCount, outOfStockCount, recent };
   }, [products]);
 
-  // 3. Mock Data (Placeholders until we build these APIs)
-  const MOCK_ORDERS = 142;
-  const MOCK_CUSTOMERS = 89;
-  const mockRecentOrders = [
-    {
-      id: "ORD-001",
-      customer: "Alice Smith",
-      total: 120.5,
-      date: "2 mins ago",
-    },
-    { id: "ORD-002", customer: "Bob Jones", total: 79.99, date: "15 mins ago" },
-    {
-      id: "ORD-003",
-      customer: "Charlie Day",
-      total: 299.0,
-      date: "1 hour ago",
-    },
-  ];
+  // 3. Real Data Metrics
+  const dashboardStats = useMemo(() => {
+    const recentOrders = [...orders]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
 
-  if (pLoading || cLoading || bLoading) {
+    const recentPayments = [...payments]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+    
+    const activeNewsletter = newsletterSubscribers.filter((s: any) => s.isActive).length;
+
+    return { recentOrders, recentPayments, activeNewsletter };
+  }, [orders, payments, newsletterSubscribers]);
+
+  if (pLoading || cLoading || bLoading || eLoading || nLoading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -89,8 +92,8 @@ export default function DashboardPage() {
     },
     {
       title: "Total Orders",
-      value: MOCK_ORDERS.toString(),
-      change: "+15.3%",
+      value: orders.length.toString(),
+      change: "Lifetime",
       trend: "up" as const,
       icon: ShoppingCart,
     },
@@ -103,8 +106,8 @@ export default function DashboardPage() {
     },
     {
       title: "Total Customers",
-      value: MOCK_CUSTOMERS.toString(),
-      change: "+3.2%",
+      value: customers.length.toString(),
+      change: "Active users",
       trend: "up" as const,
       icon: Users,
     },
@@ -129,13 +132,18 @@ export default function DashboardPage() {
     },
     {
       title: "Enquiries",
-      value: 12, // Mock
+      value: enquiries.length,
       icon: MessageSquare,
     },
     {
       title: "Newsletter",
-      value: 450, // Mock
+      value: newsletterSubscribers.length,
       icon: Mail,
+    },
+    {
+      title: "Total Payments",
+      value: payments.length,
+      icon: CreditCard,
     },
   ];
 
@@ -206,21 +214,23 @@ export default function DashboardPage() {
       </div>
 
       {/* BOTTOM ROW TABLES */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {/* RECENT ORDERS (MOCK) */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* RECENT ORDERS */}
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
             <CardTitle className="text-blue-600">Recent Orders</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockRecentOrders.map((order) => (
+              {dashboardStats.recentOrders.map((order) => (
                 <div
                   key={order.id}
                   className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0"
                 >
                   <div>
-                    <p className="text-sm font-medium">{order.id}</p>
+                    <Link href={`/admin/orders/${order.id}`} className="text-sm font-medium hover:underline">
+                      {order.id}
+                    </Link>
                     <p className="text-xs text-muted-foreground">
                       {order.customer}
                     </p>
@@ -235,6 +245,53 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ))}
+              {dashboardStats.recentOrders.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No orders yet.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* RECENT PAYMENTS */}
+        <Card className="border-border/50 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-blue-600">Recent Payments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {dashboardStats.recentPayments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0"
+                >
+                  <div>
+                    <Link href={`/admin/payments/${payment.id}`} className="text-sm font-medium hover:underline">
+                      {payment.id}
+                    </Link>
+                    <p className="text-xs text-muted-foreground uppercase">
+                      {payment.method.replace('_', ' ')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">
+                      &#8377;{payment.amount.toFixed(2)}
+                    </p>
+                    <Badge 
+                      variant={payment.status === 'completed' ? 'success' : 'secondary'}
+                      className="text-[10px] h-4 px-1"
+                    >
+                      {payment.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+              {dashboardStats.recentPayments.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No payments yet.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

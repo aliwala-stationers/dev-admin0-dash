@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ChevronLeft, Save, Plus, X, Loader2 } from "lucide-react";
+import { ChevronLeft, Save, Plus, X, Loader2, Video, Film } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useState, useRef, useEffect, use } from "react";
@@ -50,6 +50,7 @@ const productSchema = z.object({
   barcode: z.string().optional(),
   status: z.boolean(),
   images: z.array(z.string()).min(1, "At least 1 image is required.").max(5, "Max 5 images."),
+  videoUrl: z.string().optional().nullable(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -58,7 +59,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [newImageFiles, setNewImageFiles] = useState<{ index: number, file: File }[]>([]);
+  const [newVideoFile, setNewVideoFile] = useState<File | null>(null);
 
   // 1. DATA FETCHING HOOKS
   const { data: product, isLoading: isProductLoading } = useProduct(id);
@@ -83,6 +89,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       category: "",
       brand: "",
       images: [],
+      videoUrl: null,
     },
   });
 
@@ -105,8 +112,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         category: typeof product.category === 'object' ? product.category._id : product.category,
         brand: typeof product.brand === 'object' ? product.brand._id : product.brand,
         images: product.images,
+        videoUrl: product.videoUrl || null,
       });
       setPreviews(product.images);
+      setVideoPreview(product.videoUrl || null);
     }
   }, [product, form]);
 
@@ -146,37 +155,103 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
+        const currentImages = form.getValues("images");
+        const newIndex = currentImages.length;
+        
         setPreviews((prev) => [...prev, result]);
-        form.setValue("images", [...form.getValues("images"), result], { shouldValidate: true });
+        form.setValue("images", [...currentImages, result], { shouldValidate: true });
+        setNewImageFiles((prev) => [...prev, { index: newIndex, file }]);
       };
       reader.readAsDataURL(file);
     });
+  };
+
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("video/")) {
+      toast.error("Please select a valid video file");
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("Video too large (max 50MB)");
+      return;
+    }
+
+    setNewVideoFile(file);
+    const url = URL.createObjectURL(file);
+    setVideoPreview(url);
+    form.setValue("videoUrl", "pending-upload", { shouldValidate: true });
   };
 
   const removeImage = (index: number) => {
     const updatedImages = form.getValues("images").filter((_, i) => i !== index);
     setPreviews(updatedImages);
     form.setValue("images", updatedImages, { shouldValidate: true });
+    
+    // Also remove from newImageFiles if it was a newly added one
+    setNewImageFiles((prev) => prev.filter((item) => item.index !== index).map(item => {
+      if (item.index > index) return { ...item, index: item.index - 1 };
+      return item;
+    }));
+  };
+
+  const removeVideo = () => {
+    setNewVideoFile(null);
+    setVideoPreview(null);
+    form.setValue("videoUrl", null, { shouldValidate: true });
   };
 
   // 3. SUBMIT WITH MUTATION
   async function onSubmit(values: ProductFormValues) {
-    const payload = {
-      ...values,
-      hsn: values.hsn || "",
-      tax: values.tax ? parseFloat(values.tax) : 0,
-      price: parseFloat(values.price),
-      stock: parseInt(values.stock, 10),
-    };
-
-    updateMutation.mutate(
-      { id, data: payload },
-      {
-        onSuccess: () => {
-          router.push("/admin/products");
-        },
+    setIsUploading(true);
+    try {
+      // A. Upload new images
+      const currentImages = [...values.images];
+      for (const item of newImageFiles) {
+        // If the preview at this index is still a Base64 string, upload it
+        if (currentImages[item.index].startsWith("data:")) {
+          const url = await uploadFile(item.file);
+          currentImages[item.index] = url;
+        }
       }
-    );
+
+      // B. Upload new video
+      let finalVideoUrl = values.videoUrl;
+      if (newVideoFile) {
+        finalVideoUrl = await uploadFile(newVideoFile);
+      }
+
+      const payload = {
+        ...values,
+        hsn: values.hsn || "",
+        tax: values.tax ? parseFloat(values.tax) : 0,
+        price: parseFloat(values.price),
+        stock: parseInt(values.stock, 10),
+        images: currentImages,
+        videoUrl: finalVideoUrl,
+      };
+
+      updateMutation.mutate(
+        { id, data: payload },
+        {
+          onSuccess: () => {
+            toast.success("Product updated successfully");
+            router.push("/admin/products");
+          },
+          onError: () => {
+            toast.error("Failed to update product");
+            setIsUploading(false);
+          }
+        }
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("File upload failed");
+      setIsUploading(false);
+    }
   }
 
   if (isProductLoading) {
@@ -202,20 +277,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
         <div className="flex gap-3">
-          <Button variant="ghost" asChild disabled={updateMutation.isPending}>
+          <Button variant="ghost" asChild disabled={isUploading || updateMutation.isPending}>
             <Link href="/admin/products">Cancel</Link>
           </Button>
           <Button 
             onClick={form.handleSubmit(onSubmit)} 
             className="bg-blue-600 hover:bg-blue-700"
-            disabled={updateMutation.isPending}
+            disabled={isUploading || updateMutation.isPending}
           >
-            {updateMutation.isPending ? (
+            {isUploading || updateMutation.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}
-            Save Changes
+            {isUploading ? "Uploading Files..." : "Save Changes"}
           </Button>
         </div>
       </div>
@@ -486,6 +561,50 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 {form.formState.errors.images && (
                    <p className="text-xs text-destructive mt-2">{form.formState.errors.images.message}</p>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Video className="h-4 w-4" />
+                  Product Video (Optional)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {videoPreview ? (
+                  <div className="relative aspect-video border rounded-lg overflow-hidden group bg-black">
+                    <video 
+                      src={videoPreview} 
+                      className="w-full h-full" 
+                      controls 
+                    />
+                    <button
+                      type="button"
+                      onClick={removeVideo}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all shadow-lg z-10"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    className="w-full aspect-video border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    <Film className="h-8 w-8 mb-2 opacity-20" />
+                    <span className="text-sm font-medium">Upload Video</span>
+                    <span className="text-[10px] mt-1 text-muted-foreground/60 uppercase font-bold tracking-wider">MP4, WebM (Max 50MB)</span>
+                  </button>
+                )}
+                <input
+                  type="file"
+                  ref={videoInputRef}
+                  className="hidden"
+                  accept="video/*"
+                  onChange={handleVideoChange}
+                />
               </CardContent>
             </Card>
           </div>

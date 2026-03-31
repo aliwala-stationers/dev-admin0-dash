@@ -25,6 +25,7 @@ export interface Product {
   status: boolean;
 
   images: string[];
+  videoUrl?: string | null;
   specs?: Record<string, string>; // <--- ADDED (e.g. { Color: "Red" })
   isFeatured?: boolean;
 
