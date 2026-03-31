@@ -8,17 +8,18 @@ import { Mail, ArrowRight } from "lucide-react";
 
 export const metadata = {
   title: "Changelog",
-  description: "Stay up to date with the latest features and improvements to Aliwala.",
+  description:
+    "Stay up to date with the latest features and improvements to Aliwala.",
 };
 
 export default function ChangelogPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background selection:bg-accent-blue/20">
       <SiteHeader />
-      
+
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative py-20 overflow-hidden border-b border-border/40 bg-gradient-to-b from-accent-blue/5 to-transparent">
+        <section className="relative py-20 overflow-hidden border-b border-border/40 bg-linear-to-b from-accent-blue/5 to-transparent">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-accent-blue/20 bg-accent-blue/10 px-3 py-1 text-xs font-semibold text-accent-blue mb-6">
@@ -29,14 +30,16 @@ export default function ChangelogPage() {
                 Latest Update: Feb 2026
               </div>
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-foreground mb-6">
-                What's New in <span className="text-accent-blue">Aliwala Admin Panel</span>
+                What's New in{" "}
+                <span className="text-accent-blue">Aliwala Admin Panel</span>
               </h1>
               <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl">
-                Stay updated with our journey as we build the most powerful inventory and management suite for modern businesses.
+                Stay updated with our journey as we build the most powerful
+                inventory and management suite for modern businesses.
               </p>
             </div>
           </div>
-          
+
           {/* Abstract Background Decoration */}
           <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[40%] h-[150%] bg-accent-blue/10 blur-[120px] rounded-full opacity-50 -z-0" />
         </section>
@@ -49,25 +52,36 @@ export default function ChangelogPage() {
               <div className="hidden lg:block lg:col-span-3">
                 <div className="sticky top-24 space-y-8">
                   <div className="space-y-4">
-                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60">Versions</h3>
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/60">
+                      Versions
+                    </h3>
                     <nav className="flex flex-col gap-2">
                       {changelogData.map((entry) => (
-                        <a 
-                          key={entry.id} 
-                          href={`#v${entry.version.replace(/\./g, '-')}`}
+                        <a
+                          key={entry.id}
+                          href={`#v${entry.version.replace(/\./g, "-")}`}
                           className="text-sm font-medium text-muted-foreground hover:text-accent-blue transition-colors px-2 py-1.5 rounded-md hover:bg-accent-blue/5 border-l-2 border-transparent hover:border-accent-blue/30"
                         >
-                          v{entry.version} — {entry.date.split(',')[0]}
+                          v{entry.version} — {entry.date.split(",")[0]}
                         </a>
                       ))}
                     </nav>
                   </div>
-                  
+
                   <div className="p-5 rounded-2xl bg-accent-blue/5 border border-accent-blue/10 space-y-4">
                     <h4 className="font-bold text-sm">Need help?</h4>
-                    <p className="text-xs text-muted-foreground">Check out our documentation for detailed guides on these features.</p>
-                    <Button variant="link" disabled size="sm" className=" px-0 h-auto text-accent-blue text-xs font-semibold">
-                      {/* Visit  */}Documentation coming soon{/* <ArrowRight className="ml-1.5 h-3.5 w-3.5" /> */}
+                    <p className="text-xs text-muted-foreground">
+                      Check out our documentation for detailed guides on these
+                      features.
+                    </p>
+                    <Button
+                      variant="link"
+                      disabled
+                      size="sm"
+                      className=" px-0 h-auto text-accent-blue text-xs font-semibold"
+                    >
+                      {/* Visit  */}Documentation coming soon
+                      {/* <ArrowRight className="ml-1.5 h-3.5 w-3.5" /> */}
                     </Button>
                   </div>
                 </div>
@@ -77,10 +91,13 @@ export default function ChangelogPage() {
               <div className="lg:col-span-9 max-w-3xl">
                 <div className="space-y-4">
                   {changelogData.map((entry, index) => (
-                    <div id={`v${entry.version.replace(/\./g, '-')}`} key={entry.id}>
-                      <ChangelogItem 
-                        entry={entry} 
-                        isLast={index === changelogData.length - 1} 
+                    <div
+                      id={`v${entry.version.replace(/\./g, "-")}`}
+                      key={entry.id}
+                    >
+                      <ChangelogItem
+                        entry={entry}
+                        isLast={index === changelogData.length - 1}
                       />
                     </div>
                   ))}
