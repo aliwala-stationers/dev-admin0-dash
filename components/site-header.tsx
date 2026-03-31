@@ -4,8 +4,13 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Package } from "lucide-react";
+import { UserNav } from "@/components/user-nav";
+import { NotificationsNav } from "@/components/notifications-nav";
+import { useAuth } from "@/lib/auth-context";
 
 export function SiteHeader() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -24,9 +29,16 @@ export function SiteHeader() {
         </div>
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <Link href="/login">
-            <Button variant="default" size="sm" className="hidden sm:inline-flex">Log in</Button>
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <NotificationsNav />
+              <UserNav />
+            </>
+          ) : (
+            <Link href="/">
+              <Button variant="default" size="sm" className="hidden sm:inline-flex">Log in</Button>
+            </Link>
+          )}
           {/* <Button size="sm" className="bg-accent-blue hover:bg-accent-blue-hover text-white">Get Started</Button> */}
         </div>
       </div>
