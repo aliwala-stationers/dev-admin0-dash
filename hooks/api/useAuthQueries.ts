@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 // --- TYPES ---
@@ -36,6 +36,8 @@ export const useCurrentUser = () => {
 export const useLogin = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect");
 
   return useMutation({
     mutationFn: async ({ email, password }: any) => {
@@ -57,7 +59,12 @@ export const useLogin = () => {
       toast.success("Welcome back");
       
       // 3. Redirect
-      router.push("/admin/dashboard");
+      // If there's a redirect param, go there. Otherwise, dashboard.
+      if (redirect) {
+        router.push(redirect);
+      } else {
+        router.push("/admin/dashboard");
+      }
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -82,11 +89,11 @@ export const useLogout = () => {
       
       // 2. Redirect
       // If we're on the changelog page, stay there.
-      // Otherwise, redirect to login.
+      // Otherwise, redirect to root login with the current path as redirect param.
       if (pathname !== "/changelog") {
-        router.push("/admin/login");
+        router.replace(`/?redirect=${encodeURIComponent(pathname)}`);
       }
-      
+
       toast.success("Logged out");
     },
   });

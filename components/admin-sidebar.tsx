@@ -13,6 +13,9 @@ import {
   Mail,
   History,
   ArrowRight,
+  Bell,
+  User,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -44,6 +47,12 @@ const menuItems = [
   { title: "Newsletter", icon: Mail, href: "/admin/newsletter" },
 ];
 
+const bottomMenuItems = [
+  { title: "Notifications", icon: Bell, href: "/admin/notifications" },
+  { title: "Profile", icon: User, href: "/admin/profile" },
+  { title: "Settings", icon: Settings, href: "/admin/settings" },
+];
+
 export function AdminSidebar() {
   const pathname = usePathname();
 
@@ -68,6 +77,26 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {menuItems.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link href={item.href}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">
+              {bottomMenuItems.map((item) => {
                 const isActive = pathname === item.href;
                 return (
                   <SidebarMenuItem key={item.title}>
