@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useData } from "@/lib/data-context";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,10 +50,23 @@ export default function CustomerDetailPage() {
     [orders, customer]
   );
 
+  const addressGroups = useMemo(() => {
+    if (!customer) return { billing: [], shipping: [] };
+    
+    const billing = (customer.addresses || [])
+      .filter((a: any) => a.type === 'billing')
+      .sort((a: any, b: any) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+    
+    const shipping = (customer.addresses || [])
+      .filter((a: any) => a.type === 'shipping' || a.type === 'delivery')
+      .sort((a: any, b: any) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
+    
+    return { billing, shipping };
+  }, [customer]);
+
   const stats = useMemo(() => {
     if (!customer) return null;
 
-    const orderIds = customerOrders.map(o => o.id);
     const productIds = Array.from(new Set(customerOrders.flatMap(o => o.productIds || [])));
     const boughtProducts = products.filter(p => productIds.includes(p.id));
     const boughtCategories = Array.from(new Set(boughtProducts.map(p => p.category)));
@@ -280,7 +294,7 @@ export default function CustomerDetailPage() {
                 </TableHeader>
                 <TableBody>
                   {stats?.boughtProducts && stats.boughtProducts.length > 0 ? (
-                    stats.boughtProducts.map((product) => (
+                    stats.boughtProducts.map((product: any) => (
                       <TableRow key={product.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-3">
@@ -321,8 +335,8 @@ export default function CustomerDetailPage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {stats?.boughtCategories && stats.boughtCategories.length > 0 ? (
-                  stats.boughtCategories.map((catName) => {
-                    const count = stats.boughtProducts.filter(p => p.category === catName).length;
+                  stats.boughtCategories.map((catName: string) => {
+                    const count = stats.boughtProducts.filter((p: any) => p.category === catName).length;
                     return (
                       <div key={catName} className="p-4 rounded-lg border border-border/50 bg-muted/30 flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -350,8 +364,8 @@ export default function CustomerDetailPage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {stats?.boughtBrands && stats.boughtBrands.length > 0 ? (
-                  stats.boughtBrands.map((brandName) => {
-                    const count = stats.boughtProducts.filter(p => p.brand === brandName).length;
+                  stats.boughtBrands.map((brandName: string) => {
+                    const count = stats.boughtProducts.filter((p: any) => p.brand === brandName).length;
                     return (
                       <div key={brandName} className="p-4 rounded-lg border border-border/50 bg-muted/30 flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -371,37 +385,74 @@ export default function CustomerDetailPage() {
         </TabsContent>
 
         <TabsContent value="addresses" className="space-y-4 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {['shipping', 'billing', 'delivery'].map((type) => {
-              const addr = customer.addresses?.find((a: any) => a.type === type);
-              return (
-                <Card key={type} className="border-border/50 shadow-sm">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg capitalize flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-blue-600" />
-                        {type} Address
-                      </CardTitle>
-                      {addr?.isDefault && (
-                        <Badge variant="secondary" className="text-[10px] uppercase">Default</Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-1">
-                    {addr ? (
-                      <>
-                        <p className="font-medium">{customer.name}</p>
-                        <p className="text-sm text-muted-foreground">{addr.street}</p>
-                        <p className="text-sm text-muted-foreground">{addr.city}, {addr.state} {addr.zipCode}</p>
-                        <p className="text-sm text-muted-foreground">{addr.country}</p>
-                      </>
-                    ) : (
-                      <p className="text-sm text-muted-foreground italic">No {type} address set.</p>
-                    )}
-                  </CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Billing Column */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-md bg-blue-50">
+                  <CreditCard className="h-4 w-4 text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-lg">Billing Addresses</h3>
+              </div>
+              {addressGroups.billing.length > 0 ? (
+                addressGroups.billing.map((addr: any, index: number) => (
+                  <Card key={index} className={cn("border-border/50 shadow-sm transition-all hover:border-blue-200", addr.isDefault && "border-blue-500/30 bg-blue-50/10")}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-[10px] uppercase bg-muted/50">Billing</Badge>
+                        {addr.isDefault && (
+                          <Badge className="bg-blue-600 text-[10px] uppercase">Default</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-1">
+                      <p className="font-medium text-sm">{customer.name}</p>
+                      <p className="text-sm text-muted-foreground">{addr.street}</p>
+                      <p className="text-sm text-muted-foreground">{addr.city}, {addr.state} {addr.zipCode}</p>
+                      <p className="text-sm text-muted-foreground">{addr.country}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="border-dashed border-2 p-8 text-center text-muted-foreground bg-muted/5">
+                  <p className="text-sm italic">No billing address on file.</p>
                 </Card>
-              );
-            })}
+              )}
+            </div>
+
+            {/* Shipping & Delivery Column */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-md bg-green-50">
+                  <MapPin className="h-4 w-4 text-green-600" />
+                </div>
+                <h3 className="font-semibold text-lg">Shipping & Delivery Addresses</h3>
+              </div>
+              {addressGroups.shipping.length > 0 ? (
+                addressGroups.shipping.map((addr: any, index: number) => (
+                  <Card key={index} className={cn("border-border/50 shadow-sm transition-all hover:border-green-200", addr.isDefault && "border-green-500/30 bg-green-50/10")}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-[10px] uppercase bg-muted/50 capitalize">{addr.type}</Badge>
+                        {addr.isDefault && (
+                          <Badge className="bg-green-600 text-[10px] uppercase">Primary</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-1">
+                      <p className="font-medium text-sm">{customer.name}</p>
+                      <p className="text-sm text-muted-foreground">{addr.street}</p>
+                      <p className="text-sm text-muted-foreground">{addr.city}, {addr.state} {addr.zipCode}</p>
+                      <p className="text-sm text-muted-foreground">{addr.country}</p>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card className="border-dashed border-2 p-8 text-center text-muted-foreground bg-muted/5">
+                  <p className="text-sm italic">No shipping addresses on file.</p>
+                </Card>
+              )}
+            </div>
           </div>
         </TabsContent>
       </Tabs>
