@@ -71,6 +71,16 @@ export interface Order {
   productIds?: string[] // Added to link products
 }
 
+export interface Address {
+  type: 'shipping' | 'billing' | 'delivery'
+  street: string
+  city: string
+  state: string
+  zipCode: string
+  country: string
+  isDefault?: boolean
+}
+
 export interface Customer {
   id: string
   name: string
@@ -80,6 +90,7 @@ export interface Customer {
   totalSpent: number
   status: 'active' | 'inactive'
   joinedDate: string
+  addresses?: Address[]
 }
 
 export interface Payment {
@@ -286,6 +297,11 @@ const initialCustomers: Customer[] = [
     totalSpent: 1249.99,
     status: 'active',
     joinedDate: '2023-06-15',
+    addresses: [
+      { type: 'shipping', street: '123 Main St', city: 'New York', state: 'NY', zipCode: '10001', country: 'USA', isDefault: true },
+      { type: 'billing', street: '123 Main St', city: 'New York', state: 'NY', zipCode: '10001', country: 'USA', isDefault: true },
+      { type: 'delivery', street: '456 Delivery Ave', city: 'Brooklyn', state: 'NY', zipCode: '11201', country: 'USA' }
+    ],
   },
   {
     id: '2',
@@ -296,6 +312,10 @@ const initialCustomers: Customer[] = [
     totalSpent: 849.99,
     status: 'active',
     joinedDate: '2023-07-22',
+    addresses: [
+      { type: 'shipping', street: '789 Oak Rd', city: 'Los Angeles', state: 'CA', zipCode: '90001', country: 'USA', isDefault: true },
+      { type: 'billing', street: '789 Oak Rd', city: 'Los Angeles', state: 'CA', zipCode: '90001', country: 'USA', isDefault: true }
+    ],
   },
   {
     id: '3',
@@ -465,9 +485,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
       storedCategories ? JSON.parse(storedCategories) : initialCategories,
     )
     setBrands(storedBrands ? JSON.parse(storedBrands) : initialBrands)
-    setOrders(storedOrders ? JSON.parse(storedOrders) : initialOrders)
+    setOrders(
+      storedOrders
+        ? JSON.parse(storedOrders).map((o: any) => ({
+            ...o,
+            productIds:
+              o.productIds ||
+              initialOrders.find((io) => io.id === o.id)?.productIds,
+          }))
+        : initialOrders,
+    )
     setCustomers(
-      storedCustomers ? JSON.parse(storedCustomers) : initialCustomers,
+      storedCustomers
+        ? JSON.parse(storedCustomers).map((c: any) => ({
+            ...c,
+            addresses:
+              c.addresses ||
+              initialCustomers.find((ic) => ic.id === c.id)?.addresses,
+          }))
+        : initialCustomers,
     )
     setPayments(storedPayments ? JSON.parse(storedPayments) : initialPayments)
     setEnquiries(

@@ -14,7 +14,8 @@ import {
   CreditCard,
   User as UserIcon,
   Search,
-  ExternalLink
+  ExternalLink,
+  MapPin
 } from "lucide-react";
 import Link from "next/link";
 import { useData } from "@/lib/data-context";
@@ -202,13 +203,14 @@ export default function CustomerDetailPage() {
       </div>
 
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
+        <TabsList className="grid w-full grid-cols-5 lg:w-[750px]">
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="categories">Categories</TabsTrigger>
           <TabsTrigger value="brands">Brands</TabsTrigger>
+          <TabsTrigger value="addresses">Addresses</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="orders" className="space-y-4 pt-4">
           <Card className="border-border/50 shadow-sm">
             <CardHeader>
@@ -366,6 +368,41 @@ export default function CustomerDetailPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="addresses" className="space-y-4 pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {['shipping', 'billing', 'delivery'].map((type) => {
+              const addr = customer.addresses?.find((a: any) => a.type === type);
+              return (
+                <Card key={type} className="border-border/50 shadow-sm">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg capitalize flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-blue-600" />
+                        {type} Address
+                      </CardTitle>
+                      {addr?.isDefault && (
+                        <Badge variant="secondary" className="text-[10px] uppercase">Default</Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-1">
+                    {addr ? (
+                      <>
+                        <p className="font-medium">{customer.name}</p>
+                        <p className="text-sm text-muted-foreground">{addr.street}</p>
+                        <p className="text-sm text-muted-foreground">{addr.city}, {addr.state} {addr.zipCode}</p>
+                        <p className="text-sm text-muted-foreground">{addr.country}</p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No {type} address set.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
