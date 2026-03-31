@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Search } from "lucide-react";
+import Link from "next/link";
 import { useData } from "@/lib/data-context";
 
 export default function CustomersPage() {
@@ -75,6 +76,10 @@ export default function CustomersPage() {
               <TableRow key={customer.id}>
                 <TableCell>
                   <div className="flex items-center gap-3">
+                    <Link
+                      href={`/admin/customers/${customer.id}`}
+                      className="text-blue-600 flex items-center gap-3"
+                    >
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-accent-blue/10 text-accent-blue text-xs">
                         {customer.name
@@ -90,7 +95,7 @@ export default function CustomersPage() {
                         {customer.email}
                       </p>
                     </div>
-                  </div>
+                    </Link></div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {customer.phone}
@@ -115,14 +120,18 @@ export default function CustomersPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>View Profile</DropdownMenuItem>
-                      <DropdownMenuItem>View Orders</DropdownMenuItem>
-                      <DropdownMenuItem>Send Email</DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/customers/${customer.id}`}>
+                          View Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      {/* <DropdownMenuItem>View Orders</DropdownMenuItem> */}
+                      {/* <DropdownMenuItem>Send Email</DropdownMenuItem> */}
+                      {/* <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive">
                         Deactivate
-                      </DropdownMenuItem>
+                      </DropdownMenuItem> */}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
