@@ -12,7 +12,8 @@ import {
   Eye, 
   Building2, 
   AlertTriangle,
-  Loader2 
+  Loader2,
+  Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +35,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
   if (isLoading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent-blue" />
       </div>
     );
   }
@@ -62,7 +63,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">{product.name}</h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant={product.status ? "success" : "secondary"}>
                 {product.status ? "ACTIVE" : "INACTIVE"}
@@ -78,13 +79,13 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" asChild>
+          <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
             <Link href={`/admin/products/edit/${product._id}`}>
               <Edit className="mr-2 h-4 w-4" />
-              Edit
+              Edit Product
             </Link>
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700">
+          <Button variant="outline">
             <Eye className="mr-2 h-4 w-4" />
             View on Store
           </Button>
@@ -117,6 +118,27 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
             </CardContent>
           </Card>
 
+          {product.videoUrl && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                  <Video className="h-4 w-4" />
+                  Product Video
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="aspect-video rounded-lg overflow-hidden border bg-black shadow-inner">
+                  <video 
+                    src={product.videoUrl} 
+                    className="h-full w-full" 
+                    controls 
+                    preload="metadata"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Detailed Description</CardTitle>
@@ -142,7 +164,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card className="border-t-4 border-t-blue-600">
+          <Card className="border-t-4 border-t-accent-blue">
             <CardHeader>
               <CardTitle>Inventory & Pricing</CardTitle>
             </CardHeader>
@@ -153,7 +175,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
                   <span className="text-sm">Unit Price</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-2xl text-blue-600">
+                  <span className="font-bold text-2xl text-accent-blue">
                     &#8377;{product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
                   <div className="flex flex-col text-[10px] text-muted-foreground uppercase font-bold mt-1">

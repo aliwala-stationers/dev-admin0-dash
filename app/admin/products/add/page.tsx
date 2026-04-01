@@ -271,7 +271,7 @@ export default function AddProductPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-2xl font-semibold">
               Add New Product
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -284,7 +284,7 @@ export default function AddProductPage() {
             <Link href="/admin/products">Cancel</Link>
           </Button>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-accent-blue hover:bg-accent-blue-hover"
             disabled={isBusy}
             onClick={form.handleSubmit(onSubmit)}
           >

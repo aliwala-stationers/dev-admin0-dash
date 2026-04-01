@@ -94,7 +94,7 @@ export default function ProductsPage() {
   if (isLoading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent-blue" />
       </div>
     );
   }
@@ -103,12 +103,12 @@ export default function ProductsPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-semibold">Products</h1>
+          <p className="text-muted-foreground mt-1">
             Manage your inventory ({filteredProducts.length} showing)
           </p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white" asChild>
+        <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
           <Link href="/admin/products/add">
             <Plus className="mr-2 h-4 w-4" />
             Add Product
@@ -120,7 +120,7 @@ export default function ProductsPage() {
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-blue-600" />
+            <Package className="h-4 w-4 text-accent-blue" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.total}</div>
@@ -160,7 +160,7 @@ export default function ProductsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4">
-        <div className="relative flex-1 w-full sm:max-w-sm">
+        <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search by name or brand..."
@@ -183,9 +183,9 @@ export default function ProductsPage() {
         </Select>
       </div>
 
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+      <div className="rounded-md border bg-card">
         <Table>
-          <TableHeader className="bg-muted/50">
+          <TableHeader>
             <TableRow>
               <TableHead className="w-[300px]">Product Name</TableHead>
               <TableHead>Brand</TableHead>
@@ -213,7 +213,7 @@ export default function ProductsPage() {
                     <div className="flex flex-col">
                       <Link 
                         href={`/admin/products/${product._id}`} 
-                        className="text-blue-600 hover:underline"
+                        className="text-accent-blue hover:underline"
                       >
                         {product.name}
                       </Link>

@@ -257,7 +257,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   if (isProductLoading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent-blue" />
       </div>
     );
   }
@@ -272,7 +272,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Edit Product</h1>
+            <h1 className="text-2xl font-semibold">Edit Product</h1>
             <p className="text-sm text-muted-foreground">Modify product details and inventory</p>
           </div>
         </div>
@@ -282,7 +282,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </Button>
           <Button 
             onClick={form.handleSubmit(onSubmit)} 
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-accent-blue hover:bg-accent-blue-hover"
             disabled={isUploading || updateMutation.isPending}
           >
             {isUploading || updateMutation.isPending ? (
