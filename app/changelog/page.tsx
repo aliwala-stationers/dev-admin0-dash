@@ -1,16 +1,16 @@
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
-import { ChangelogItem } from "@/components/changelog-item";
-import { changelogData } from "@/lib/changelog-data";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight } from "lucide-react";
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
+import { ChangelogItem } from "@/components/changelog-item"
+import { changelogData } from "@/lib/changelog-data"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Mail, ArrowRight } from "lucide-react"
 
 export const metadata = {
   title: "Changelog",
   description:
     "Stay up to date with the latest features and improvements to Aliwala.",
-};
+}
 
 export default function ChangelogPage() {
   return (
@@ -41,7 +41,7 @@ export default function ChangelogPage() {
           </div>
 
           {/* Abstract Background Decoration */}
-          <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[40%] h-[150%] bg-accent-blue/10 blur-[120px] rounded-full opacity-50 -z-0" />
+          <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[40%] h-[150%] bg-accent-blue/10 blur-[120px] rounded-full opacity-50 z-0" />
         </section>
 
         {/* Changelog Feed */}
@@ -137,5 +137,5 @@ export default function ChangelogPage() {
 
       {/* <SiteFooter /> */}
     </div>
-  );
+  )
 }
