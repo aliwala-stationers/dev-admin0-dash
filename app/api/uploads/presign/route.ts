@@ -11,6 +11,10 @@ import { r2 } from "@/lib/r2storage";
 const R2_BUCKET = process.env.R2_BUCKET!;
 const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL!;
 
+// Define the root environment folder (e.g., 'dev', 'staging', 'prod')
+// Fallback to 'dev' if the variable isn't set to prevent accidental root uploads
+const APP_ENV = process.env.APP_ENV || 'dev'; 
+
 export async function POST(req: NextRequest) {
   // 1. SECURITY: Gatekeeper Check
   const token = (await cookies()).get("aliwala_admin_token");
@@ -28,10 +32,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. ORGANIZATION: Use folders (e.g. 'avatars/uuid', 'products/uuid')
-    // We try to keep the extension if possible, or default to bin
+    // 2. ORGANIZATION: Prepend the environment root to the path
+    // Format: env/folder/uuid.ext (e.g., dev/products/1234-5678.png)
     const ext = contentType.split('/')[1] || 'bin';
-    const key = `${folder}/${randomUUID()}.${ext}`;
+    const key = `${APP_ENV}/${folder}/${randomUUID()}.${ext}`;
 
     // 3. GENERATE SIGNATURE
     const uploadUrl = await getSignedUrl(
