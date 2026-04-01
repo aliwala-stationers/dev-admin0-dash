@@ -166,7 +166,7 @@ export default function CategoriesPage() {
               <TableHead>Category Name</TableHead>
               <TableHead>Slug</TableHead>
               <TableHead>Description</TableHead>
-              <TableHead>Products</TableHead> {/* <--- ADDED COLUMN */}
+              <TableHead>Products</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -205,7 +205,6 @@ export default function CategoriesPage() {
                     {category.description}
                   </TableCell>
 
-                  {/* <--- ADDED DATA CELL */}
                   <TableCell className="font-medium">
                     {category.productCount || 0}
                   </TableCell>
