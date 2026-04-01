@@ -1,4 +1,4 @@
-import { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose"
 
 const BrandSchema = new Schema(
   {
@@ -10,8 +10,8 @@ const BrandSchema = new Schema(
   },
   {
     timestamps: true,
-  }
-);
+  },
+)
 
-const Brand = models.Brand || model("Brand", BrandSchema);
-export default Brand;
+const Brand = models.Brand || model("Brand", BrandSchema)
+export default Brand

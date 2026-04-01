@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Bell, Package, User, MessageSquare, AlertCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card"
+import { Bell, Package, User, MessageSquare, AlertCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 const notifications = [
   {
@@ -41,39 +41,46 @@ const notifications = [
     icon: AlertCircle,
     unread: false,
   },
-];
+]
 
 export default function NotificationsPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold tracking-tight">Notifications</h1>
-        <Badge variant="outline" className="bg-white dark:bg-slate-900 border-border/50">
+        <Badge
+          variant="outline"
+          className="bg-white dark:bg-slate-900 border-border/50"
+        >
           {notifications.filter((n) => n.unread).length} Unread
         </Badge>
       </div>
 
       <div className="grid gap-4">
         {notifications.map((notification) => (
-          <Card 
-            key={notification.id} 
+          <Card
+            key={notification.id}
             className={`overflow-hidden transition-colors ${
-              notification.unread 
-                ? 'border-accent-blue/30 bg-accent-blue/[0.03] dark:bg-accent-blue/[0.05]' 
-                : 'border-border/50 shadow-sm'
+              notification.unread
+                ? "border-accent-blue/30 bg-accent-blue/[0.03] dark:bg-accent-blue/[0.05]"
+                : "border-border/50 shadow-sm"
             }`}
           >
             <CardContent className="p-4 flex items-start gap-4">
-              <div className={`mt-1 p-2 rounded-full ${
-                notification.unread 
-                  ? 'bg-accent-blue text-white shadow-md' 
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-              }`}>
+              <div
+                className={`mt-1 p-2 rounded-full ${
+                  notification.unread
+                    ? "bg-accent-blue text-white shadow-md"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                }`}
+              >
                 <notification.icon className="h-5 w-5" />
               </div>
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
-                  <h3 className={`font-medium ${notification.unread ? 'text-foreground' : 'text-foreground/80'}`}>
+                  <h3
+                    className={`font-medium ${notification.unread ? "text-foreground" : "text-foreground/80"}`}
+                  >
                     {notification.title}
                   </h3>
                   <span className="text-xs text-muted-foreground font-medium">
@@ -89,5 +96,5 @@ export default function NotificationsPage() {
         ))}
       </div>
     </div>
-  );
+  )
 }

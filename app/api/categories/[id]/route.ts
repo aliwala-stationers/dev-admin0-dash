@@ -1,54 +1,56 @@
-import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
-import Category from "@/models/Category";
-import Product from "@/models/Product";
+import { NextResponse } from "next/server"
+import connectDB from "@/lib/db"
+import Category from "@/models/Category"
+import Product from "@/models/Product"
 
 type RouteContext = {
-  params: Promise<{ id: string }>;
-};
+  params: Promise<{ id: string }>
+}
 
 export async function GET(req: Request, { params }: RouteContext) {
-  await connectDB();
-  const { id } = await params;
-  
-  const category = await Category.findById(id);
-  if (!category) return NextResponse.json({ error: "Category not found" }, { status: 404 });
+  await connectDB()
+  const { id } = await params
+
+  const category = await Category.findById(id)
+  if (!category)
+    return NextResponse.json({ error: "Category not found" }, { status: 404 })
 
   // <--- CHANGED: Query by ID, not Name
-  const productCount = await Product.countDocuments({ category: id });
+  const productCount = await Product.countDocuments({ category: id })
 
-  return NextResponse.json({ 
-    ...category.toObject(), 
-    productCount 
-  });
+  return NextResponse.json({
+    ...category.toObject(),
+    productCount,
+  })
 }
 
 export async function PUT(req: Request, { params }: RouteContext) {
   try {
-    await connectDB();
-    const { id } = await params;
-    const { name, slug, description, status, image, parentId } = await req.json();
+    await connectDB()
+    const { id } = await params
+    const { name, slug, description, status, image, parentId } =
+      await req.json()
 
     const category = await Category.findByIdAndUpdate(
       id,
       { name, slug, description, status, image, parentId },
-      { new: true, runValidators: true }
-    );
+      { new: true, runValidators: true },
+    )
 
     if (!category) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+      return NextResponse.json({ error: "Category not found" }, { status: 404 })
     }
 
-    return NextResponse.json(category);
+    return NextResponse.json(category)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: error.message }, { status: 400 })
   }
 }
 
 export async function DELETE(req: Request, { params }: RouteContext) {
-  await connectDB();
-  const { id } = await params;
-  
+  await connectDB()
+  const { id } = await params
+
   // Optional Safety: Prevent deleting a category if it has products
   /* const hasProducts = await Product.exists({ category: id });
   if (hasProducts) {
@@ -56,6 +58,6 @@ export async function DELETE(req: Request, { params }: RouteContext) {
   }
   */
 
-  await Category.findByIdAndDelete(id);
-  return NextResponse.json({ success: true });
+  await Category.findByIdAndDelete(id)
+  return NextResponse.json({ success: true })
 }

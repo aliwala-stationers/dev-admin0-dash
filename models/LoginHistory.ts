@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model, models } from "mongoose"
 
 const LoginHistorySchema = new Schema(
   {
@@ -10,7 +10,7 @@ const LoginHistorySchema = new Schema(
     },
     event: {
       type: String,
-      enum: ["LOGIN", "LOGOUT", "FAILED_LOGIN"], 
+      enum: ["LOGIN", "LOGOUT", "FAILED_LOGIN"],
       required: true,
     },
     ipAddress: {
@@ -25,14 +25,15 @@ const LoginHistorySchema = new Schema(
     location: {
       city: String,
       country: String,
-    }
+    },
   },
   {
     timestamps: true, // Tracks 'createdAt' (Time of login)
-  }
-);
+  },
+)
 
 // Prevent model recompilation
-const LoginHistory = models.LoginHistory || model("LoginHistory", LoginHistorySchema);
+const LoginHistory =
+  models.LoginHistory || model("LoginHistory", LoginHistorySchema)
 
-export default LoginHistory;
+export default LoginHistory

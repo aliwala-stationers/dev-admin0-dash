@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useState, useMemo } from "react";
+import { useState, useMemo } from "react"
 import {
   Table,
   TableBody,
@@ -8,18 +8,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,76 +27,92 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Filter, Trash2, Building2, Package, Loader2, IndianRupee, AlertTriangle, CheckCircle2 } from "lucide-react";
-import Link from "next/link";
-import { useProducts, useDeleteProduct } from "@/hooks/api/useProducts"; // Updated import
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+} from "@/components/ui/dropdown-menu"
+import {
+  Plus,
+  MoreHorizontal,
+  Search,
+  Filter,
+  Trash2,
+  Building2,
+  Package,
+  Loader2,
+  IndianRupee,
+  AlertTriangle,
+  CheckCircle2,
+} from "lucide-react"
+import Link from "next/link"
+import { useProducts, useDeleteProduct } from "@/hooks/api/useProducts" // Updated import
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 // import { toast } from "sonner";
 
 export default function ProductsPage() {
   // 1. Fetching data with React Query
-  const { data: products = [], isLoading } = useProducts();
-  const deleteMutation = useDeleteProduct();
+  const { data: products = [], isLoading } = useProducts()
+  const deleteMutation = useDeleteProduct()
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState("all")
 
   const analytics = useMemo(() => {
-    const totalValue = products.reduce((sum, p) => sum + (p.price || 0) * (p.stock || 0), 0);
-    const lowStock = products.filter(p => p.stock < 10).length;
-    const active = products.filter(p => p.status).length;
+    const totalValue = products.reduce(
+      (sum, p) => sum + (p.price || 0) * (p.stock || 0),
+      0,
+    )
+    const lowStock = products.filter((p) => p.stock < 10).length
+    const active = products.filter((p) => p.status).length
 
     return {
       total: products.length,
       totalValue,
       lowStock,
-      active
-    };
-  }, [products]);
+      active,
+    }
+  }, [products])
 
   // Helper to handle both populated and unpopulated fields
-  const getLabel = (field: any) => (typeof field === "object" ? field?.name : field);
+  const getLabel = (field: any) =>
+    typeof field === "object" ? field?.name : field
 
   // 2. Dynamic Categories from DB products
   const categories = useMemo(() => {
-    const unique = new Set(products.map((p) => getLabel(p.category)));
-    return Array.from(unique).filter(Boolean).sort();
-  }, [products]);
+    const unique = new Set(products.map((p) => getLabel(p.category)))
+    return Array.from(unique).filter(Boolean).sort()
+  }, [products])
 
   // 3. Filtering logic
   const filteredProducts = products.filter((product) => {
-    const name = product.name.toLowerCase();
-    const brand = getLabel(product.brand)?.toLowerCase() || "";
-    const category = getLabel(product.category);
+    const name = product.name.toLowerCase()
+    const brand = getLabel(product.brand)?.toLowerCase() || ""
+    const category = getLabel(product.category)
 
-    const matchesSearch = 
+    const matchesSearch =
       name.includes(searchQuery.toLowerCase()) ||
-      brand.includes(searchQuery.toLowerCase());
-    
+      brand.includes(searchQuery.toLowerCase())
+
     const matchesCategory =
-      categoryFilter === "all" || category === categoryFilter;
-    
-    return matchesSearch && matchesCategory;
-  });
+      categoryFilter === "all" || category === categoryFilter
+
+    return matchesSearch && matchesCategory
+  })
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete ${name}?`)) {
       try {
-        await deleteMutation.mutateAsync(id);
+        await deleteMutation.mutateAsync(id)
         // Toast is handled in the hook's onSuccess
       } catch (error) {
         // Error is handled in the hook's onError
       }
     }
-  };
+  }
 
   if (isLoading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-accent-blue" />
       </div>
-    );
+    )
   }
 
   return (
@@ -119,42 +135,63 @@ export default function ProductsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Products</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Products
+            </CardTitle>
             <Package className="h-4 w-4 text-accent-blue" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">Unique items in catalog</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Unique items in catalog
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Inventory Value</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Inventory Value
+            </CardTitle>
             <IndianRupee className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">&#8377;{analytics.totalValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-            <p className="text-xs text-muted-foreground mt-1">Total value of stock</p>
+            <div className="text-2xl font-bold">
+              &#8377;
+              {analytics.totalValue.toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total value of stock
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Low Stock Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Low Stock Alerts
+            </CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.lowStock}</div>
-            <p className="text-xs text-muted-foreground mt-1">Items below threshold</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Items below threshold
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Listings</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Listings
+            </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.active}</div>
-            <p className="text-xs text-muted-foreground mt-1">Visible to customers</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Visible to customers
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -177,7 +214,9 @@ export default function ProductsPage() {
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
             {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -199,7 +238,10 @@ export default function ProductsPage() {
           <TableBody>
             {filteredProducts.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={7}
+                  className="h-32 text-center text-muted-foreground"
+                >
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Package className="h-8 w-8 opacity-20" />
                     <p>No products found.</p>
@@ -208,11 +250,14 @@ export default function ProductsPage() {
               </TableRow>
             ) : (
               filteredProducts.map((product) => (
-                <TableRow key={product._id} className="hover:bg-muted/50 transition-colors">
+                <TableRow
+                  key={product._id}
+                  className="hover:bg-muted/50 transition-colors"
+                >
                   <TableCell className="font-medium">
                     <div className="flex flex-col">
-                      <Link 
-                        href={`/admin/products/${product._id}`} 
+                      <Link
+                        href={`/admin/products/${product._id}`}
                         className="text-accent-blue hover:underline"
                       >
                         {product.name}
@@ -225,10 +270,11 @@ export default function ProductsPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8 rounded-lg border bg-muted">
-                        {typeof product.brand === "object" && product.brand.logo ? (
-                          <AvatarImage 
-                            src={product.brand.logo} 
-                            alt={product.brand.name} 
+                        {typeof product.brand === "object" &&
+                        product.brand.logo ? (
+                          <AvatarImage
+                            src={product.brand.logo}
+                            alt={product.brand.name}
                             className="object-contain p-1"
                           />
                         ) : null}
@@ -249,7 +295,10 @@ export default function ProductsPage() {
                   <TableCell>
                     <div className="flex flex-col">
                       <span className=" font-medium">
-                        &#8377;{product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        &#8377;
+                        {product.price.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
                       </span>
                       {product.hsn && (
                         <span className="text-[10px] text-muted-foreground uppercase font-medium">
@@ -264,7 +313,11 @@ export default function ProductsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className={product.stock < 10 ? "text-red-600 font-bold" : ""}>
+                    <span
+                      className={
+                        product.stock < 10 ? "text-red-600 font-bold" : ""
+                      }
+                    >
                       {product.stock}
                     </span>
                   </TableCell>
@@ -282,16 +335,22 @@ export default function ProductsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/products/${product._id}`}>View Details</Link>
+                          <Link href={`/admin/products/${product._id}`}>
+                            View Details
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/products/edit/${product._id}`}>Edit</Link>
+                          <Link href={`/admin/products/edit/${product._id}`}>
+                            Edit
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive focus:bg-destructive/10"
                           disabled={deleteMutation.isPending}
-                          onClick={() => handleDelete(product._id, product.name)}
+                          onClick={() =>
+                            handleDelete(product._id, product.name)
+                          }
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           {deleteMutation.isPending ? "Deleting..." : "Delete"}
@@ -306,5 +365,5 @@ export default function ProductsPage() {
         </Table>
       </div>
     </div>
-  );
+  )
 }

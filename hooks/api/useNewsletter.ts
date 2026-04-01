@@ -1,95 +1,95 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 
 export interface NewsletterSubscriber {
-  _id: string;
-  email: string;
-  isActive: boolean;
+  _id: string
+  email: string
+  isActive: boolean
   meta?: {
-    source?: string;
-  };
-  createdAt: string;
-  updatedAt: string;
+    source?: string
+  }
+  createdAt: string
+  updatedAt: string
 }
 
 export const useNewsletter = () => {
   return useQuery({
     queryKey: ["newsletter"],
     queryFn: async (): Promise<NewsletterSubscriber[]> => {
-      const res = await fetch("/api/newsletter");
-      if (!res.ok) throw new Error("Failed to fetch newsletter subscribers");
-      return res.json();
+      const res = await fetch("/api/newsletter")
+      if (!res.ok) throw new Error("Failed to fetch newsletter subscribers")
+      return res.json()
     },
-  });
-};
+  })
+}
 
 export const useCreateNewsletterSubscriber = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: Partial<NewsletterSubscriber>) => {
       const res = await fetch("/api/newsletter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      });
+      })
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to create subscriber");
+        const err = await res.json()
+        throw new Error(err.error || "Failed to create subscriber")
       }
-      return res.json();
+      return res.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletter"] });
-      toast.success("Subscriber added");
+      queryClient.invalidateQueries({ queryKey: ["newsletter"] })
+      toast.success("Subscriber added")
     },
     onError: (error: Error) => toast.error(error.message),
-  });
-};
+  })
+}
 
 export const useUpdateNewsletterSubscriber = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({
       id,
       data,
     }: {
-      id: string;
-      data: Partial<NewsletterSubscriber>;
+      id: string
+      data: Partial<NewsletterSubscriber>
     }) => {
       const res = await fetch(`/api/newsletter/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      });
+      })
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to update subscriber");
+        const err = await res.json()
+        throw new Error(err.error || "Failed to update subscriber")
       }
-      return res.json();
+      return res.json()
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["newsletter"] });
-      queryClient.invalidateQueries({ queryKey: ["newsletter", variables.id] });
-      toast.success("Subscriber updated");
+      queryClient.invalidateQueries({ queryKey: ["newsletter"] })
+      queryClient.invalidateQueries({ queryKey: ["newsletter", variables.id] })
+      toast.success("Subscriber updated")
     },
     onError: (error: Error) => toast.error(error.message),
-  });
-};
+  })
+}
 
 export const useDeleteNewsletterSubscriber = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/newsletter/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/newsletter/${id}`, { method: "DELETE" })
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to delete subscriber");
+        const err = await res.json()
+        throw new Error(err.error || "Failed to delete subscriber")
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["newsletter"] });
-      toast.success("Subscriber removed");
+      queryClient.invalidateQueries({ queryKey: ["newsletter"] })
+      toast.success("Subscriber removed")
     },
     onError: (error: Error) => toast.error(error.message),
-  });
-};
+  })
+}

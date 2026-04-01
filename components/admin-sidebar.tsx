@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   LayoutDashboard,
@@ -16,9 +16,9 @@ import {
   Bell,
   User,
   Settings,
-} from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+} from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import {
   Sidebar,
   SidebarContent,
@@ -29,11 +29,11 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+} from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
 
 // 1. FIX: Import from the new Context location
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-context"
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
@@ -45,19 +45,19 @@ const menuItems = [
   { title: "Payments", icon: CreditCard, href: "/admin/payments" },
   { title: "Enquiries", icon: MessageSquare, href: "/admin/enquiries" },
   { title: "Newsletter", icon: Mail, href: "/admin/newsletter" },
-];
+]
 
 const bottomMenuItems = [
   { title: "Notifications", icon: Bell, href: "/admin/notifications" },
   { title: "Profile", icon: User, href: "/admin/profile" },
   { title: "Settings", icon: Settings, href: "/admin/settings" },
-];
+]
 
 export function AdminSidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname()
 
   // 2. Destructure the new mutation-based logout
-  const { logout } = useAuth();
+  const { logout } = useAuth()
 
   return (
     <Sidebar>
@@ -77,7 +77,7 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {menuItems.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>
@@ -87,7 +87,7 @@ export function AdminSidebar() {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                );
+                )
               })}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -97,7 +97,7 @@ export function AdminSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {bottomMenuItems.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive = pathname === item.href
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive}>
@@ -107,15 +107,15 @@ export function AdminSidebar() {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                );
+                )
               })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-4 gap-2">
-        <Link 
-          href="/changelog" 
+        <Link
+          href="/changelog"
           className="flex w-full items-end gap-2 px-2 py-1.5 text-sm italic font-light text-accent-blue hover:text-foreground transition-colors"
         >
           {/* <History className="h-4 w-4 opacity-70" /> */}
@@ -132,5 +132,5 @@ export function AdminSidebar() {
         </Button>
       </SidebarFooter>
     </Sidebar>
-  );
+  )
 }

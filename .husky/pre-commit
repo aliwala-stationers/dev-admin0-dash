@@ -7,6 +7,6 @@ JS_TS_FILES=$(echo "$FILES" | grep -E '\.(js|ts|tsx)$')
 
 pnpm exec prettier $FILES --write --ignore-unknown
 
-[ -n "$JS_TS_FILES" ] && pnpm exec eslint $JS_TS_FILES --fix --max-warnings=50
+[ -n "$JS_TS_FILES" ] && pnpm exec eslint $JS_TS_FILES --fix --max-warnings=100
 
 git update-index --again

@@ -1,16 +1,16 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { useState, useEffect, useRef } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from "@/components/ui/card"
 import {
   Table,
   TableBody,
@@ -18,15 +18,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from "@/components/ui/table"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
+} from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
@@ -34,7 +34,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
+} from "@/components/ui/dialog"
 import {
   ArrowLeft,
   CheckCircle2,
@@ -47,64 +47,64 @@ import {
   Clock,
   Truck,
   CheckCircle,
-} from 'lucide-react'
-import Link from 'next/link'
-import { useData, OrderStatus } from '@/lib/data-context'
-import { toast } from 'sonner'
+} from "lucide-react"
+import Link from "next/link"
+import { useData, OrderStatus } from "@/lib/data-context"
+import { toast } from "sonner"
 
 // Expanded mock data for detail view
 const mockOrderDetails = {
-  'ORD-1001': {
-    id: 'ORD-1001',
-    customer: 'John Doe',
-    email: 'john@example.com',
-    phone: '+1 (555) 123-4567',
-    date: '2024-01-05',
+  "ORD-1001": {
+    id: "ORD-1001",
+    customer: "John Doe",
+    email: "john@example.com",
+    phone: "+1 (555) 123-4567",
+    date: "2024-01-05",
     total: 249.99,
-    status: 'order_delivered' as OrderStatus,
-    paymentStatus: 'paid',
-    shippingAddress: '123 Main St, New York, NY 10001',
+    status: "order_delivered" as OrderStatus,
+    paymentStatus: "paid",
+    shippingAddress: "123 Main St, New York, NY 10001",
     items: [
-      { id: 1, name: 'Wireless Headphones', quantity: 1, price: 99.99 },
-      { id: 2, name: 'Phone Case', quantity: 2, price: 25.0 },
-      { id: 3, name: 'USB-C Cable', quantity: 1, price: 100.0 },
+      { id: 1, name: "Wireless Headphones", quantity: 1, price: 99.99 },
+      { id: 2, name: "Phone Case", quantity: 2, price: 25.0 },
+      { id: 3, name: "USB-C Cable", quantity: 1, price: 100.0 },
     ],
   },
-  'ORD-1002': {
-    id: 'ORD-1002',
-    customer: 'Jane Smith',
-    email: 'jane@example.com',
-    phone: '+1 (555) 987-6543',
-    date: '2024-01-05',
+  "ORD-1002": {
+    id: "ORD-1002",
+    customer: "Jane Smith",
+    email: "jane@example.com",
+    phone: "+1 (555) 987-6543",
+    date: "2024-01-05",
     total: 149.99,
-    status: 'accepted_order_by_seller' as OrderStatus,
-    paymentStatus: 'paid',
-    shippingAddress: '456 Oak Ave, Los Angeles, CA 90001',
+    status: "accepted_order_by_seller" as OrderStatus,
+    paymentStatus: "paid",
+    shippingAddress: "456 Oak Ave, Los Angeles, CA 90001",
     items: [
-      { id: 4, name: 'Running Shoes', quantity: 1, price: 120.0 },
-      { id: 5, name: 'Sports Socks', quantity: 3, price: 10.0 },
+      { id: 4, name: "Running Shoes", quantity: 1, price: 120.0 },
+      { id: 5, name: "Sports Socks", quantity: 3, price: 10.0 },
     ],
   },
 }
 
 const statusVariants = {
-  order_placed: 'secondary',
-  accepted_order_by_seller: 'default',
-  order_rejected_by_seller: 'destructive',
-  order_cancelled_by_customer: 'destructive',
-  order_packed: 'default',
-  order_shipped: 'default',
-  order_delivered: 'default',
+  order_placed: "secondary",
+  accepted_order_by_seller: "default",
+  order_rejected_by_seller: "destructive",
+  order_cancelled_by_customer: "destructive",
+  order_packed: "default",
+  order_shipped: "default",
+  order_delivered: "default",
 } as const
 
 const statusLabels = {
-  order_placed: 'Order Placed',
-  accepted_order_by_seller: 'Accepted by Seller',
-  order_rejected_by_seller: 'Rejected by Seller',
-  order_cancelled_by_customer: 'Cancelled by Customer',
-  order_packed: 'Order Packed',
-  order_shipped: 'Order Shipped',
-  order_delivered: 'Order Delivered',
+  order_placed: "Order Placed",
+  accepted_order_by_seller: "Accepted by Seller",
+  order_rejected_by_seller: "Rejected by Seller",
+  order_cancelled_by_customer: "Cancelled by Customer",
+  order_packed: "Order Packed",
+  order_shipped: "Order Shipped",
+  order_delivered: "Order Delivered",
 } as const
 
 const statusIcons = {
@@ -118,16 +118,16 @@ const statusIcons = {
 } as const
 
 const STATUS_ORDER: OrderStatus[] = [
-  'order_placed',
-  'accepted_order_by_seller',
-  'order_packed',
-  'order_shipped',
-  'order_delivered',
+  "order_placed",
+  "accepted_order_by_seller",
+  "order_packed",
+  "order_shipped",
+  "order_delivered",
 ]
 
 export default function OrderDetailPage() {
   const params = useParams()
-  const router = useRouter()
+  // const router = useRouter()
   const { orders, updateOrderStatus } = useData()
   const orderId = params.id as string
 
@@ -137,41 +137,57 @@ export default function OrderDetailPage() {
   const order = {
     ...(mockOrderDetails[orderId as keyof typeof mockOrderDetails] || {
       id: orderId,
-      customer: 'Unknown Customer',
-      email: '-',
-      phone: '-',
-      date: '-',
+      customer: "Unknown Customer",
+      email: "-",
+      phone: "-",
+      date: "-",
       total: 0,
-      status: 'order_placed' as OrderStatus,
-      paymentStatus: 'pending',
-      shippingAddress: '-',
+      status: "order_placed" as OrderStatus,
+      paymentStatus: "pending",
+      shippingAddress: "-",
       items: [],
     }),
-    status: orderFromContext?.status || ('order_placed' as OrderStatus),
+    status: orderFromContext?.status || ("order_placed" as OrderStatus),
     history: orderFromContext?.history || [],
-    customer: orderFromContext?.customer || 'Unknown Customer',
+    customer: orderFromContext?.customer || "Unknown Customer",
     total: orderFromContext?.total || 0,
-    date: orderFromContext?.date || '-',
-    lastUpdated: orderFromContext?.lastUpdated || orderFromContext?.date || '-',
+    date: orderFromContext?.date || "-",
+    lastUpdated: orderFromContext?.lastUpdated || orderFromContext?.date || "-",
   }
 
+  // const [currentStatus, setCurrentStatus] = useState<OrderStatus>(
+  //   () => order.status,
+  // )
   const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order.status)
   const [isSaving, setIsSaving] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
-  const [rejectReason, setRejectReason] = useState('')
-  const [customReason, setCustomReason] = useState('')
+  const [rejectReason, setRejectReason] = useState("")
+  const [customReason, setCustomReason] = useState("")
 
   const rejectionOptions = [
-    'Out of Stock',
-    'Delivery not available in this area',
-    'Incorrect pricing',
-    'Customer requested cancellation',
-    'Other',
+    "Out of Stock",
+    "Delivery not available in this area",
+    "Incorrect pricing",
+    "Customer requested cancellation",
+    "Other",
   ]
 
-  useEffect(() => {
-    setCurrentStatus(order.status)
-  }, [order.status])
+  // useEffect(() => {
+  //   setCurrentStatus(order.status)
+  // }, [order.status])
+
+  // const orderIdRef = useRef(order.id)
+
+  // if (orderIdRef.current !== order.id) {
+  //   orderIdRef.current = order.id
+  //   setCurrentStatus(order.status)
+  // }
+  // useEffect(() => {
+  //   setCurrentStatus((prev) => (prev === order.status ? prev : order.status))
+  // }, [order.id, order.status])
+  // useEffect(() => {
+  //   setCurrentStatus(order.status)
+  // }, [order.id])
 
   const handleStatusUpdate = (newStatus: OrderStatus) => {
     setCurrentStatus(newStatus)
@@ -183,7 +199,7 @@ export default function OrderDetailPage() {
     setTimeout(() => {
       updateOrderStatus(order.id, currentStatus)
       setIsSaving(false)
-      toast.success('Order status updated successfully')
+      toast.success("Order status updated successfully")
     }, 500)
   }
 
@@ -192,30 +208,30 @@ export default function OrderDetailPage() {
   }
 
   const handleAccept = () => {
-    setCurrentStatus('accepted_order_by_seller')
-    updateOrderStatus(order.id, 'accepted_order_by_seller')
-    toast.success('Order accepted. Tracking history updated.')
+    setCurrentStatus("accepted_order_by_seller")
+    updateOrderStatus(order.id, "accepted_order_by_seller")
+    toast.success("Order accepted. Tracking history updated.")
   }
 
   const handleConfirmReject = () => {
     if (!rejectReason) {
-      toast.error('Please select a reason for rejection')
+      toast.error("Please select a reason for rejection")
       return
     }
 
-    const finalReason = rejectReason === 'Other' ? customReason : rejectReason
+    const finalReason = rejectReason === "Other" ? customReason : rejectReason
 
-    if (rejectReason === 'Other' && !customReason.trim()) {
-      toast.error('Please provide a custom reason')
+    if (rejectReason === "Other" && !customReason.trim()) {
+      toast.error("Please provide a custom reason")
       return
     }
 
-    setCurrentStatus('order_rejected_by_seller')
-    updateOrderStatus(order.id, 'order_rejected_by_seller', finalReason)
+    setCurrentStatus("order_rejected_by_seller")
+    updateOrderStatus(order.id, "order_rejected_by_seller", finalReason)
     setShowRejectModal(false)
-    setRejectReason('')
-    setCustomReason('')
-    toast.error('Order rejected. Reason: ' + finalReason)
+    setRejectReason("")
+    setCustomReason("")
+    toast.error("Order rejected. Reason: " + finalReason)
   }
 
   return (
@@ -272,7 +288,7 @@ export default function OrderDetailPage() {
             <Printer className="mr-2 h-4 w-4" />
             Print Invoice
           </Button>
-          {order.status === 'order_placed' && (
+          {order.status === "order_placed" && (
             <>
               <Button
                 variant="destructive"
@@ -343,9 +359,9 @@ export default function OrderDetailPage() {
           {/* 1. ACTIVE FULFILLMENT STATE */}
           {/* Active Status Update Block */}
           {[
-            'accepted_order_by_seller',
-            'order_packed',
-            'order_shipped',
+            "accepted_order_by_seller",
+            "order_packed",
+            "order_shipped",
           ].includes(order.status) && (
             <Card className="no-print relative overflow-hidden border-accent-blue/30 dark:border-accent-blue/40 bg-gradient-to-br from-background via-background to-accent-blue/5 dark:to-accent-blue/10 shadow-sm transition-all duration-300">
               {/* Decorative background glow */}
@@ -377,7 +393,7 @@ export default function OrderDetailPage() {
                         value="order_packed"
                         disabled={
                           STATUS_ORDER.indexOf(order.status) >=
-                          STATUS_ORDER.indexOf('order_packed')
+                          STATUS_ORDER.indexOf("order_packed")
                         }
                       >
                         Order Packed
@@ -386,7 +402,7 @@ export default function OrderDetailPage() {
                         value="order_shipped"
                         disabled={
                           STATUS_ORDER.indexOf(order.status) >=
-                          STATUS_ORDER.indexOf('order_shipped')
+                          STATUS_ORDER.indexOf("order_shipped")
                         }
                       >
                         Order Shipped
@@ -395,7 +411,7 @@ export default function OrderDetailPage() {
                         value="order_delivered"
                         disabled={
                           STATUS_ORDER.indexOf(order.status) >=
-                          STATUS_ORDER.indexOf('order_delivered')
+                          STATUS_ORDER.indexOf("order_delivered")
                         }
                       >
                         Order Delivered
@@ -408,7 +424,7 @@ export default function OrderDetailPage() {
                       disabled={isSaving}
                       className="bg-accent-blue text-white hover:bg-accent-blue-hover shadow-md shadow-accent-blue/20 dark:shadow-accent-blue/30"
                     >
-                      {isSaving ? 'Saving...' : 'Save Changes'}
+                      {isSaving ? "Saving..." : "Save Changes"}
                     </Button>
                   )}
                   <p className="text-sm text-muted-foreground ml-auto md:ml-0">
@@ -420,7 +436,7 @@ export default function OrderDetailPage() {
           )}
 
           {/* Locked State: Delivered */}
-          {order.status === 'order_delivered' && (
+          {order.status === "order_delivered" && (
             <Card className="no-print relative overflow-hidden border-emerald-500/20 dark:border-emerald-500/30 bg-gradient-to-r from-emerald-500/5 to-transparent dark:from-emerald-500/10">
               <div className="absolute -left-8 -top-8 w-24 h-24 bg-emerald-500/20 dark:bg-emerald-500/20 blur-2xl rounded-full pointer-events-none" />
               <CardContent className="pt-6 relative z-10">
@@ -435,7 +451,7 @@ export default function OrderDetailPage() {
           )}
 
           {/* Locked State: Rejected / Cancelled */}
-          {['order_rejected_by_seller', 'order_cancelled_by_customer'].includes(
+          {["order_rejected_by_seller", "order_cancelled_by_customer"].includes(
             order.status,
           ) && (
             <Card className="no-print relative overflow-hidden border-destructive/20 dark:border-destructive/30 bg-gradient-to-r from-destructive/5 to-transparent dark:from-destructive/10">
@@ -444,10 +460,10 @@ export default function OrderDetailPage() {
                 <div className="flex items-center gap-3 text-destructive dark:text-red-400">
                   <XCircle className="h-5 w-5" />
                   <p className="font-medium">
-                    Order{' '}
-                    {order.status === 'order_rejected_by_seller'
-                      ? 'Rejected'
-                      : 'Cancelled'}
+                    Order{" "}
+                    {order.status === "order_rejected_by_seller"
+                      ? "Rejected"
+                      : "Cancelled"}
                     . No further actions can be taken.
                   </p>
                 </div>
@@ -597,7 +613,7 @@ export default function OrderDetailPage() {
               </SelectContent>
             </Select>
 
-            {rejectReason === 'Other' && (
+            {rejectReason === "Other" && (
               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                 <Textarea
                   placeholder="Enter custom rejection reason..."

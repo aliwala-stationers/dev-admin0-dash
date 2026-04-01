@@ -1,20 +1,20 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/lib/auth-context";
-import { DataProvider } from "@/lib/data-context";
-import Providers from "./providers";
+import type { Metadata } from "next"
+import { Geist, Geist_Mono } from "next/font/google"
+import "./globals.css"
+import { Toaster } from "@/components/ui/sonner"
+import { AuthProvider } from "@/lib/auth-context"
+import { DataProvider } from "@/lib/data-context"
+import Providers from "./providers"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
+})
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-});
+})
 
 export const metadata: Metadata = {
   title: {
@@ -27,12 +27,12 @@ export const metadata: Metadata = {
     shortcut: "/favicon-16x16.png",
     apple: "/apple-touch-icon.png",
   },
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -43,11 +43,11 @@ export default function RootLayout({
           <AuthProvider>
             <DataProvider>
               {children}
-              <Toaster richColors visibleToasts={4} expand={true}/>
+              <Toaster richColors visibleToasts={4} expand={true} />
             </DataProvider>
           </AuthProvider>
         </Providers>
       </body>
     </html>
-  );
+  )
 }

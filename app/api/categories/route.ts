@@ -1,44 +1,48 @@
-import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
-import Category from "@/models/Category";
+import { NextResponse } from "next/server"
+import connectDB from "@/lib/db"
+import Category from "@/models/Category"
 // We don't import Product here because the database does the joining
 
 export async function GET() {
-  await connectDB();
+  await connectDB()
 
   const categories = await Category.aggregate([
     {
       $lookup: {
-        from: "products",       // The collection name in MongoDB
-        localField: "_id",      // <--- CHANGED: Match Category ID
+        from: "products", // The collection name in MongoDB
+        localField: "_id", // <--- CHANGED: Match Category ID
         foreignField: "category", // <--- CHANGED: Match Product's category ref
-        as: "products"
-      }
+        as: "products",
+      },
     },
     {
       $addFields: {
-        productCount: { $size: "$products" } // Count the matches
-      }
+        productCount: { $size: "$products" }, // Count the matches
+      },
     },
     {
       $project: {
-        products: 0 // Remove the heavy array, keep only the count
-      }
+        products: 0, // Remove the heavy array, keep only the count
+      },
     },
-    { $sort: { createdAt: -1 } }
-  ]);
+    { $sort: { createdAt: -1 } },
+  ])
 
-  return NextResponse.json(categories);
+  return NextResponse.json(categories)
 }
 
 export async function POST(req: Request) {
   try {
-    await connectDB();
-    const { name, slug, description, status, image, parentId } = await req.json();
+    await connectDB()
+    const { name, slug, description, status, image, parentId } =
+      await req.json()
 
-    const exists = await Category.findOne({ slug });
+    const exists = await Category.findOne({ slug })
     if (exists) {
-      return NextResponse.json({ error: "Slug already exists" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Slug already exists" },
+        { status: 400 },
+      )
     }
 
     const category = await Category.create({
@@ -47,10 +51,10 @@ export async function POST(req: Request) {
       description,
       status,
       image,
-      parentId
-    });
-    return NextResponse.json(category, { status: 201 });
+      parentId,
+    })
+    return NextResponse.json(category, { status: 201 })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: error.message }, { status: 400 })
   }
 }

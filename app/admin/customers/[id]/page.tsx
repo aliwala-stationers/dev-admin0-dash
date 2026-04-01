@@ -1,30 +1,36 @@
-"use client";
+"use client"
 
-import { useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { 
-  ArrowLeft, 
-  ShoppingCart, 
-  Package, 
-  Layers, 
-  Tag, 
-  Mail, 
-  Phone, 
+import { useMemo } from "react"
+import { useParams, useRouter } from "next/navigation"
+import {
+  ArrowLeft,
+  ShoppingCart,
+  Package,
+  Layers,
+  Tag,
+  Mail,
+  Phone,
   Calendar,
   CreditCard,
   User as UserIcon,
   Search,
   ExternalLink,
-  MapPin
-} from "lucide-react";
-import Link from "next/link";
-import { useData } from "@/lib/data-context";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  MapPin,
+} from "lucide-react"
+import Link from "next/link"
+import { useData } from "@/lib/data-context"
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Table,
   TableBody,
@@ -32,45 +38,49 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/components/ui/table"
 
 export default function CustomerDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { customers, orders, products, categories, brands } = useData();
-  const customerId = params.id as string;
+  const params = useParams()
+  const router = useRouter()
+  const { customers, orders, products, categories, brands } = useData()
+  const customerId = params.id as string
 
-  const customer = useMemo(() => 
-    customers.find((c) => c.id === customerId),
-    [customers, customerId]
-  );
+  const customer = useMemo(
+    () => customers.find((c) => c.id === customerId),
+    [customers, customerId],
+  )
 
-  const customerOrders = useMemo(() => 
-    orders.filter((o) => o.customer === customer?.name),
-    [orders, customer]
-  );
+  const customerOrders = useMemo(
+    () => orders.filter((o) => o.customer === customer?.name),
+    [orders, customer],
+  )
 
   const addressGroups = useMemo(() => {
-    if (!customer) return { billing: [], shipping: [] };
-    
+    if (!customer) return { billing: [], shipping: [] }
+
     const billing = (customer.addresses || [])
-      .filter((a: any) => a.type === 'billing')
-      .sort((a: any, b: any) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
-    
+      .filter((a: any) => a.type === "billing")
+      .sort((a: any, b: any) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0))
+
     const shipping = (customer.addresses || [])
-      .filter((a: any) => a.type === 'shipping' || a.type === 'delivery')
-      .sort((a: any, b: any) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
-    
-    return { billing, shipping };
-  }, [customer]);
+      .filter((a: any) => a.type === "shipping" || a.type === "delivery")
+      .sort((a: any, b: any) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0))
+
+    return { billing, shipping }
+  }, [customer])
 
   const stats = useMemo(() => {
-    if (!customer) return null;
+    if (!customer) return null
 
-    const productIds = Array.from(new Set(customerOrders.flatMap(o => o.productIds || [])));
-    const boughtProducts = products.filter(p => productIds.includes(p.id));
-    const boughtCategories = Array.from(new Set(boughtProducts.map(p => p.category)));
-    const boughtBrands = Array.from(new Set(boughtProducts.map(p => p.brand)));
+    const productIds = Array.from(
+      new Set(customerOrders.flatMap((o) => o.productIds || [])),
+    )
+    const boughtProducts = products.filter((p) => productIds.includes(p.id))
+    const boughtCategories = Array.from(
+      new Set(boughtProducts.map((p) => p.category)),
+    )
+    const boughtBrands = Array.from(new Set(boughtProducts.map((p) => p.brand)))
 
     return {
       totalOrders: customerOrders.length,
@@ -80,9 +90,9 @@ export default function CustomerDetailPage() {
       totalBrands: boughtBrands.length,
       boughtProducts,
       boughtCategories,
-      boughtBrands
-    };
-  }, [customer, customerOrders, products]);
+      boughtBrands,
+    }
+  }, [customer, customerOrders, products])
 
   if (!customer) {
     return (
@@ -92,7 +102,7 @@ export default function CustomerDetailPage() {
           <ArrowLeft className="mr-2 h-4 w-4" /> Go back
         </Button>
       </div>
-    );
+    )
   }
 
   return (
@@ -136,8 +146,13 @@ export default function CustomerDetailPage() {
               </AvatarFallback>
             </Avatar>
             <CardTitle className="text-2xl">{customer.name}</CardTitle>
-            <Badge variant={customer.status === "active" ? "default" : "secondary"} className="mt-2">
-              {customer.status === "active" ? "Active Customer" : "Inactive Customer"}
+            <Badge
+              variant={customer.status === "active" ? "default" : "secondary"}
+              className="mt-2"
+            >
+              {customer.status === "active"
+                ? "Active Customer"
+                : "Inactive Customer"}
             </Badge>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
@@ -175,42 +190,60 @@ export default function CustomerDetailPage() {
         <div className="lg:col-span-2 grid gap-4 md:grid-cols-2">
           <Card className="border-border/50 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Orders</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Orders
+              </CardTitle>
               <ShoppingCart className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats?.totalOrders}</div>
-              <p className="text-xs text-muted-foreground mt-1">Lifetime orders placed</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Lifetime orders placed
+              </p>
             </CardContent>
           </Card>
           <Card className="border-border/50 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Spent</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Spent
+              </CardTitle>
               <CreditCard className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">&#8377;{stats?.totalSpent.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground mt-1">Gross revenue from customer</p>
+              <div className="text-2xl font-bold">
+                &#8377;{stats?.totalSpent.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Gross revenue from customer
+              </p>
             </CardContent>
           </Card>
           <Card className="border-border/50 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Categories Explored</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Categories Explored
+              </CardTitle>
               <Layers className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats?.totalCategories}</div>
-              <p className="text-xs text-muted-foreground mt-1">Unique categories ordered</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Unique categories ordered
+              </p>
             </CardContent>
           </Card>
           <Card className="border-border/50 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Brands Preferred</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Brands Preferred
+              </CardTitle>
               <Tag className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats?.totalBrands}</div>
-              <p className="text-xs text-muted-foreground mt-1">Unique brands purchased</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Unique brands purchased
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -229,7 +262,9 @@ export default function CustomerDetailPage() {
           <Card className="border-border/50 shadow-sm">
             <CardHeader>
               <CardTitle>Order History</CardTitle>
-              <CardDescription>All orders placed by this customer.</CardDescription>
+              <CardDescription>
+                All orders placed by this customer.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -248,16 +283,23 @@ export default function CustomerDetailPage() {
                     customerOrders.map((order) => (
                       <TableRow key={order.id}>
                         <TableCell className="font-medium">
-                          <Link className="text-blue-600" href={`/admin/orders/${order.id}`}>
+                          <Link
+                            className="text-blue-600"
+                            href={`/admin/orders/${order.id}`}
+                          >
                             {order.id}
                           </Link>
                         </TableCell>
                         <TableCell>{order.date}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{order.status.replace(/_/g, ' ')}</Badge>
+                          <Badge variant="outline">
+                            {order.status.replace(/_/g, " ")}
+                          </Badge>
                         </TableCell>
                         <TableCell>{order.items} items</TableCell>
-                        <TableCell className="text-right">&#8377;{order.total.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          &#8377;{order.total.toFixed(2)}
+                        </TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="sm" asChild>
                             <Link href={`/admin/orders/${order.id}`}>
@@ -269,7 +311,10 @@ export default function CustomerDetailPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={6}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         No orders found for this customer.
                       </TableCell>
                     </TableRow>
@@ -284,7 +329,9 @@ export default function CustomerDetailPage() {
           <Card className="border-border/50 shadow-sm">
             <CardHeader>
               <CardTitle>Ordered Products</CardTitle>
-              <CardDescription>List of unique products this customer has purchased.</CardDescription>
+              <CardDescription>
+                List of unique products this customer has purchased.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -304,7 +351,11 @@ export default function CustomerDetailPage() {
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded bg-muted flex items-center justify-center overflow-hidden">
                               {product.images?.[0] ? (
-                                <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
+                                <img
+                                  src={product.images[0]}
+                                  alt={product.name}
+                                  className="h-full w-full object-cover"
+                                />
                               ) : (
                                 <Package className="h-4 w-4 text-muted-foreground" />
                               )}
@@ -314,12 +365,17 @@ export default function CustomerDetailPage() {
                         </TableCell>
                         <TableCell>{product.category}</TableCell>
                         <TableCell>{product.brand}</TableCell>
-                        <TableCell className="text-right">&#8377;{product.price.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          &#8377;{product.price.toFixed(2)}
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                      <TableCell
+                        colSpan={4}
+                        className="text-center py-8 text-muted-foreground"
+                      >
                         No products purchased yet.
                       </TableCell>
                     </TableRow>
@@ -334,25 +390,35 @@ export default function CustomerDetailPage() {
           <Card className="border-border/50 shadow-sm">
             <CardHeader>
               <CardTitle>Interests by Category</CardTitle>
-              <CardDescription>Categories this customer is interested in based on purchases.</CardDescription>
+              <CardDescription>
+                Categories this customer is interested in based on purchases.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {stats?.boughtCategories && stats.boughtCategories.length > 0 ? (
+                {stats?.boughtCategories &&
+                stats.boughtCategories.length > 0 ? (
                   stats.boughtCategories.map((catName: string) => {
-                    const count = stats.boughtProducts.filter((p: any) => p.category === catName).length;
+                    const count = stats.boughtProducts.filter(
+                      (p: any) => p.category === catName,
+                    ).length
                     return (
-                      <div key={catName} className="p-4 rounded-lg border border-border/50 bg-muted/30 flex items-center justify-between">
+                      <div
+                        key={catName}
+                        className="p-4 rounded-lg border border-border/50 bg-muted/30 flex items-center justify-between"
+                      >
                         <div className="flex items-center gap-3">
                           <Layers className="h-5 w-5 text-purple-600" />
                           <span className="font-medium">{catName}</span>
                         </div>
                         <Badge variant="secondary">{count} products</Badge>
                       </div>
-                    );
+                    )
                   })
                 ) : (
-                  <p className="text-center col-span-3 py-8 text-muted-foreground italic">No category data available.</p>
+                  <p className="text-center col-span-3 py-8 text-muted-foreground italic">
+                    No category data available.
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -363,25 +429,34 @@ export default function CustomerDetailPage() {
           <Card className="border-border/50 shadow-sm">
             <CardHeader>
               <CardTitle>Preferred Brands</CardTitle>
-              <CardDescription>Brands this customer has purchased from.</CardDescription>
+              <CardDescription>
+                Brands this customer has purchased from.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {stats?.boughtBrands && stats.boughtBrands.length > 0 ? (
                   stats.boughtBrands.map((brandName: string) => {
-                    const count = stats.boughtProducts.filter((p: any) => p.brand === brandName).length;
+                    const count = stats.boughtProducts.filter(
+                      (p: any) => p.brand === brandName,
+                    ).length
                     return (
-                      <div key={brandName} className="p-4 rounded-lg border border-border/50 bg-muted/30 flex items-center justify-between">
+                      <div
+                        key={brandName}
+                        className="p-4 rounded-lg border border-border/50 bg-muted/30 flex items-center justify-between"
+                      >
                         <div className="flex items-center gap-3">
                           <Tag className="h-5 w-5 text-orange-600" />
                           <span className="font-medium">{brandName}</span>
                         </div>
                         <Badge variant="secondary">{count} items</Badge>
                       </div>
-                    );
+                    )
                   })
                 ) : (
-                  <p className="text-center col-span-3 py-8 text-muted-foreground italic">No brand data available.</p>
+                  <p className="text-center col-span-3 py-8 text-muted-foreground italic">
+                    No brand data available.
+                  </p>
                 )}
               </div>
             </CardContent>
@@ -400,20 +475,39 @@ export default function CustomerDetailPage() {
               </div>
               {addressGroups.billing.length > 0 ? (
                 addressGroups.billing.map((addr: any, index: number) => (
-                  <Card key={index} className={cn("border-border/50 shadow-sm transition-all hover:border-blue-200", addr.isDefault && "border-blue-500/30 bg-blue-50/10")}>
+                  <Card
+                    key={index}
+                    className={cn(
+                      "border-border/50 shadow-sm transition-all hover:border-blue-200",
+                      addr.isDefault && "border-blue-500/30 bg-blue-50/10",
+                    )}
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-[10px] uppercase bg-muted/50">Billing</Badge>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] uppercase bg-muted/50"
+                        >
+                          Billing
+                        </Badge>
                         {addr.isDefault && (
-                          <Badge className="bg-blue-600 text-[10px] uppercase">Default</Badge>
+                          <Badge className="bg-blue-600 text-[10px] uppercase">
+                            Default
+                          </Badge>
                         )}
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-1">
                       <p className="font-medium text-sm">{customer.name}</p>
-                      <p className="text-sm text-muted-foreground">{addr.street}</p>
-                      <p className="text-sm text-muted-foreground">{addr.city}, {addr.state} {addr.zipCode}</p>
-                      <p className="text-sm text-muted-foreground">{addr.country}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {addr.street}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {addr.city}, {addr.state} {addr.zipCode}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {addr.country}
+                      </p>
                     </CardContent>
                   </Card>
                 ))
@@ -430,30 +524,53 @@ export default function CustomerDetailPage() {
                 <div className="p-2 rounded-md bg-green-50">
                   <MapPin className="h-4 w-4 text-green-600" />
                 </div>
-                <h3 className="font-semibold text-lg">Shipping & Delivery Addresses</h3>
+                <h3 className="font-semibold text-lg">
+                  Shipping & Delivery Addresses
+                </h3>
               </div>
               {addressGroups.shipping.length > 0 ? (
                 addressGroups.shipping.map((addr: any, index: number) => (
-                  <Card key={index} className={cn("border-border/50 shadow-sm transition-all hover:border-green-200", addr.isDefault && "border-green-500/30 bg-green-50/10")}>
+                  <Card
+                    key={index}
+                    className={cn(
+                      "border-border/50 shadow-sm transition-all hover:border-green-200",
+                      addr.isDefault && "border-green-500/30 bg-green-50/10",
+                    )}
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-[10px] uppercase bg-muted/50 capitalize">{addr.type}</Badge>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] uppercase bg-muted/50 capitalize"
+                        >
+                          {addr.type}
+                        </Badge>
                         {addr.isDefault && (
-                          <Badge className="bg-green-600 text-[10px] uppercase">Primary</Badge>
+                          <Badge className="bg-green-600 text-[10px] uppercase">
+                            Primary
+                          </Badge>
                         )}
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-1">
                       <p className="font-medium text-sm">{customer.name}</p>
-                      <p className="text-sm text-muted-foreground">{addr.street}</p>
-                      <p className="text-sm text-muted-foreground">{addr.city}, {addr.state} {addr.zipCode}</p>
-                      <p className="text-sm text-muted-foreground">{addr.country}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {addr.street}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {addr.city}, {addr.state} {addr.zipCode}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {addr.country}
+                      </p>
                     </CardContent>
                   </Card>
                 ))
               ) : (
                 <Card className="border-dashed border-2 p-8 text-center text-muted-foreground bg-muted/5">
-                  <p className="text-sm italic">No shipping addresses on file.</p>
+                  <p className="text-sm italic">
+                    No shipping addresses on file.
+                  </p>
                 </Card>
               )}
             </div>
@@ -461,5 +578,5 @@ export default function CustomerDetailPage() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }

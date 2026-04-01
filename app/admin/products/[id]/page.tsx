@@ -1,43 +1,48 @@
-"use client";
+"use client"
 
-import { use } from "react";
-import Link from "next/link";
-import { 
-  ChevronLeft, 
-  Edit, 
-  Package, 
-  Tag, 
-  Layers, 
-  Clock, 
-  Eye, 
-  Building2, 
+import { use } from "react"
+import Link from "next/link"
+import {
+  ChevronLeft,
+  Edit,
+  Package,
+  Tag,
+  Layers,
+  Clock,
+  Eye,
+  Building2,
   AlertTriangle,
   Loader2,
-  Video
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+  Video,
+} from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 
 // NEW HOOK
-import { useProduct } from "@/hooks/api/useProducts";
+import { useProduct } from "@/hooks/api/useProducts"
 
-export default function ViewProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  
+export default function ViewProductPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = use(params)
+
   // 1. FETCH SINGLE PRODUCT
-  const { data: product, isLoading } = useProduct(id);
+  const { data: product, isLoading } = useProduct(id)
 
   // Helper to handle populated objects or ID strings
-  const getLabel = (field: any) => (typeof field === "object" && field !== null ? field.name : field);
+  const getLabel = (field: any) =>
+    typeof field === "object" && field !== null ? field.name : field
 
   if (isLoading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-accent-blue" />
       </div>
-    );
+    )
   }
 
   if (!product) {
@@ -49,7 +54,7 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
           <Link href="/admin/products">Back to products</Link>
         </Button>
       </div>
-    );
+    )
   }
 
   return (
@@ -63,18 +68,26 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">{product.name}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">
+              {product.name}
+            </h1>
             <div className="flex items-center gap-2 mt-1">
               <Badge variant={product.status ? "success" : "secondary"}>
                 {product.status ? "ACTIVE" : "INACTIVE"}
               </Badge>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span className="text-sm text-muted-foreground font-mono">SKU: {product.sku}</span>
+                <span className="text-sm text-muted-foreground font-mono">
+                  SKU: {product.sku}
+                </span>
                 {product.upc && (
-                  <span className="text-sm text-muted-foreground font-mono">UPC: {product.upc}</span>
+                  <span className="text-sm text-muted-foreground font-mono">
+                    UPC: {product.upc}
+                  </span>
                 )}
               </div>
-              <span className="text-sm text-muted-foreground italic font-mono">/{product.slug}</span>
+              <span className="text-sm text-muted-foreground italic font-mono">
+                /{product.slug}
+              </span>
             </div>
           </div>
         </div>
@@ -97,20 +110,22 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
         <div className="lg:col-span-2 space-y-6">
           <Card className="overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Product Gallery</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Product Gallery
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {product.images.map((url, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className={`rounded-lg overflow-hidden border bg-muted flex items-center justify-center 
                       ${index === 0 && product.images.length % 2 !== 0 ? "sm:col-span-2 aspect-[21/9]" : "aspect-square"}`}
                   >
-                    <img 
-                      src={url} 
-                      alt={`${product.name} view ${index + 1}`} 
-                      className="h-full w-full object-cover hover:scale-105 transition-transform duration-300" 
+                    <img
+                      src={url}
+                      alt={`${product.name} view ${index + 1}`}
+                      className="h-full w-full object-cover hover:scale-105 transition-transform duration-300"
                     />
                   </div>
                 ))}
@@ -128,10 +143,10 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
               </CardHeader>
               <CardContent>
                 <div className="aspect-video rounded-lg overflow-hidden border bg-black shadow-inner">
-                  <video 
-                    src={product.videoUrl} 
-                    className="h-full w-full" 
-                    controls 
+                  <video
+                    src={product.videoUrl}
+                    className="h-full w-full"
+                    controls
                     preload="metadata"
                   />
                 </div>
@@ -141,7 +156,9 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Detailed Description</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Detailed Description
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
@@ -153,10 +170,16 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
           {product.barcode && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Barcode</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  Barcode
+                </CardTitle>
               </CardHeader>
               <CardContent className="flex justify-center bg-white rounded-b-lg p-6">
-                <img src={product.barcode} alt="Barcode" className="max-h-24 object-contain" />
+                <img
+                  src={product.barcode}
+                  alt="Barcode"
+                  className="max-h-24 object-contain"
+                />
               </CardContent>
             </Card>
           )}
@@ -176,11 +199,16 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div className="text-right">
                   <span className="font-bold text-2xl text-accent-blue">
-                    &#8377;{product.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    &#8377;
+                    {product.price.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
                   </span>
                   <div className="flex flex-col text-[10px] text-muted-foreground uppercase font-bold mt-1">
                     {product.hsn && <span>HSN: {product.hsn}</span>}
-                    {product.tax !== undefined && <span>GST: {product.tax}%</span>}
+                    {product.tax !== undefined && (
+                      <span>GST: {product.tax}%</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -200,7 +228,9 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
                   <span className="text-sm">Category</span>
                 </div>
                 {/* 3. SAFE RENDER of Category Object */}
-                <Badge variant="outline" className="font-normal">{getLabel(product.category)}</Badge>
+                <Badge variant="outline" className="font-normal">
+                  {getLabel(product.category)}
+                </Badge>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -209,7 +239,9 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
                   <span className="text-sm">Stock Level</span>
                 </div>
                 <div className="text-right">
-                  <span className={`font-bold ${product.stock < 10 ? "text-red-500" : "text-green-600"}`}>
+                  <span
+                    className={`font-bold ${product.stock < 10 ? "text-red-500" : "text-green-600"}`}
+                  >
                     {product.stock} units
                   </span>
                   {product.stock < 10 && (
@@ -245,5 +277,5 @@ export default function ViewProductPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { UserNav } from "@/components/user-nav";
-import { NotificationsNav } from "@/components/notifications-nav";
+import { SidebarTrigger } from "@/components/ui/sidebar"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { UserNav } from "@/components/user-nav"
+import { NotificationsNav } from "@/components/notifications-nav"
 
 export function AdminHeader() {
   return (
@@ -25,5 +25,5 @@ export function AdminHeader() {
         <UserNav />
       </div>
     </header>
-  );
+  )
 }

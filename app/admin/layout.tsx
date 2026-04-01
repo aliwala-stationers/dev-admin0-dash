@@ -1,39 +1,39 @@
-"use client";
+"use client"
 
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { AdminSidebar } from "@/components/admin-sidebar";
-import { AdminHeader } from "@/components/admin-header";
-import { useAuth } from "@/lib/auth-context";
+import { useEffect } from "react"
+import { useRouter, usePathname } from "next/navigation"
+import { SidebarProvider } from "@/components/ui/sidebar"
+import { AdminSidebar } from "@/components/admin-sidebar"
+import { AdminHeader } from "@/components/admin-header"
+import { useAuth } from "@/lib/auth-context"
 
 export default function AdminLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  const { isAuthenticated, isLoading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
+  const { isAuthenticated, isLoading } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       // Redirect to login with current path as redirect param
       // Use replace so we don't clutter history with redirect URLs
-      router.replace(`/?redirect=${encodeURIComponent(pathname)}`);
+      router.replace(`/?redirect=${encodeURIComponent(pathname)}`)
     }
-  }, [isAuthenticated, isLoading, router, pathname]);
+  }, [isAuthenticated, isLoading, router, pathname])
 
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent-blue border-t-transparent" />
       </div>
-    );
+    )
   }
 
   if (!isAuthenticated) {
-    return null;
+    return null
   }
 
   return (
@@ -48,5 +48,5 @@ export default function AdminLayout({
         </div>
       </div>
     </SidebarProvider>
-  );
+  )
 }

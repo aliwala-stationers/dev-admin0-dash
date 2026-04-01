@@ -56,8 +56,8 @@
   --accent-blue-hover: oklch(0.52 0.12 250);
 
   /* Backgrounds */
-  --background: oklch(0.985 0.005 95);   /* warm off-white */
-  --foreground: oklch(0.18 0.01 260);    /* soft charcoal */
+  --background: oklch(0.985 0.005 95); /* warm off-white */
+  --foreground: oklch(0.18 0.01 260); /* soft charcoal */
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.01 260);
@@ -149,8 +149,8 @@
 .card,
 [data-slot="card"] {
   box-shadow:
-    0 1px 2px rgba(0,0,0,0.04),
-    0 8px 24px rgba(0,0,0,0.06);
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 @layer base {
@@ -167,7 +167,7 @@
     .no-print {
       display: none !important;
     }
-    
+
     .print-only {
       display: block !important;
     }
@@ -184,8 +184,8 @@
     }
 
     /* Hide sidebar and header during print */
-    header, 
-    aside, 
+    header,
+    aside,
     nav,
     button,
     [role="navigation"],
@@ -194,7 +194,7 @@
     }
 
     /* Ensure content takes full width */
-    main, 
+    main,
     .p-6 {
       padding: 0 !important;
       margin: 0 !important;

@@ -1,14 +1,14 @@
-"use client";
+"use client"
 
-import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bell } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+} from "@/components/ui/popover"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { cn } from "@/lib/utils"
 
 const notifications = [
   {
@@ -39,10 +39,10 @@ const notifications = [
     time: "Yesterday",
     unread: false,
   },
-];
+]
 
 export function NotificationsNav() {
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const unreadCount = notifications.filter((n) => n.unread).length
 
   return (
     <Popover>
@@ -62,7 +62,11 @@ export function NotificationsNav() {
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h4 className="text-sm font-semibold">Notifications</h4>
-          <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+          >
             Mark all as read
           </Button>
         </div>
@@ -74,7 +78,7 @@ export function NotificationsNav() {
                   key={notification.id}
                   className={cn(
                     "flex flex-col gap-1 border-b px-4 py-3 transition-colors hover:bg-muted/50",
-                    notification.unread && "bg-muted/30"
+                    notification.unread && "bg-muted/30",
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -93,17 +97,23 @@ export function NotificationsNav() {
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <Bell className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">No notifications yet</p>
+                <p className="text-sm text-muted-foreground">
+                  No notifications yet
+                </p>
               </div>
             )}
           </div>
         </ScrollArea>
         <div className="border-t px-4 py-2 text-center">
-          <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-foreground">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-xs text-muted-foreground hover:text-foreground"
+          >
             View all notifications
           </Button>
         </div>
       </PopoverContent>
     </Popover>
-  );
+  )
 }

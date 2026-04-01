@@ -1,14 +1,14 @@
 export interface ChangelogEntry {
-  id: string;
-  version: string;
-  date: string;
-  title: string;
-  description?: string;
+  id: string
+  version: string
+  date: string
+  title: string
+  description?: string
   changes: {
-    type: "added" | "fixed" | "improved" | "deprecated";
-    items: string[];
-  }[];
-  image?: string;
+    type: "added" | "fixed" | "improved" | "deprecated"
+    items: string[]
+  }[]
+  image?: string
 }
 
 export const changelogData: ChangelogEntry[] = [
@@ -17,7 +17,8 @@ export const changelogData: ChangelogEntry[] = [
     version: "2.4.0",
     date: "February 28, 2026",
     title: "Introducing Analytics Dashboard & Bulk Exports",
-    description: "Our biggest update yet! We've added a comprehensive analytics suite to help you track your business growth.",
+    description:
+      "Our biggest update yet! We've added a comprehensive analytics suite to help you track your business growth.",
     changes: [
       {
         type: "added",
@@ -49,7 +50,8 @@ export const changelogData: ChangelogEntry[] = [
     version: "2.3.2",
     date: "February 15, 2026",
     title: "Performance Improvements & UI Polish",
-    description: "This version focuses on performance and some much-needed UI refinements across the admin panel.",
+    description:
+      "This version focuses on performance and some much-needed UI refinements across the admin panel.",
     changes: [
       {
         type: "improved",
@@ -72,7 +74,8 @@ export const changelogData: ChangelogEntry[] = [
     version: "2.3.0",
     date: "January 20, 2026",
     title: "New Inventory Management System",
-    description: "We've completely rebuilt the inventory system to support multi-warehouse tracking and stock alerts.",
+    description:
+      "We've completely rebuilt the inventory system to support multi-warehouse tracking and stock alerts.",
     changes: [
       {
         type: "added",
@@ -85,4 +88,4 @@ export const changelogData: ChangelogEntry[] = [
     ],
     image: "https://picsum.photos/seed/changelog3/1200/600",
   },
-];
+]

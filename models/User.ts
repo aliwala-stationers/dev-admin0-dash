@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model, models } from "mongoose"
 
 const UserSchema = new Schema(
   {
@@ -44,10 +44,10 @@ const UserSchema = new Schema(
   },
   {
     timestamps: true, // Auto-adds createdAt and updatedAt
-  }
-);
+  },
+)
 
 // Prevent model recompilation error in Next.js
-const User = models.User || model("User", UserSchema);
+const User = models.User || model("User", UserSchema)
 
-export default User;
+export default User

@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   DropdownMenu,
@@ -8,17 +8,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth-context";
-import { LogOut, User, Settings, LayoutDashboard } from "lucide-react";
-import Link from "next/link";
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/lib/auth-context"
+import { LogOut, User, Settings, LayoutDashboard } from "lucide-react"
+import Link from "next/link"
 
 export function UserNav() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth()
 
-  if (!user) return null;
+  if (!user) return null
 
   const initials = user.name
     ? user.name
@@ -26,7 +26,7 @@ export function UserNav() {
         .map((n) => n[0])
         .join("")
         .toUpperCase()
-    : user.email[0].toUpperCase();
+    : user.email[0].toUpperCase()
 
   return (
     <DropdownMenu>
@@ -69,7 +69,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="text-destructive focus:text-destructive cursor-pointer"
           onClick={() => logout()}
         >
@@ -78,5 +78,5 @@ export function UserNav() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }
