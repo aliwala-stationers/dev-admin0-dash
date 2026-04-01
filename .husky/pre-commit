@@ -1,0 +1,5 @@
+#!/bin/sh
+
+pnpm exec prettier $(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|ts|tsx|json|md|css)$') --write --ignore-unknown
+
+git update-index --again
