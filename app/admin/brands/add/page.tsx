@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { useRouter } from "next/navigation"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
 import {
   ChevronLeft,
   Save,
@@ -11,15 +11,15 @@ import {
   X,
   Loader2,
   Image as ImageIcon,
-} from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
-import { useState, useRef } from "react";
+} from "lucide-react"
+import Link from "next/link"
+import { toast } from "sonner"
+import { useState, useRef } from "react"
 
 // HOOKS
-import { useCreateBrand } from "@/hooks/api/useBrands";
+import { useCreateBrand } from "@/hooks/api/useBrands"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
@@ -27,11 +27,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // Validation Schema
 const brandSchema = z.object({
@@ -43,19 +43,19 @@ const brandSchema = z.object({
   description: z.string().optional(),
   status: z.boolean(),
   logo: z.string().optional(),
-});
+})
 
-type BrandFormValues = z.infer<typeof brandSchema>;
+type BrandFormValues = z.infer<typeof brandSchema>
 
 export default function AddBrandPage() {
-  const router = useRouter();
-  const createMutation = useCreateBrand();
+  const router = useRouter()
+  const createMutation = useCreateBrand()
 
   // State for File Upload
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const form = useForm<BrandFormValues>({
     resolver: zodResolver(brandSchema),
@@ -66,36 +66,36 @@ export default function AddBrandPage() {
       status: true,
       logo: "",
     },
-  });
+  })
 
   // Handle File Selection (Local Preview)
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
     if (file) {
       // Validate file size/type if needed
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("File is too large (max 5MB)");
-        return;
+        toast.error("File is too large (max 5MB)")
+        return
       }
 
-      setFileToUpload(file);
+      setFileToUpload(file)
 
-      const reader = new FileReader();
-      reader.onloadend = () => setLogoPreview(reader.result as string);
-      reader.readAsDataURL(file);
+      const reader = new FileReader()
+      reader.onloadend = () => setLogoPreview(reader.result as string)
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   const removeLogo = () => {
-    setFileToUpload(null);
-    setLogoPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+    setFileToUpload(null)
+    setLogoPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
 
   // Auto-generate slug from name
   const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    form.setValue("name", name, { shouldValidate: true });
+    const name = e.target.value
+    form.setValue("name", name, { shouldValidate: true })
 
     // Simple slugify logic
     const slug = name
@@ -103,16 +103,16 @@ export default function AddBrandPage() {
       .trim()
       .replace(/[^\w\s-]/g, "")
       .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+      .replace(/^-+|-+$/g, "")
 
-    form.setValue("slug", slug, { shouldValidate: true });
-  };
+    form.setValue("slug", slug, { shouldValidate: true })
+  }
 
   // Main Submit Logic
   async function onSubmit(values: BrandFormValues) {
-    setIsUploading(true);
+    setIsUploading(true)
     try {
-      let finalLogoUrl = values.logo;
+      let finalLogoUrl = values.logo
 
       // 1. Upload Image if exists
       if (fileToUpload) {
@@ -123,41 +123,41 @@ export default function AddBrandPage() {
             contentType: fileToUpload.type,
             folder: "brands",
           }),
-        });
+        })
 
-        if (!presignRes.ok) throw new Error("Failed to get upload URL");
-        const { uploadUrl, publicUrl } = await presignRes.json();
+        if (!presignRes.ok) throw new Error("Failed to get upload URL")
+        const { uploadUrl, publicUrl } = await presignRes.json()
 
         // B. Upload File to R2/S3
         const uploadRes = await fetch(uploadUrl, {
           method: "PUT",
           headers: { "Content-Type": fileToUpload.type },
           body: fileToUpload,
-        });
+        })
 
-        if (!uploadRes.ok) throw new Error("Failed to upload image");
+        if (!uploadRes.ok) throw new Error("Failed to upload image")
 
-        finalLogoUrl = publicUrl;
+        finalLogoUrl = publicUrl
       }
 
       // 2. Save Brand to DB
       await createMutation.mutateAsync({
         ...values,
         logo: finalLogoUrl,
-      });
+      })
 
-      router.push("/admin/brands");
+      router.push("/admin/brands")
     } catch (error) {
-      console.error(error);
+      console.error(error)
       // Toast error is handled by the hook's onError usually,
       // but if the upload fails, we catch it here.
-      toast.error("Failed to save brand. Please try again.");
+      toast.error("Failed to save brand. Please try again.")
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
   }
 
-  const isBusy = isUploading || createMutation.isPending;
+  const isBusy = isUploading || createMutation.isPending
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -181,7 +181,7 @@ export default function AddBrandPage() {
             <Link href="/admin/brands">Cancel</Link>
           </Button>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-accent-blue hover:bg-accent-blue-hover"
             disabled={isBusy}
             onClick={form.handleSubmit(onSubmit)}
           >
@@ -215,8 +215,8 @@ export default function AddBrandPage() {
                           placeholder="e.g. Sony"
                           {...field}
                           onChange={(e) => {
-                            field.onChange(e); // Update react-hook-form
-                            onNameChange(e); // Update slug
+                            field.onChange(e) // Update react-hook-form
+                            onNameChange(e) // Update slug
                           }}
                         />
                       </FormControl>
@@ -346,5 +346,5 @@ export default function AddBrandPage() {
         </form>
       </Form>
     </div>
-  );
+  )
 }

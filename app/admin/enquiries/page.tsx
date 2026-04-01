@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useMemo, useState } from "react";
+import { useMemo, useState } from "react"
 import {
   Table,
   TableBody,
@@ -8,10 +8,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import {
   Card,
   CardContent,
@@ -19,19 +19,14 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+} from "@/components/ui/dropdown-menu"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   MoreHorizontal,
   Search,
@@ -45,53 +40,53 @@ import {
   Eye,
   RotateCcw,
   MessageSquare,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 import {
   useEnquiries,
   useDeleteEnquiry,
   useUpdateEnquiry,
   type Enquiry,
-} from "@/hooks/api/useEnquiries";
+} from "@/hooks/api/useEnquiries"
 
 const statusVariants: Record<Enquiry["status"], any> = {
   new: "default",
   read: "secondary",
   contacted: "outline",
-};
+}
 
 export default function EnquiriesPage() {
-  const router = useRouter();
-  const { data: enquiries = [], isLoading } = useEnquiries();
-  const deleteMutation = useDeleteEnquiry();
-  const updateMutation = useUpdateEnquiry();
+  const router = useRouter()
+  const { data: enquiries = [], isLoading } = useEnquiries()
+  const deleteMutation = useDeleteEnquiry()
+  const updateMutation = useUpdateEnquiry()
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"table" | "card">("table");
+  const [searchQuery, setSearchQuery] = useState("")
+  const [viewMode, setViewMode] = useState<"table" | "card">("table")
 
   const analytics = useMemo(() => {
     return {
       total: enquiries.length,
-      new: enquiries.filter(e => e.status === 'new').length,
-      read: enquiries.filter(e => e.status === 'read').length,
-      contacted: enquiries.filter(e => e.status === 'contacted').length,
-    };
-  }, [enquiries]);
+      new: enquiries.filter((e) => e.status === "new").length,
+      read: enquiries.filter((e) => e.status === "read").length,
+      contacted: enquiries.filter((e) => e.status === "contacted").length,
+    }
+  }, [enquiries])
 
   const filteredEnquiries = useMemo(() => {
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase()
     return enquiries.filter((e) => {
       return (
         e.name.toLowerCase().includes(q) ||
         e.email.toLowerCase().includes(q) ||
         (e.message || "").toLowerCase().includes(q) ||
         (e.phone || "").toLowerCase().includes(q)
-      );
-    });
-  }, [enquiries, searchQuery]);
+      )
+    })
+  }, [enquiries, searchQuery])
 
-  if (isLoading) return <div className="p-6">Loading enquiries...</div>;
+  if (isLoading) return <div className="p-6">Loading enquiries...</div>
 
   return (
     <div className="p-6 space-y-6">
@@ -107,42 +102,58 @@ export default function EnquiriesPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Enquiries</CardTitle>
-            <MessageSquare className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Enquiries
+            </CardTitle>
+            <MessageSquare className="h-4 w-4 text-accent-blue" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">All time messages</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              All time messages
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">New / Unread</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              New / Unread
+            </CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.new}</div>
-            <p className="text-xs text-muted-foreground mt-1">Awaiting attention</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Awaiting attention
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Read</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Read
+            </CardTitle>
             <Eye className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.read}</div>
-            <p className="text-xs text-muted-foreground mt-1">Reviewed by team</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Reviewed by team
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Contacted</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Contacted
+            </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.contacted}</div>
-            <p className="text-xs text-muted-foreground mt-1">Resolution in progress</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Resolution in progress
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -200,11 +211,17 @@ export default function EnquiriesPage() {
                       <TableCell>
                         <div className="flex flex-col">
                           <span className="font-medium">{e.name}</span>
-                          <span className="text-xs text-muted-foreground">{e.email}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {e.email}
+                          </span>
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[300px] truncate">{e.message}</TableCell>
-                      <TableCell className="text-muted-foreground whitespace-nowrap">{e.phone || "-"}</TableCell>
+                      <TableCell className="max-w-[300px] truncate">
+                        {e.message}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground whitespace-nowrap">
+                        {e.phone || "-"}
+                      </TableCell>
                       <TableCell className="text-muted-foreground whitespace-nowrap">
                         {new Date(e.createdAt).toLocaleString()}
                       </TableCell>
@@ -213,32 +230,60 @@ export default function EnquiriesPage() {
                           {e.status.charAt(0).toUpperCase() + e.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
+                      <TableCell
+                        className="text-right"
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-blue-600">
+                            <Button variant="ghost" size="icon">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/admin/enquiries/${e._id}`)}>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(`/admin/enquiries/${e._id}`)
+                              }
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
                             {e.status !== "read" && (
-                              <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "read" } })}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateMutation.mutate({
+                                    id: e._id,
+                                    data: { status: "read" },
+                                  })
+                                }
+                              >
                                 <CheckCircle2 className="mr-2 h-4 w-4" />
                                 Mark as Read
                               </DropdownMenuItem>
                             )}
                             {e.status !== "contacted" && (
-                              <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "contacted" } })}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateMutation.mutate({
+                                    id: e._id,
+                                    data: { status: "contacted" },
+                                  })
+                                }
+                              >
                                 <Mail className="mr-2 h-4 w-4" />
                                 Mark Contacted
                               </DropdownMenuItem>
                             )}
                             {e.status !== "new" && (
-                              <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "new" } })}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  updateMutation.mutate({
+                                    id: e._id,
+                                    data: { status: "new" },
+                                  })
+                                }
+                              >
                                 <RotateCcw className="mr-2 h-4 w-4" />
                                 Mark as Unread
                               </DropdownMenuItem>
@@ -268,7 +313,8 @@ export default function EnquiriesPage() {
                   key={e._id}
                   className={cn(
                     "flex flex-col",
-                    e.status === "new" && "border-blue-500/50 shadow-blue-500/10"
+                    e.status === "new" &&
+                      "border-accent-blue/50 shadow-accent-blue/10",
                   )}
                 >
                   <CardHeader className="pb-3">
@@ -277,7 +323,7 @@ export default function EnquiriesPage() {
                         <CardTitle className="text-lg flex items-center gap-2">
                           {e.name}
                           {e.status === "new" && (
-                            <span className="flex h-2 w-2 rounded-full bg-blue-600" />
+                            <span className="flex h-2 w-2 rounded-full bg-accent-blue" />
                           )}
                         </CardTitle>
                         <CardDescription className="flex items-center gap-1">
@@ -319,7 +365,7 @@ export default function EnquiriesPage() {
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -329,19 +375,40 @@ export default function EnquiriesPage() {
                           View Details
                         </DropdownMenuItem> */}
                         {e.status !== "read" && (
-                          <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "read" } })}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              updateMutation.mutate({
+                                id: e._id,
+                                data: { status: "read" },
+                              })
+                            }
+                          >
                             <CheckCircle2 className="mr-2 h-4 w-4" />
                             Mark as Read
                           </DropdownMenuItem>
                         )}
                         {e.status !== "contacted" && (
-                          <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "contacted" } })}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              updateMutation.mutate({
+                                id: e._id,
+                                data: { status: "contacted" },
+                              })
+                            }
+                          >
                             <Mail className="mr-2 h-4 w-4" />
                             Mark Contacted
                           </DropdownMenuItem>
                         )}
                         {e.status !== "new" && (
-                          <DropdownMenuItem onClick={() => updateMutation.mutate({ id: e._id, data: { status: "new" } })}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              updateMutation.mutate({
+                                id: e._id,
+                                data: { status: "new" },
+                              })
+                            }
+                          >
                             <RotateCcw className="mr-2 h-4 w-4" />
                             Mark as Unread
                           </DropdownMenuItem>
@@ -360,5 +427,5 @@ export default function EnquiriesPage() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }

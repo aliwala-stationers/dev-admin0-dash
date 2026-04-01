@@ -1,20 +1,20 @@
-"use client";
+"use client"
 
-import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { ChevronLeft, Save, Plus, X, Loader2, Video, Film } from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
-import { useState, useRef } from "react";
+import { useRouter } from "next/navigation"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import { ChevronLeft, Save, Plus, X, Loader2, Video, Film } from "lucide-react"
+import Link from "next/link"
+import { toast } from "sonner"
+import { useState, useRef } from "react"
 
 // YOUR HOOKS
-import { useCreateProduct } from "@/hooks/api/useProducts";
-import { useCategories } from "@/hooks/api/useCategories";
-import { useBrands } from "@/hooks/api/useBrands";
+import { useCreateProduct } from "@/hooks/api/useProducts"
+import { useCategories } from "@/hooks/api/useCategories"
+import { useBrands } from "@/hooks/api/useBrands"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
@@ -22,23 +22,25 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+} from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // Validation Schema
 const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
-  slug: z.string().min(2, "Slug is required and must be at least 2 characters."),
+  slug: z
+    .string()
+    .min(2, "Slug is required and must be at least 2 characters."),
   description: z
     .string()
     .min(10, "Description must be at least 10 characters."),
@@ -55,24 +57,24 @@ const productSchema = z.object({
   // We allow strings here, but we will ensure they are valid URLs before DB save
   images: z.array(z.string()).min(1, "At least 1 image is required."),
   videoUrl: z.string().optional().nullable(),
-});
+})
 
-type ProductFormValues = z.infer<typeof productSchema>;
+type ProductFormValues = z.infer<typeof productSchema>
 
 export default function AddProductPage() {
-  const router = useRouter();
-  const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
-  const { data: categories = [] } = useCategories();
-  const { data: brands = [] } = useBrands();
+  const router = useRouter()
+  const { mutate: createProduct, isPending: isCreating } = useCreateProduct()
+  const { data: categories = [] } = useCategories()
+  const { data: brands = [] } = useBrands()
 
   // STATE: Keep track of raw files separately from form values
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]); // Base64 strings for UI
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const [filesToUpload, setFilesToUpload] = useState<File[]>([])
+  const [previews, setPreviews] = useState<string[]>([]) // Base64 strings for UI
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [videoPreview, setVideoPreview] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -93,92 +95,92 @@ export default function AddProductPage() {
       images: [],
       videoUrl: null,
     },
-  });
+  })
 
   // 1. HANDLE IMAGE SELECTION
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
 
     if (filesToUpload.length + files.length > 5) {
       toast.error("Limit exceeded", {
         description: "Maximum 5 images allowed.",
-      });
-      return;
+      })
+      return
     }
 
     // Add actual files to state for later upload
-    setFilesToUpload((prev) => [...prev, ...files]);
+    setFilesToUpload((prev) => [...prev, ...files])
 
     // Generate Base64 previews for UI
     files.forEach((file) => {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onloadend = () => {
-        const base64String = reader.result as string;
+        const base64String = reader.result as string
 
         // Update local preview state
-        setPreviews((prev) => [...prev, base64String]);
+        setPreviews((prev) => [...prev, base64String])
 
         // Update form validation state (so Zod knows we have "something")
-        const currentImages = form.getValues("images");
+        const currentImages = form.getValues("images")
         form.setValue("images", [...currentImages, base64String], {
           shouldValidate: true,
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+        })
+      }
+      reader.readAsDataURL(file)
+    })
+  }
 
   // HANDLE VIDEO SELECTION
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]
+    if (!file) return
 
     if (!file.type.startsWith("video/")) {
       toast.error("Invalid file type", {
         description: "Please select a video file.",
-      });
-      return;
+      })
+      return
     }
 
     // Limit video size (e.g., 50MB)
     if (file.size > 50 * 1024 * 1024) {
       toast.error("File too large", {
         description: "Video size should be less than 50MB.",
-      });
-      return;
+      })
+      return
     }
 
-    setVideoFile(file);
+    setVideoFile(file)
 
     // Generate preview
-    const url = URL.createObjectURL(file);
-    setVideoPreview(url);
+    const url = URL.createObjectURL(file)
+    setVideoPreview(url)
 
     // Update form state
-    form.setValue("videoUrl", "pending-upload", { shouldValidate: true });
-  };
+    form.setValue("videoUrl", "pending-upload", { shouldValidate: true })
+  }
 
   // 2. REMOVE IMAGE
   const removeImage = (index: number) => {
     // Remove from Files array
-    const updatedFiles = filesToUpload.filter((_, i) => i !== index);
-    setFilesToUpload(updatedFiles);
+    const updatedFiles = filesToUpload.filter((_, i) => i !== index)
+    setFilesToUpload(updatedFiles)
 
     // Remove from Previews array
-    const updatedPreviews = previews.filter((_, i) => i !== index);
-    setPreviews(updatedPreviews);
+    const updatedPreviews = previews.filter((_, i) => i !== index)
+    setPreviews(updatedPreviews)
 
     // Sync with Form
-    form.setValue("images", updatedPreviews, { shouldValidate: true });
-  };
+    form.setValue("images", updatedPreviews, { shouldValidate: true })
+  }
 
   // REMOVE VIDEO
   const removeVideo = () => {
-    setVideoFile(null);
-    setVideoPreview(null);
-    form.setValue("videoUrl", null, { shouldValidate: true });
-  };
+    setVideoFile(null)
+    setVideoPreview(null)
+    form.setValue("videoUrl", null, { shouldValidate: true })
+  }
 
   // 3. UPLOAD HELPER FUNCTION
   const uploadFile = async (file: File) => {
@@ -190,10 +192,10 @@ export default function AddProductPage() {
         contentType: file.type,
         folder: "products",
       }),
-    });
+    })
 
-    if (!presignRes.ok) throw new Error("Failed to get presigned URL");
-    const { uploadUrl, publicUrl } = await presignRes.json();
+    if (!presignRes.ok) throw new Error("Failed to get presigned URL")
+    const { uploadUrl, publicUrl } = await presignRes.json()
 
     // B. Upload to R2/S3
     // IMPORTANT: 'Content-Type' must match exactly what was sent to presign
@@ -201,30 +203,30 @@ export default function AddProductPage() {
       method: "PUT",
       headers: { "Content-Type": file.type },
       body: file,
-    });
+    })
 
-    if (!uploadRes.ok) throw new Error(`Upload failed for ${file.name}`);
-    return publicUrl;
-  };
+    if (!uploadRes.ok) throw new Error(`Upload failed for ${file.name}`)
+    return publicUrl
+  }
 
   // 4. MAIN SUBMIT
   async function onSubmit(values: ProductFormValues) {
     if (filesToUpload.length === 0) {
-      toast.error("Please select at least one image");
-      return;
+      toast.error("Please select at least one image")
+      return
     }
 
-    setIsUploading(true);
+    setIsUploading(true)
     try {
       // Step A: Upload all images in parallel
       const uploadedUrls = await Promise.all(
         filesToUpload.map((file) => uploadFile(file)),
-      );
+      )
 
       // Step B: Upload video if exists
-      let uploadedVideoUrl = null;
+      let uploadedVideoUrl = null
       if (videoFile) {
-        uploadedVideoUrl = await uploadFile(videoFile);
+        uploadedVideoUrl = await uploadFile(videoFile)
       }
 
       // Step C: Replace the Base64 strings in form values with real URLs
@@ -236,30 +238,28 @@ export default function AddProductPage() {
         stock: parseInt(values.stock, 10),
         images: uploadedUrls,
         videoUrl: uploadedVideoUrl,
-      };
+      }
 
       // Step D: Save to Database
       createProduct(finalProductData, {
         onSuccess: () => {
-          toast.success("Product created successfully");
-          router.push("/admin/products");
+          router.push("/admin/products")
         },
         onError: (err) => {
-          console.error(err);
-          toast.error("Failed to save product to database.");
+          console.error(err)
         },
-      });
+      })
     } catch (error) {
-      console.error("Upload Error:", error);
+      console.error("Upload Error:", error)
       toast.error(
         "Image upload failed. Check your connection or CORS settings.",
-      );
+      )
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
   }
 
-  const isBusy = isUploading || isCreating;
+  const isBusy = isUploading || isCreating
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -271,9 +271,7 @@ export default function AddProductPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold">
-              Add New Product
-            </h1>
+            <h1 className="text-2xl font-semibold">Add New Product</h1>
             <p className="text-sm text-muted-foreground">
               Fill in the details to list a new item
             </p>
@@ -318,17 +316,27 @@ export default function AddProductPage() {
                           placeholder="e.g. Ultra Wireless Headphones"
                           {...field}
                           onChange={(e) => {
-                            field.onChange(e);
+                            field.onChange(e)
                             // Auto-generate slug if it's empty or matches the previous name's slug
-                            const name = e.target.value;
-                            const currentSlug = form.getValues("slug");
+                            const name = e.target.value
+                            const currentSlug = form.getValues("slug")
                             const generatedSlug = name
                               .toLowerCase()
                               .replace(/[^a-z0-9]+/g, "-")
-                              .replace(/(^-|-$)/g, "");
-                            
-                            if (!currentSlug || currentSlug === name.slice(0, -1).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")) {
-                              form.setValue("slug", generatedSlug, { shouldValidate: true });
+                              .replace(/(^-|-$)/g, "")
+
+                            if (
+                              !currentSlug ||
+                              currentSlug ===
+                                name
+                                  .slice(0, -1)
+                                  .toLowerCase()
+                                  .replace(/[^a-z0-9]+/g, "-")
+                                  .replace(/(^-|-$)/g, "")
+                            ) {
+                              form.setValue("slug", generatedSlug, {
+                                shouldValidate: true,
+                              })
                             }
                           }}
                         />
@@ -565,9 +573,13 @@ export default function AddProductPage() {
                         <div className="flex flex-col items-center gap-4">
                           {field.value ? (
                             <div className="relative w-full aspect-[3/1] border rounded-lg overflow-hidden group">
-                              <img src={field.value} alt="barcode" className="w-full h-full object-contain p-2" />
-                              <button 
-                                type="button" 
+                              <img
+                                src={field.value}
+                                alt="barcode"
+                                className="w-full h-full object-contain p-2"
+                              />
+                              <button
+                                type="button"
                                 onClick={() => field.onChange("")}
                                 className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                               >
@@ -578,29 +590,32 @@ export default function AddProductPage() {
                             <button
                               type="button"
                               onClick={() => {
-                                const input = document.createElement("input");
-                                input.type = "file";
-                                input.accept = "image/*";
+                                const input = document.createElement("input")
+                                input.type = "file"
+                                input.accept = "image/*"
                                 input.onchange = async (e) => {
-                                  const file = (e.target as HTMLInputElement).files?.[0];
+                                  const file = (e.target as HTMLInputElement)
+                                    .files?.[0]
                                   if (file) {
-                                    setIsUploading(true);
+                                    setIsUploading(true)
                                     try {
-                                      const url = await uploadFile(file);
-                                      field.onChange(url);
+                                      const url = await uploadFile(file)
+                                      field.onChange(url)
                                     } catch (err) {
-                                      toast.error("Barcode upload failed");
+                                      toast.error("Barcode upload failed")
                                     } finally {
-                                      setIsUploading(false);
+                                      setIsUploading(false)
                                     }
                                   }
-                                };
-                                input.click();
+                                }
+                                input.click()
                               }}
                               className="w-full aspect-[3/1] border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted"
                             >
                               <Plus className="h-5 w-5 mb-1" />
-                              <span className="text-xs font-bold uppercase tracking-wider">Upload Barcode</span>
+                              <span className="text-xs font-bold uppercase tracking-wider">
+                                Upload Barcode
+                              </span>
                             </button>
                           )}
                         </div>
@@ -681,10 +696,10 @@ export default function AddProductPage() {
               <CardContent>
                 {videoPreview ? (
                   <div className="relative aspect-video border rounded-lg overflow-hidden group bg-black">
-                    <video 
-                      src={videoPreview} 
-                      className="w-full h-full" 
-                      controls 
+                    <video
+                      src={videoPreview}
+                      className="w-full h-full"
+                      controls
                     />
                     <button
                       type="button"
@@ -702,7 +717,9 @@ export default function AddProductPage() {
                   >
                     <Film className="h-8 w-8 mb-2 opacity-20" />
                     <span className="text-sm font-medium">Upload Video</span>
-                    <span className="text-[10px] mt-1 text-muted-foreground/60 uppercase font-bold tracking-wider">MP4, WebM (Max 50MB)</span>
+                    <span className="text-[10px] mt-1 text-muted-foreground/60 uppercase font-bold tracking-wider">
+                      MP4, WebM (Max 50MB)
+                    </span>
                   </button>
                 )}
                 <input
@@ -718,5 +735,5 @@ export default function AddProductPage() {
         </form>
       </Form>
     </div>
-  );
+  )
 }

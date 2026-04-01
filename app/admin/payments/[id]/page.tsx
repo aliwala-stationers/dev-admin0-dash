@@ -1,29 +1,35 @@
-"use client";
+"use client"
 
-import { useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { 
-  ArrowLeft, 
-  CreditCard, 
-  User, 
-  Calendar, 
-  ShoppingBag, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
+import { useMemo } from "react"
+import { useParams, useRouter } from "next/navigation"
+import {
+  ArrowLeft,
+  CreditCard,
+  User,
+  Calendar,
+  ShoppingBag,
+  CheckCircle2,
+  XCircle,
+  Clock,
   RefreshCcw,
   Receipt,
   Download,
   AlertCircle,
   Package,
-  MapPin
-} from "lucide-react";
-import Link from "next/link";
-import { useData } from "@/lib/data-context";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+  MapPin,
+} from "lucide-react"
+import Link from "next/link"
+import { useData } from "@/lib/data-context"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 const statusVariants = {
   completed: "bg-green-100 text-green-800 border-green-200",
@@ -31,7 +37,7 @@ const statusVariants = {
   processing: "bg-blue-100 text-blue-800 border-blue-200",
   failed: "bg-red-100 text-red-800 border-red-200",
   refunded: "bg-gray-100 text-gray-800 border-gray-200",
-} as const;
+} as const
 
 const methodLabels = {
   credit_card: "Credit Card",
@@ -39,23 +45,23 @@ const methodLabels = {
   paypal: "PayPal",
   bank_transfer: "Bank Transfer",
   upi: "UPI Payment",
-} as const;
+} as const
 
 export default function PaymentDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { payments, orders } = useData();
-  const paymentId = params.id as string;
+  const params = useParams()
+  const router = useRouter()
+  const { payments, orders } = useData()
+  const paymentId = params.id as string
 
-  const payment = useMemo(() => 
-    payments.find((p) => p.id === paymentId),
-    [payments, paymentId]
-  );
+  const payment = useMemo(
+    () => payments.find((p) => p.id === paymentId),
+    [payments, paymentId],
+  )
 
-  const order = useMemo(() => 
-    orders.find((o) => o.id === payment?.orderId),
-    [orders, payment]
-  );
+  const order = useMemo(
+    () => orders.find((o) => o.id === payment?.orderId),
+    [orders, payment],
+  )
 
   if (!payment) {
     return (
@@ -65,11 +71,11 @@ export default function PaymentDetailPage() {
           <ArrowLeft className="mr-2 h-4 w-4" /> Go back
         </Button>
       </div>
-    );
+    )
   }
 
-  const isFailed = payment.status === 'failed';
-  const isCompleted = payment.status === 'completed';
+  const isFailed = payment.status === "failed"
+  const isCompleted = payment.status === "completed"
 
   return (
     <div className="p-6 space-y-6">
@@ -106,7 +112,7 @@ export default function PaymentDetailPage() {
         <Card className="lg:col-span-2 border-border/50 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-blue-600" />
+              <Receipt className="h-5 w-5 text-accent-blue" />
               Transaction Summary
             </CardTitle>
           </CardHeader>
@@ -114,17 +120,28 @@ export default function PaymentDetailPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Status</p>
-                <Badge className={cn("capitalize border", statusVariants[payment.status as keyof typeof statusVariants])}>
+                <Badge
+                  className={cn(
+                    "capitalize border",
+                    statusVariants[
+                      payment.status as keyof typeof statusVariants
+                    ],
+                  )}
+                >
                   {payment.status}
                 </Badge>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Amount</p>
-                <p className="text-xl font-bold">&#8377;{payment.amount.toFixed(2)}</p>
+                <p className="text-xl font-bold">
+                  &#8377;{payment.amount.toFixed(2)}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Method</p>
-                <p className="font-medium capitalize">{methodLabels[payment.method as keyof typeof methodLabels]}</p>
+                <p className="font-medium capitalize">
+                  {methodLabels[payment.method as keyof typeof methodLabels]}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Date</p>
@@ -143,8 +160,12 @@ export default function PaymentDetailPage() {
               <div className="bg-red-50 border border-red-100 p-4 rounded-lg flex gap-3 items-start">
                 <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-red-900">Failure Reason</p>
-                  <p className="text-sm text-red-700">{payment.details.reason}</p>
+                  <p className="text-sm font-semibold text-red-900">
+                    Failure Reason
+                  </p>
+                  <p className="text-sm text-red-700">
+                    {payment.details.reason}
+                  </p>
                 </div>
               </div>
             )}
@@ -155,21 +176,26 @@ export default function PaymentDetailPage() {
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-blue-600" />
+              <CreditCard className="h-5 w-5 text-accent-blue" />
               Payment Method
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {payment.method === 'credit_card' || payment.method === 'debit_card' ? (
+            {payment.method === "credit_card" ||
+            payment.method === "debit_card" ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-12 bg-white border rounded flex items-center justify-center font-bold text-xs">
-                      {payment.details?.brand || 'CARD'}
+                      {payment.details?.brand || "CARD"}
                     </div>
                     <div>
-                      <p className="text-sm font-medium">•••• •••• •••• {payment.details?.last4 || '****'}</p>
-                      <p className="text-xs text-muted-foreground">Expires {payment.details?.expiry || 'MM/YY'}</p>
+                      <p className="text-sm font-medium">
+                        •••• •••• •••• {payment.details?.last4 || "****"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Expires {payment.details?.expiry || "MM/YY"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -180,23 +206,27 @@ export default function PaymentDetailPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Type</span>
-                    <span className="capitalize">{payment.method.replace('_', ' ')}</span>
+                    <span className="capitalize">
+                      {payment.method.replace("_", " ")}
+                    </span>
                   </div>
                 </div>
               </div>
-            ) : payment.method === 'paypal' ? (
+            ) : payment.method === "paypal" ? (
               <div className="space-y-4">
-                <div className="p-3 border rounded-lg bg-blue-50/50 flex items-center gap-3">
-                  <div className="h-10 w-10 bg-white border rounded flex items-center justify-center font-bold text-blue-600 italic">
+                <div className="p-3 border rounded-lg bg-accent-blue/10 flex items-center gap-3">
+                  <div className="h-10 w-10 bg-white border rounded flex items-center justify-center font-bold text-accent-blue italic">
                     PP
                   </div>
                   <div>
                     <p className="text-sm font-medium">PayPal Transaction</p>
-                    <p className="text-xs text-muted-foreground">{payment.details?.customerEmail}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {payment.details?.customerEmail}
+                    </p>
                   </div>
                 </div>
               </div>
-            ) : payment.method === 'upi' ? (
+            ) : payment.method === "upi" ? (
               <div className="space-y-4">
                 <div className="p-3 border rounded-lg bg-purple-50/50 flex items-center gap-3">
                   <div className="h-10 w-10 bg-white border rounded flex items-center justify-center font-bold text-purple-600 text-xs">
@@ -204,35 +234,51 @@ export default function PaymentDetailPage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium">UPI Payment</p>
-                    <p className="text-xs text-muted-foreground">{payment.details?.upiId || 'N/A'}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {payment.details?.upiId || "N/A"}
+                    </p>
                   </div>
                 </div>
                 <div className="text-sm space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">UTR/Ref Number</span>
-                    <span className="font-mono">{payment.details?.utrNumber || 'N/A'}</span>
+                    <span className="text-muted-foreground">
+                      UTR/Ref Number
+                    </span>
+                    <span className="font-mono">
+                      {payment.details?.utrNumber || "N/A"}
+                    </span>
                   </div>
                 </div>
               </div>
-            ) : payment.method === 'bank_transfer' ? (
+            ) : payment.method === "bank_transfer" ? (
               <div className="space-y-4">
                 <div className="p-3 border rounded-lg bg-orange-50/50 flex items-center gap-3">
                   <div className="h-10 w-10 bg-white border rounded flex items-center justify-center font-bold text-orange-600 text-xs">
                     BANK
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{payment.details?.bankName || 'Bank Transfer'}</p>
-                    <p className="text-xs text-muted-foreground">A/C: {payment.details?.accountNumber || 'N/A'}</p>
+                    <p className="text-sm font-medium">
+                      {payment.details?.bankName || "Bank Transfer"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      A/C: {payment.details?.accountNumber || "N/A"}
+                    </p>
                   </div>
                 </div>
                 <div className="text-sm space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">IFSC Code</span>
-                    <span className="font-mono">{payment.details?.ifscCode || 'N/A'}</span>
+                    <span className="font-mono">
+                      {payment.details?.ifscCode || "N/A"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">UTR/Ref Number</span>
-                    <span className="font-mono">{payment.details?.utrNumber || 'N/A'}</span>
+                    <span className="text-muted-foreground">
+                      UTR/Ref Number
+                    </span>
+                    <span className="font-mono">
+                      {payment.details?.utrNumber || "N/A"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -249,18 +295,22 @@ export default function PaymentDetailPage() {
           <Card className="border-border/50 shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Receipt className="h-5 w-5 text-blue-600" />
+                <Receipt className="h-5 w-5 text-accent-blue" />
                 Payment Proof
               </CardTitle>
-              <CardDescription>Screenshot provided by the customer</CardDescription>
+              <CardDescription>
+                Screenshot provided by the customer
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="relative aspect-[3/4] max-w-[300px] mx-auto overflow-hidden rounded-lg border bg-muted group">
-                <img 
-                  src={payment.details.screenshotUrl} 
-                  alt="Payment Screenshot" 
+                <img
+                  src={payment.details.screenshotUrl}
+                  alt="Payment Screenshot"
                   className="h-full w-full object-cover transition-transform group-hover:scale-105 cursor-zoom-in"
-                  onClick={() => window.open(payment.details?.screenshotUrl, '_blank')}
+                  onClick={() =>
+                    window.open(payment.details?.screenshotUrl, "_blank")
+                  }
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
               </div>
@@ -274,7 +324,7 @@ export default function PaymentDetailPage() {
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <User className="h-5 w-5 text-blue-600" />
+              <User className="h-5 w-5 text-accent-blue" />
               Customer Information
             </CardTitle>
           </CardHeader>
@@ -282,12 +332,12 @@ export default function PaymentDetailPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">{payment.customer}</p>
-                <p className="text-xs text-muted-foreground">{payment.details?.customerEmail}</p>
+                <p className="text-xs text-muted-foreground">
+                  {payment.details?.customerEmail}
+                </p>
               </div>
               <Button variant="ghost" size="sm" asChild>
-                <Link href={`/admin/customers`}>
-                  View Profile
-                </Link>
+                <Link href={`/admin/customers`}>View Profile</Link>
               </Button>
             </div>
           </CardContent>
@@ -296,7 +346,7 @@ export default function PaymentDetailPage() {
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-blue-600" />
+              <ShoppingBag className="h-5 w-5 text-accent-blue" />
               Associated Order
             </CardTitle>
           </CardHeader>
@@ -304,7 +354,10 @@ export default function PaymentDetailPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Order #{payment.orderId}</p>
-                <p className="text-xs text-muted-foreground">Total: &#8377;{order?.total.toFixed(2) || payment.amount.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">
+                  Total: &#8377;
+                  {order?.total.toFixed(2) || payment.amount.toFixed(2)}
+                </p>
               </div>
               <Button variant="ghost" size="sm" asChild>
                 <Link href={`/admin/orders/${payment.orderId}`}>
@@ -316,5 +369,5 @@ export default function PaymentDetailPage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

@@ -1,8 +1,8 @@
-"use client";
+"use client"
 
-import { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import {
   Package,
   ShoppingCart,
@@ -16,31 +16,32 @@ import {
   Mail,
   Loader2,
   AlertTriangle,
-} from "lucide-react";
-import Link from "next/link";
+} from "lucide-react"
+import Link from "next/link"
 
 // IMPORT REAL DATA HOOKS
-import { useProducts } from "@/hooks/api/useProducts";
-import { useCategories } from "@/hooks/api/useCategories";
-import { useBrands } from "@/hooks/api/useBrands";
-import { useEnquiries } from "@/hooks/api/useEnquiries";
-import { useNewsletter } from "@/hooks/api/useNewsletter";
-import { useData } from "@/lib/data-context";
+import { useProducts } from "@/hooks/api/useProducts"
+import { useCategories } from "@/hooks/api/useCategories"
+import { useBrands } from "@/hooks/api/useBrands"
+import { useEnquiries } from "@/hooks/api/useEnquiries"
+import { useNewsletter } from "@/hooks/api/useNewsletter"
+import { useData } from "@/lib/data-context"
 
 export default function DashboardPage() {
   // 1. Fetch Real Data
-  const { data: products = [], isLoading: pLoading } = useProducts();
-  const { data: categories = [], isLoading: cLoading } = useCategories();
-  const { data: brands = [], isLoading: bLoading } = useBrands();
-  const { data: enquiries = [], isLoading: eLoading } = useEnquiries();
-  const { data: newsletterSubscribers = [], isLoading: nLoading } = useNewsletter();
-  const { orders, customers, payments } = useData();
+  const { data: products = [], isLoading: pLoading } = useProducts()
+  const { data: categories = [], isLoading: cLoading } = useCategories()
+  const { data: brands = [], isLoading: bLoading } = useBrands()
+  const { data: enquiries = [], isLoading: eLoading } = useEnquiries()
+  const { data: newsletterSubscribers = [], isLoading: nLoading } =
+    useNewsletter()
+  const { orders, customers, payments } = useData()
 
   // 2. Calculate Real Metrics
   const inventoryData = useMemo(() => {
-    const totalValue = products.reduce((sum, p) => sum + p.price * p.stock, 0);
-    const lowStockCount = products.filter((p) => p.stock < 10).length;
-    const outOfStockCount = products.filter((p) => p.stock === 0).length;
+    const totalValue = products.reduce((sum, p) => sum + p.price * p.stock, 0)
+    const lowStockCount = products.filter((p) => p.stock < 10).length
+    const outOfStockCount = products.filter((p) => p.stock === 0).length
 
     // Sort products by newest first for "Recent" list
     const recent = [...products]
@@ -48,32 +49,34 @@ export default function DashboardPage() {
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )
-      .slice(0, 5);
+      .slice(0, 5)
 
-    return { totalValue, lowStockCount, outOfStockCount, recent };
-  }, [products]);
+    return { totalValue, lowStockCount, outOfStockCount, recent }
+  }, [products])
 
   // 3. Real Data Metrics
   const dashboardStats = useMemo(() => {
     const recentOrders = [...orders]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
+      .slice(0, 5)
 
     const recentPayments = [...payments]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
-    
-    const activeNewsletter = newsletterSubscribers.filter((s: any) => s.isActive).length;
+      .slice(0, 5)
 
-    return { recentOrders, recentPayments, activeNewsletter };
-  }, [orders, payments, newsletterSubscribers]);
+    const activeNewsletter = newsletterSubscribers.filter(
+      (s: any) => s.isActive,
+    ).length
+
+    return { recentOrders, recentPayments, activeNewsletter }
+  }, [orders, payments, newsletterSubscribers])
 
   if (pLoading || cLoading || bLoading || eLoading || nLoading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent-blue" />
       </div>
-    );
+    )
   }
 
   // Configuration for Top Stats Cards
@@ -111,7 +114,7 @@ export default function DashboardPage() {
       trend: "up" as const,
       icon: Users,
     },
-  ];
+  ]
 
   const subStats = [
     {
@@ -145,12 +148,12 @@ export default function DashboardPage() {
       value: payments.length,
       icon: CreditCard,
     },
-  ];
+  ]
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold text-blue-600">Dashboard</h1>
+        <h1 className="text-3xl font-semibold text-accent-blue">Dashboard</h1>
         <p className="text-muted-foreground mt-1">
           Store overview and real-time inventory metrics.
         </p>
@@ -159,14 +162,14 @@ export default function DashboardPage() {
       {/* TOP ROW STATS */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
-          const Icon = stat.icon;
+          const Icon = stat.icon
           return (
             <Card key={stat.title} className="border-border/50 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <Icon className="h-4 w-4 text-blue-600" />
+                <Icon className="h-4 w-4 text-accent-blue" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
@@ -186,7 +189,7 @@ export default function DashboardPage() {
                 </div>
               </CardContent>
             </Card>
-          );
+          )
         })}
       </div>
 
@@ -196,9 +199,9 @@ export default function DashboardPage() {
           <Card key={stat.title} className="border-border/50 shadow-sm">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-2 rounded-md bg-blue-50">
+                <div className="p-2 rounded-md bg-accent-blue/10">
                   <stat.icon
-                    className={`h-5 w-5 ${stat.color || "text-blue-600"}`}
+                    className={`h-5 w-5 ${stat.color || "text-accent-blue"}`}
                   />
                 </div>
                 <div>
@@ -218,7 +221,7 @@ export default function DashboardPage() {
         {/* RECENT ORDERS */}
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-600">Recent Orders</CardTitle>
+            <CardTitle className="text-accent-blue">Recent Orders</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -228,7 +231,10 @@ export default function DashboardPage() {
                   className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0"
                 >
                   <div>
-                    <Link href={`/admin/orders/${order.id}`} className="text-sm font-medium hover:underline">
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      className="text-sm font-medium hover:underline"
+                    >
                       {order.id}
                     </Link>
                     <p className="text-xs text-muted-foreground">
@@ -257,7 +263,7 @@ export default function DashboardPage() {
         {/* RECENT PAYMENTS */}
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-600">Recent Payments</CardTitle>
+            <CardTitle className="text-accent-blue">Recent Payments</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -267,19 +273,24 @@ export default function DashboardPage() {
                   className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0"
                 >
                   <div>
-                    <Link href={`/admin/payments/${payment.id}`} className="text-sm font-medium hover:underline">
+                    <Link
+                      href={`/admin/payments/${payment.id}`}
+                      className="text-sm font-medium hover:underline"
+                    >
                       {payment.id}
                     </Link>
                     <p className="text-xs text-muted-foreground uppercase">
-                      {payment.method.replace('_', ' ')}
+                      {payment.method.replace("_", " ")}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium">
                       &#8377;{payment.amount.toFixed(2)}
                     </p>
-                    <Badge 
-                      variant={payment.status === 'completed' ? 'success' : 'secondary'}
+                    <Badge
+                      variant={
+                        payment.status === "completed" ? "success" : "secondary"
+                      }
                       className="text-[10px] h-4 px-1"
                     >
                       {payment.status}
@@ -299,7 +310,7 @@ export default function DashboardPage() {
         {/* TOP PRODUCTS (REAL DATA - NEWEST) */}
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-600">New Arrivals</CardTitle>
+            <CardTitle className="text-accent-blue">New Arrivals</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -309,7 +320,7 @@ export default function DashboardPage() {
                   className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-50">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent-blue/10">
                       {product.images[0] ? (
                         <img
                           src={product.images[0]}
@@ -317,7 +328,7 @@ export default function DashboardPage() {
                           className="w-8 h-8 object-cover rounded"
                         />
                       ) : (
-                        <Package className="h-5 w-5 text-blue-600" />
+                        <Package className="h-5 w-5 text-accent-blue" />
                       )}
                     </div>
                     <div>
@@ -332,7 +343,9 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-sm font-medium">&#8377;{product.price}</span>
+                    <span className="text-sm font-medium">
+                      &#8377;{product.price}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -348,7 +361,7 @@ export default function DashboardPage() {
         {/* LOW STOCK ALERTS (REAL DATA) */}
         <Card className="border-border/50 shadow-sm">
           <CardHeader>
-            <CardTitle className="text-blue-600">Low Stock Alerts</CardTitle>
+            <CardTitle className="text-accent-blue">Low Stock Alerts</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -391,5 +404,5 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

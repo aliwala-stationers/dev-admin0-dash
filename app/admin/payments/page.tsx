@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState } from "react"
 import {
   Table,
   TableBody,
@@ -8,17 +8,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,12 +26,22 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Filter, Download, Eye, IndianRupee, Clock, CheckCircle2, AlertCircle } from "lucide-react";
-import Link from "next/link";
-import { useData } from "@/lib/data-context";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMemo } from "react";
+} from "@/components/ui/dropdown-menu"
+import {
+  MoreHorizontal,
+  Search,
+  Filter,
+  Download,
+  Eye,
+  IndianRupee,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react"
+import Link from "next/link"
+import { useData } from "@/lib/data-context"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useMemo } from "react"
 
 const statusVariants = {
   completed: "default",
@@ -39,7 +49,7 @@ const statusVariants = {
   processing: "default",
   failed: "destructive",
   refunded: "secondary",
-} as const;
+} as const
 
 const methodLabels = {
   credit_card: "Credit Card",
@@ -47,36 +57,40 @@ const methodLabels = {
   paypal: "PayPal",
   bank_transfer: "Bank Transfer",
   upi: "UPI Payment",
-} as const;
+} as const
 
 export default function PaymentsPage() {
-  const { payments } = useData();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { payments } = useData()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
 
   const analytics = useMemo(() => {
-    const completed = payments.filter(p => p.status === 'completed');
-    const pending = payments.filter(p => p.status === 'pending' || p.status === 'processing');
-    const failed = payments.filter(p => p.status === 'failed');
-    
+    const completed = payments.filter((p) => p.status === "completed")
+    const pending = payments.filter(
+      (p) => p.status === "pending" || p.status === "processing",
+    )
+    const failed = payments.filter((p) => p.status === "failed")
+
     return {
       totalRevenue: completed.reduce((sum, p) => sum + p.amount, 0),
       pendingAmount: pending.reduce((sum, p) => sum + p.amount, 0),
       failedAmount: failed.reduce((sum, p) => sum + p.amount, 0),
       count: payments.length,
-      successRate: payments.length ? (completed.length / (payments.length - pending.length || 1)) * 100 : 0
-    };
-  }, [payments]);
+      successRate: payments.length
+        ? (completed.length / (payments.length - pending.length || 1)) * 100
+        : 0,
+    }
+  }, [payments])
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch =
       payment.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       payment.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.customer.toLowerCase().includes(searchQuery.toLowerCase());
+      payment.customer.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus =
-      statusFilter === "all" || payment.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+      statusFilter === "all" || payment.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
   return (
     <div className="p-6 space-y-6">
@@ -96,42 +110,66 @@ export default function PaymentsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Revenue
+            </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">&#8377;{analytics.totalRevenue.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-muted-foreground mt-1">From completed transactions</p>
+            <div className="text-2xl font-bold">
+              &#8377;{analytics.totalRevenue.toLocaleString("en-IN")}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              From completed transactions
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Volume</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Pending Volume
+            </CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">&#8377;{analytics.pendingAmount.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-muted-foreground mt-1">Awaiting verification</p>
+            <div className="text-2xl font-bold">
+              &#8377;{analytics.pendingAmount.toLocaleString("en-IN")}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Awaiting verification
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Failed Payments</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Failed Payments
+            </CardTitle>
             <AlertCircle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">&#8377;{analytics.failedAmount.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-muted-foreground mt-1">Lost or rejected revenue</p>
+            <div className="text-2xl font-bold">
+              &#8377;{analytics.failedAmount.toLocaleString("en-IN")}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Lost or rejected revenue
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Success Rate</CardTitle>
-            <IndianRupee className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Success Rate
+            </CardTitle>
+            <IndianRupee className="h-4 w-4 text-accent-blue" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.successRate.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground mt-1">Of processed transactions</p>
+            <div className="text-2xl font-bold">
+              {analytics.successRate.toFixed(1)}%
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Of processed transactions
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -190,7 +228,13 @@ export default function PaymentsPage() {
                   {methodLabels[payment.method as keyof typeof methodLabels]}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={statusVariants[payment.status as keyof typeof statusVariants]}>
+                  <Badge
+                    variant={
+                      statusVariants[
+                        payment.status as keyof typeof statusVariants
+                      ]
+                    }
+                  >
                     {payment.status.charAt(0).toUpperCase() +
                       payment.status.slice(1)}
                   </Badge>
@@ -229,5 +273,5 @@ export default function PaymentsPage() {
         </Table>
       </div>
     </div>
-  );
+  )
 }

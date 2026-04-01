@@ -1,47 +1,73 @@
-"use client";
+"use client"
 
-import { useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Trash2, FolderTree, Layers, CheckCircle2, TrendingUp } from "lucide-react";
-import Link from "next/link";
-import { useCategories, useDeleteCategory } from "@/hooks/api/useCategories"; // Correct Hook Path
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMemo } from "react";
+import { useState } from "react"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Plus,
+  MoreHorizontal,
+  Search,
+  Trash2,
+  FolderTree,
+  Layers,
+  CheckCircle2,
+  TrendingUp,
+} from "lucide-react"
+import Link from "next/link"
+import { useCategories, useDeleteCategory } from "@/hooks/api/useCategories" // Correct Hook Path
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useMemo } from "react"
 
 export default function CategoriesPage() {
-  const { data: categories = [], isLoading } = useCategories();
-  const deleteMutation = useDeleteCategory();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { data: categories = [], isLoading } = useCategories()
+  const deleteMutation = useDeleteCategory()
+  const [searchQuery, setSearchQuery] = useState("")
 
   const analytics = useMemo(() => {
-    const active = categories.filter(c => c.status).length;
-    const totalProducts = categories.reduce((sum, c) => sum + (c.productCount || 0), 0);
-    const topCategory = [...categories].sort((a, b) => (b.productCount || 0) - (a.productCount || 0))[0];
+    const active = categories.filter((c) => c.status).length
+    const totalProducts = categories.reduce(
+      (sum, c) => sum + (c.productCount || 0),
+      0,
+    )
+    const topCategory = [...categories].sort(
+      (a, b) => (b.productCount || 0) - (a.productCount || 0),
+    )[0]
 
     return {
       total: categories.length,
       active,
       totalProducts,
-      topCategory: topCategory?.name || 'N/A'
-    };
-  }, [categories]);
+      topCategory: topCategory?.name || "N/A",
+    }
+  }, [categories])
 
   const filteredCategories = categories.filter((category) =>
-    category.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    category.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  )
 
   const handleDelete = (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate(id)
     }
-  };
+  }
 
-  if (isLoading) return <div className="p-6">Loading categories...</div>;
+  if (isLoading) return <div className="p-6">Loading categories...</div>
 
   return (
     <div className="p-6 space-y-6">
@@ -63,42 +89,60 @@ export default function CategoriesPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Categories</CardTitle>
-            <FolderTree className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Categories
+            </CardTitle>
+            <FolderTree className="h-4 w-4 text-accent-blue" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">Product groupings</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Product groupings
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Categories</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Categories
+            </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.active}</div>
-            <p className="text-xs text-muted-foreground mt-1">Enabled for catalog</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Enabled for catalog
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Linked Products</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Linked Products
+            </CardTitle>
             <Layers className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.totalProducts}</div>
-            <p className="text-xs text-muted-foreground mt-1">Items with categories</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Items with categories
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Top Category</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Top Category
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold truncate">{analytics.topCategory}</div>
-            <p className="text-xs text-muted-foreground mt-1">Most items linked</p>
+            <div className="text-2xl font-bold truncate">
+              {analytics.topCategory}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Most items linked
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -140,7 +184,7 @@ export default function CategoriesPage() {
                   <TableCell>
                     <Link
                       href={`/admin/categories/${category._id}`}
-                      className="text-blue-600 flex items-center gap-3"
+                      className="text-accent-blue hover:underline flex items-center gap-3"
                     >
                       <Avatar className="h-10 w-10 border rounded-md">
                         <AvatarImage
@@ -154,9 +198,13 @@ export default function CategoriesPage() {
                       <span className="font-medium">{category.name}</span>
                     </Link>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">/{category.slug}</TableCell>
-                  <TableCell className="max-w-xs truncate">{category.description}</TableCell>
-                  
+                  <TableCell className="text-muted-foreground">
+                    /{category.slug}
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {category.description}
+                  </TableCell>
+
                   {/* <--- ADDED DATA CELL */}
                   <TableCell className="font-medium">
                     {category.productCount || 0}
@@ -170,20 +218,26 @@ export default function CategoriesPage() {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-blue-600">
+                        <Button variant="ghost" size="icon">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/categories/${category._id}`}>View Details</Link>
+                          <Link href={`/admin/categories/${category._id}`}>
+                            View Details
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/categories/edit/${category._id}`}>Edit</Link>
+                          <Link href={`/admin/categories/edit/${category._id}`}>
+                            Edit
+                          </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           className="text-destructive"
-                          onClick={() => handleDelete(category._id, category.name)}
+                          onClick={() =>
+                            handleDelete(category._id, category.name)
+                          }
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
@@ -198,5 +252,5 @@ export default function CategoriesPage() {
         </Table>
       </div>
     </div>
-  );
+  )
 }

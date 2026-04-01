@@ -1,5 +1,12 @@
 #!/bin/sh
 
-pnpm exec prettier $(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|ts|tsx|json|md|css)$') --write --ignore-unknown
+FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$FILES" ] && exit 0
+
+JS_TS_FILES=$(echo "$FILES" | grep -E '\.(js|ts|tsx)$')
+
+pnpm exec prettier $FILES --write --ignore-unknown
+
+[ -n "$JS_TS_FILES" ] && pnpm exec eslint $JS_TS_FILES --fix --max-warnings=50
 
 git update-index --again

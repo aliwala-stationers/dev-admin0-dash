@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useMemo, useState } from "react";
+import { useMemo, useState } from "react"
 import {
   Table,
   TableBody,
@@ -8,27 +8,37 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Filter, Eye, ArrowUpDown, ShoppingBag, Clock, CheckCircle2, IndianRupee } from "lucide-react";
-import Link from "next/link";
-import { useData } from "@/lib/data-context";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+} from "@/components/ui/dropdown-menu"
+import {
+  MoreHorizontal,
+  Search,
+  Filter,
+  Eye,
+  ArrowUpDown,
+  ShoppingBag,
+  Clock,
+  CheckCircle2,
+  IndianRupee,
+} from "lucide-react"
+import Link from "next/link"
+import { useData } from "@/lib/data-context"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -38,7 +48,7 @@ import {
   getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table";
+} from "@tanstack/react-table"
 
 const statusVariants = {
   order_placed: "secondary",
@@ -48,7 +58,7 @@ const statusVariants = {
   order_packed: "default",
   order_shipped: "default",
   order_delivered: "default",
-} as const;
+} as const
 
 const statusLabels = {
   order_placed: "Order Placed",
@@ -58,38 +68,45 @@ const statusLabels = {
   order_packed: "Order Packed",
   order_shipped: "Order Shipped",
   order_delivered: "Order Delivered",
-} as const;
+} as const
 
 type OrderRow = {
-  id: string;
-  customer: string;
-  date: string;
-  lastUpdated?: string;
-  items: number;
-  total: number;
-  status: keyof typeof statusLabels;
-};
+  id: string
+  customer: string
+  date: string
+  lastUpdated?: string
+  items: number
+  total: number
+  status: keyof typeof statusLabels
+}
 
 export default function OrdersPage() {
-  const { orders } = useData();
-  const data = useMemo(() => orders as OrderRow[], [orders]);
-  
+  const { orders } = useData()
+  const data = useMemo(() => orders as OrderRow[], [orders])
+
   const analytics = useMemo(() => {
-    const delivered = orders.filter(o => o.status === 'order_delivered');
-    const pending = orders.filter(o => !['order_delivered', 'order_rejected_by_seller', 'order_cancelled_by_customer'].includes(o.status));
-    
+    const delivered = orders.filter((o) => o.status === "order_delivered")
+    const pending = orders.filter(
+      (o) =>
+        ![
+          "order_delivered",
+          "order_rejected_by_seller",
+          "order_cancelled_by_customer",
+        ].includes(o.status),
+    )
+
     return {
       total: orders.length,
       delivered: delivered.length,
       pending: pending.length,
-      totalValue: orders.reduce((sum, o) => sum + o.total, 0)
-    };
-  }, [orders]);
+      totalValue: orders.reduce((sum, o) => sum + o.total, 0),
+    }
+  }, [orders])
 
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const columns = useMemo<ColumnDef<OrderRow>[]>(
     () => [
@@ -108,7 +125,7 @@ export default function OrdersPage() {
         cell: ({ row }) => (
           <Link
             href={`/admin/orders/${row.original.id}`}
-            className="hover:underline text-blue-600"
+            className="hover:underline text-accent-blue"
           >
             {row.original.id}
           </Link>
@@ -186,12 +203,12 @@ export default function OrdersPage() {
         ),
         cell: ({ row }) => {
           // Ensure the value is a number before formatting
-          const amount = row.original.total;
+          const amount = row.original.total
 
           return amount.toLocaleString("en-IN", {
             style: "currency",
             currency: "INR",
-          });
+          })
         },
       },
       {
@@ -216,8 +233,8 @@ export default function OrdersPage() {
           </Badge>
         ),
         filterFn: (row, id, value) => {
-          if (!value || value === "all") return true;
-          return row.getValue(id) === value;
+          if (!value || value === "all") return true
+          return row.getValue(id) === value
         },
       },
       {
@@ -227,7 +244,7 @@ export default function OrdersPage() {
           <div className="text-right">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-blue-600">
+                <Button variant="ghost" size="icon">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -247,7 +264,7 @@ export default function OrdersPage() {
       },
     ],
     [],
-  );
+  )
 
   const table = useReactTable({
     data,
@@ -263,21 +280,21 @@ export default function OrdersPage() {
     globalFilterFn: (row, _columnId, filterValue) => {
       const q = String(filterValue ?? "")
         .toLowerCase()
-        .trim();
-      if (!q) return true;
-      const id = String(row.original.id ?? "").toLowerCase();
-      const customer = String(row.original.customer ?? "").toLowerCase();
-      return id.includes(q) || customer.includes(q);
+        .trim()
+      if (!q) return true
+      const id = String(row.original.id ?? "").toLowerCase()
+      const customer = String(row.original.customer ?? "").toLowerCase()
+      return id.includes(q) || customer.includes(q)
     },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-  });
+  })
 
   const handleStatusFilterChange = (value: string) => {
-    setStatusFilter(value);
-    table.getColumn("status")?.setFilterValue(value);
-  };
+    setStatusFilter(value)
+    table.getColumn("status")?.setFilterValue(value)
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -293,42 +310,63 @@ export default function OrdersPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Orders</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Orders
+            </CardTitle>
+            <ShoppingBag className="h-4 w-4 text-accent-blue" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">Lifetime orders</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Lifetime orders
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Orders</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Pending Orders
+            </CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.pending}</div>
-            <p className="text-xs text-muted-foreground mt-1">In processing/fulfillment</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              In processing/fulfillment
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Completed Orders</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Completed Orders
+            </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.delivered}</div>
-            <p className="text-xs text-muted-foreground mt-1">Delivered successfully</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Delivered successfully
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Gross Merchandise Value</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Gross Merchandise Value
+            </CardTitle>
             <IndianRupee className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">&#8377;{analytics.totalValue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-            <p className="text-xs text-muted-foreground mt-1">Cumulative sales value</p>
+            <div className="text-2xl font-bold">
+              &#8377;
+              {analytics.totalValue.toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Cumulative sales value
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -423,5 +461,5 @@ export default function OrdersPage() {
         </Table>
       </div>
     </div>
-  );
+  )
 }

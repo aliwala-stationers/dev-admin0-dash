@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { useMemo, use } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useMemo, use } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
   ArrowLeft,
   Trash2,
@@ -17,43 +17,53 @@ import {
   Archive,
   Clock,
   RotateCcw,
-} from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+} from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useDeleteEnquiry, useEnquiry, useUpdateEnquiry, useEnquiries } from "@/hooks/api/useEnquiries";
+} from "@/components/ui/dropdown-menu"
+import {
+  useDeleteEnquiry,
+  useEnquiry,
+  useUpdateEnquiry,
+  useEnquiries,
+} from "@/hooks/api/useEnquiries"
 
 const statusVariants = {
   new: "default",
   read: "secondary",
   contacted: "outline",
-} as const;
+} as const
 
-export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const router = useRouter();
-  
-  const { data: enquiry } = useEnquiry(id);
-  const { data: enquiries = [] } = useEnquiries();
-  const deleteMutation = useDeleteEnquiry();
-  const updateMutation = useUpdateEnquiry();
+export default function EnquiryDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = use(params)
+  const router = useRouter()
+
+  const { data: enquiry } = useEnquiry(id)
+  const { data: enquiries = [] } = useEnquiries()
+  const deleteMutation = useDeleteEnquiry()
+  const updateMutation = useUpdateEnquiry()
 
   const { currentIndex, totalEnquiries, prevId, nextId } = useMemo(() => {
-    if (!enquiries.length || !id) return { currentIndex: -1, totalEnquiries: 0, prevId: null, nextId: null };
-    
-    const index = enquiries.findIndex((e) => e._id === id);
+    if (!enquiries.length || !id)
+      return { currentIndex: -1, totalEnquiries: 0, prevId: null, nextId: null }
+
+    const index = enquiries.findIndex((e) => e._id === id)
     return {
       currentIndex: index,
       totalEnquiries: enquiries.length,
       prevId: index > 0 ? enquiries[index - 1]._id : null,
       nextId: index < enquiries.length - 1 ? enquiries[index + 1]._id : null,
-    };
-  }, [enquiries, id]);
+    }
+  }, [enquiries, id])
 
   if (!enquiry) {
     return (
@@ -64,7 +74,7 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
           Back to Enquiries
         </Button>
       </div>
-    );
+    )
   }
 
   const getInitials = (name: string) => {
@@ -72,23 +82,30 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
       .split(" ")
       .map((n) => n[0])
       .join("")
-      .toUpperCase();
-  };
+      .toUpperCase()
+  }
 
   const handleDelete = async () => {
-    await deleteMutation.mutateAsync(enquiry._id);
-    router.push("/admin/enquiries");
-  };
+    await deleteMutation.mutateAsync(enquiry._id)
+    router.push("/admin/enquiries")
+  }
 
-  const markAsRead = () => updateMutation.mutate({ id: enquiry._id, data: { status: "read" } });
-  const markContacted = () => updateMutation.mutate({ id: enquiry._id, data: { status: "contacted" } });
-  const markAsUnread = () => updateMutation.mutate({ id: enquiry._id, data: { status: "new" } });
+  const markAsRead = () =>
+    updateMutation.mutate({ id: enquiry._id, data: { status: "read" } })
+  const markContacted = () =>
+    updateMutation.mutate({ id: enquiry._id, data: { status: "contacted" } })
+  const markAsUnread = () =>
+    updateMutation.mutate({ id: enquiry._id, data: { status: "new" } })
 
   return (
     <div className="flex flex-col h-full bg-card">
       <div className="flex items-center justify-between px-4 py-2 border-b">
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/admin/enquiries")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/admin/enquiries")}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <Separator orientation="vertical" className="h-6 mx-2" />
@@ -111,7 +128,9 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
         </div>
         <div className="flex items-center gap-1">
           <span className="text-xs text-muted-foreground mr-4">
-            {currentIndex !== -1 ? `${currentIndex + 1} / ${totalEnquiries}` : "Details"}
+            {currentIndex !== -1
+              ? `${currentIndex + 1} / ${totalEnquiries}`
+              : "Details"}
           </span>
           <Button
             variant="ghost"
@@ -136,24 +155,31 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="space-y-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <h1 className="text-2xl font-semibold tracking-tight">{enquiry.name}</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                {enquiry.name}
+              </h1>
               <Badge variant={statusVariants[enquiry.status]} className="w-fit">
-                {enquiry.status.charAt(0).toUpperCase() + enquiry.status.slice(1)}
+                {enquiry.status.charAt(0).toUpperCase() +
+                  enquiry.status.slice(1)}
               </Badge>
             </div>
           </div>
 
           <div className="flex items-start gap-4">
             <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-blue-600 text-white font-medium">
+              <AvatarFallback className="bg-accent-blue text-white font-medium">
                 {getInitials(enquiry.name)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <span className="font-semibold text-base">{enquiry.name}</span>
-                  <span className="text-muted-foreground text-sm">&lt;{enquiry.email}&gt;</span>
+                  <span className="font-semibold text-base">
+                    {enquiry.name}
+                  </span>
+                  <span className="text-muted-foreground text-sm">
+                    &lt;{enquiry.email}&gt;
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <Clock className="h-3.5 w-3.5" />
@@ -193,7 +219,9 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
           </div>
 
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-6 min-h-[200px]">
-            <p className="text-base leading-relaxed whitespace-pre-wrap">{enquiry.message}</p>
+            <p className="text-base leading-relaxed whitespace-pre-wrap">
+              {enquiry.message}
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-8 border-t border-dashed">
@@ -219,5 +247,5 @@ export default function EnquiryDetailsPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
     </div>
-  );
+  )
 }

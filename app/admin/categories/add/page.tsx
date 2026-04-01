@@ -1,9 +1,9 @@
-"use client";
+"use client"
 
-import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
+import { useRouter } from "next/navigation"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
 import {
   ChevronLeft,
   Save,
@@ -11,15 +11,15 @@ import {
   X,
   Loader2,
   Image as ImageIcon,
-} from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
-import { useState, useRef } from "react";
+} from "lucide-react"
+import Link from "next/link"
+import { toast } from "sonner"
+import { useState, useRef } from "react"
 
 // HOOKS
-import { useCreateCategory } from "@/hooks/api/useCategories";
+import { useCreateCategory } from "@/hooks/api/useCategories"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
@@ -27,11 +27,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const categorySchema = z.object({
   name: z.string().min(2, "Name required"),
@@ -39,22 +39,24 @@ const categorySchema = z.object({
     .string()
     .min(2)
     .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with dashes."),
-  description: z.string().min(10, "Description must be at least 10 characters."),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters."),
   status: z.boolean(),
   image: z.string().optional(),
-});
+})
 
-type CategoryFormValues = z.infer<typeof categorySchema>;
+type CategoryFormValues = z.infer<typeof categorySchema>
 
 export default function AddCategoryPage() {
-  const router = useRouter();
-  const createMutation = useCreateCategory();
+  const router = useRouter()
+  const createMutation = useCreateCategory()
 
   // State for File Upload
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
@@ -65,47 +67,47 @@ export default function AddCategoryPage() {
       status: true,
       image: "",
     },
-  });
+  })
 
   // Handle File Selection (Local Preview)
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("File is too large (max 5MB)");
-        return;
+        toast.error("File is too large (max 5MB)")
+        return
       }
 
-      setFileToUpload(file);
+      setFileToUpload(file)
 
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
+      const reader = new FileReader()
+      reader.onloadend = () => setImagePreview(reader.result as string)
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   const removeImage = () => {
-    setFileToUpload(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+    setFileToUpload(null)
+    setImagePreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
 
   const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    form.setValue("name", name, { shouldValidate: true });
+    const name = e.target.value
+    form.setValue("name", name, { shouldValidate: true })
     const slug = name
       .toLowerCase()
       .trim()
       .replace(/[^\w\s-]/g, "")
       .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    form.setValue("slug", slug, { shouldValidate: true });
-  };
+      .replace(/^-+|-+$/g, "")
+    form.setValue("slug", slug, { shouldValidate: true })
+  }
 
   async function onSubmit(values: CategoryFormValues) {
-    setIsUploading(true);
+    setIsUploading(true)
     try {
-      let finalImageUrl = values.image;
+      let finalImageUrl = values.image
 
       if (fileToUpload) {
         const presignRes = await fetch("/api/uploads/presign", {
@@ -114,37 +116,37 @@ export default function AddCategoryPage() {
             contentType: fileToUpload.type,
             folder: "categories",
           }),
-        });
+        })
 
-        if (!presignRes.ok) throw new Error("Failed to get upload URL");
-        const { uploadUrl, publicUrl } = await presignRes.json();
+        if (!presignRes.ok) throw new Error("Failed to get upload URL")
+        const { uploadUrl, publicUrl } = await presignRes.json()
 
         const uploadRes = await fetch(uploadUrl, {
           method: "PUT",
           headers: { "Content-Type": fileToUpload.type },
           body: fileToUpload,
-        });
+        })
 
-        if (!uploadRes.ok) throw new Error("Failed to upload image");
+        if (!uploadRes.ok) throw new Error("Failed to upload image")
 
-        finalImageUrl = publicUrl;
+        finalImageUrl = publicUrl
       }
 
       await createMutation.mutateAsync({
         ...values,
         image: finalImageUrl,
-      });
+      })
 
-      router.push("/admin/categories");
+      router.push("/admin/categories")
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to save category. Please try again.");
+      console.error(error)
+      toast.error("Failed to save category. Please try again.")
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
   }
 
-  const isBusy = isUploading || createMutation.isPending;
+  const isBusy = isUploading || createMutation.isPending
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -157,7 +159,9 @@ export default function AddCategoryPage() {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Add New Category</h1>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Add New Category
+            </h1>
             <p className="text-sm text-muted-foreground">
               Create a category to organize your products
             </p>
@@ -168,7 +172,8 @@ export default function AddCategoryPage() {
             <Link href="/admin/categories">Cancel</Link>
           </Button>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            type="submit"
+            className="bg-accent-blue hover:bg-accent-blue-hover"
             disabled={isBusy}
             onClick={form.handleSubmit(onSubmit)}
           >
@@ -201,8 +206,8 @@ export default function AddCategoryPage() {
                           placeholder="e.g. Electronics"
                           {...field}
                           onChange={(e) => {
-                            field.onChange(e);
-                            onNameChange(e);
+                            field.onChange(e)
+                            onNameChange(e)
                           }}
                         />
                       </FormControl>
@@ -331,5 +336,5 @@ export default function AddCategoryPage() {
         </form>
       </Form>
     </div>
-  );
+  )
 }

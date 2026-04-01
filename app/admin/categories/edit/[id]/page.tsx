@@ -1,48 +1,75 @@
-"use client";
+"use client"
 
-import { use, useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { ChevronLeft, Save, Plus, Loader2, Image as ImageIcon, X } from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
-import { useCategory, useUpdateCategory } from "@/hooks/api/useCategories";
+import { use, useEffect, useState, useRef } from "react"
+import { useRouter } from "next/navigation"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import {
+  ChevronLeft,
+  Save,
+  Plus,
+  Loader2,
+  Image as ImageIcon,
+  X,
+} from "lucide-react"
+import Link from "next/link"
+import { toast } from "sonner"
+import { useCategory, useUpdateCategory } from "@/hooks/api/useCategories"
 
-import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const categorySchema = z.object({
   name: z.string().min(2, "Name required"),
-  slug: z.string().min(2).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(2)
+    .regex(/^[a-z0-9-]+$/),
   description: z.string().min(10),
   status: z.boolean(),
   image: z.string().optional(),
-});
-type CategoryFormValues = z.infer<typeof categorySchema>;
+})
+type CategoryFormValues = z.infer<typeof categorySchema>
 
-export default function EditCategoryPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const router = useRouter();
-  
-  const { data: category, isLoading } = useCategory(id);
-  const updateMutation = useUpdateCategory();
-  
+export default function EditCategoryPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = use(params)
+  const router = useRouter()
+
+  const { data: category, isLoading } = useCategory(id)
+  const updateMutation = useUpdateCategory()
+
   // File Upload State
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [fileToUpload, setFileToUpload] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
-    defaultValues: { name: "", slug: "", description: "", status: true, image: "" },
-  });
+    defaultValues: {
+      name: "",
+      slug: "",
+      description: "",
+      status: true,
+      image: "",
+    },
+  })
 
   useEffect(() => {
     if (category) {
@@ -52,72 +79,78 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
         description: category.description,
         status: category.status,
         image: category.image || "",
-      });
-      setImagePreview(category.image || null);
+      })
+      setImagePreview(category.image || null)
     }
-  }, [category, form]);
+  }, [category, form])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("File is too large (max 5MB)");
-        return;
+        toast.error("File is too large (max 5MB)")
+        return
       }
-      setFileToUpload(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
+      setFileToUpload(file)
+      const reader = new FileReader()
+      reader.onloadend = () => setImagePreview(reader.result as string)
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   const removeImage = () => {
-    setFileToUpload(null);
-    setImagePreview(null);
-    form.setValue("image", "");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+    setFileToUpload(null)
+    setImagePreview(null)
+    form.setValue("image", "")
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
 
   async function onSubmit(values: CategoryFormValues) {
-    setIsUploading(true);
+    setIsUploading(true)
     try {
-      let finalImageUrl = values.image;
+      let finalImageUrl = values.image
 
       if (fileToUpload) {
         const presignRes = await fetch("/api/uploads/presign", {
           method: "POST",
-          body: JSON.stringify({ contentType: fileToUpload.type, folder: "categories" }),
-        });
-        
-        if (!presignRes.ok) throw new Error("Failed to get upload URL");
-        const { uploadUrl, publicUrl } = await presignRes.json();
+          body: JSON.stringify({
+            contentType: fileToUpload.type,
+            folder: "categories",
+          }),
+        })
+
+        if (!presignRes.ok) throw new Error("Failed to get upload URL")
+        const { uploadUrl, publicUrl } = await presignRes.json()
 
         const uploadRes = await fetch(uploadUrl, {
           method: "PUT",
           headers: { "Content-Type": fileToUpload.type },
           body: fileToUpload,
-        });
+        })
 
-        if (!uploadRes.ok) throw new Error("Failed to upload image");
+        if (!uploadRes.ok) throw new Error("Failed to upload image")
 
-        finalImageUrl = publicUrl;
+        finalImageUrl = publicUrl
       }
 
-      await updateMutation.mutateAsync({ id, data: { ...values, image: finalImageUrl } });
-      
-      toast.success("Category updated successfully");
-      router.push("/admin/categories");
+      await updateMutation.mutateAsync({
+        id,
+        data: { ...values, image: finalImageUrl },
+      })
+
+      toast.success("Category updated successfully")
+      router.push("/admin/categories")
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to update category");
+      console.error(error)
+      toast.error("Failed to update category")
     } finally {
-      setIsUploading(false);
+      setIsUploading(false)
     }
   }
 
-  const isBusy = isLoading || isUploading || updateMutation.isPending;
+  const isBusy = isLoading || isUploading || updateMutation.isPending
 
-  if (isLoading) return <div className="p-6">Loading...</div>;
+  if (isLoading) return <div className="p-6">Loading...</div>
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -141,7 +174,8 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
             <Link href="/admin/categories">Cancel</Link>
           </Button>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            type="submit"
+            className="bg-accent-blue hover:bg-accent-blue-hover"
             disabled={isBusy}
             onClick={form.handleSubmit(onSubmit)}
           >
@@ -297,5 +331,5 @@ export default function EditCategoryPage({ params }: { params: Promise<{ id: str
         </form>
       </Form>
     </div>
-  );
+  )
 }

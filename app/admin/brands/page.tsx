@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import { useState } from "react";
+import { useState } from "react"
 import {
   Table,
   TableBody,
@@ -8,50 +8,59 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+} from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Plus, MoreHorizontal, Search, Trash2, Building2, CheckCircle2, Globe, Tag } from "lucide-react";
-import Link from "next/link";
-import { useBrands, useDeleteBrand } from "@/hooks/api/useBrands"; // <--- NEW HOOKS
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMemo } from "react";
+} from "@/components/ui/dropdown-menu"
+import {
+  Plus,
+  MoreHorizontal,
+  Search,
+  Trash2,
+  Building2,
+  CheckCircle2,
+  Globe,
+  Tag,
+} from "lucide-react"
+import Link from "next/link"
+import { useBrands, useDeleteBrand } from "@/hooks/api/useBrands" // <--- NEW HOOKS
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useMemo } from "react"
 
 export default function BrandsPage() {
   // Use React Query hooks instead of static context
-  const { data: brands = [], isLoading } = useBrands();
-  const deleteMutation = useDeleteBrand();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { data: brands = [], isLoading } = useBrands()
+  const deleteMutation = useDeleteBrand()
+  const [searchQuery, setSearchQuery] = useState("")
 
   const analytics = useMemo(() => {
-    const active = brands.filter(b => b.status).length;
-    
+    const active = brands.filter((b) => b.status).length
+
     return {
       total: brands.length,
       active,
       inactive: brands.length - active,
-    };
-  }, [brands]);
+    }
+  }, [brands])
 
   const filteredBrands = brands.filter((brand) =>
     brand.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  )
 
   const handleDelete = (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate(id)
     }
-  };
+  }
 
-  if (isLoading) return <div className="p-6">Loading brands...</div>;
+  if (isLoading) return <div className="p-6">Loading brands...</div>
 
   return (
     <div className="p-6 space-y-6">
@@ -73,32 +82,44 @@ export default function BrandsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Brands</CardTitle>
-            <Building2 className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Brands
+            </CardTitle>
+            <Building2 className="h-4 w-4 text-accent-blue" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">Partners and manufacturers</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Partners and manufacturers
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Brands</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Brands
+            </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.active}</div>
-            <p className="text-xs text-muted-foreground mt-1">Visible on frontend</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Visible on frontend
+            </p>
           </CardContent>
         </Card>
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Inactive Brands</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Inactive Brands
+            </CardTitle>
             <Tag className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.inactive}</div>
-            <p className="text-xs text-muted-foreground mt-1">Hidden from customers</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Hidden from customers
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -139,7 +160,7 @@ export default function BrandsPage() {
                   <TableCell>
                     <Link
                       href={`/admin/brands/${brand._id}`}
-                      className="text-blue-600 flex items-center gap-3"
+                      className="text-accent-blue hover:underline flex items-center gap-3"
                     >
                       <Avatar className="h-10 w-10 border rounded-md">
                         <AvatarImage
@@ -167,11 +188,7 @@ export default function BrandsPage() {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-blue-600"
-                        >
+                        <Button variant="ghost" size="icon">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -203,5 +220,5 @@ export default function BrandsPage() {
         </Table>
       </div>
     </div>
-  );
+  )
 }
