@@ -1,63 +1,180 @@
+// @/app/api/uploads/presign/route.ts
+
 import { NextRequest, NextResponse } from "next/server"
 import { PutObjectCommand } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { cookies } from "next/headers"
 import { randomUUID } from "crypto"
 
-// Update the import to match the file we just created
 import { r2 } from "@/lib/r2storage"
+import { jwtVerify } from "jose"
+import {
+  ADMIN_JWT_SECRET,
+  CUSTOMER_JWT_SECRET,
+  AUTH_META,
+  AUTH_COOKIES,
+} from "@/lib/auth/constants"
+import { AUTH_ERRORS, AuthError } from "@/lib/auth/errors"
 
-// Pull vars from env directly or the storage file if exported
+/**
+ * 🔐 ENV
+ */
 const R2_BUCKET = process.env.R2_BUCKET!
 const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL!
-
-// Define the root environment folder (e.g., 'dev', 'staging', 'prod')
-// Fallback to 'dev' if the variable isn't set to prevent accidental root uploads
 const APP_ENV = process.env.APP_ENV || "dev"
 
-export async function POST(req: NextRequest) {
-  // 1. SECURITY: Gatekeeper Check
-  const token = (await cookies()).get("aliwala_admin_token")
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+/**
+ * 🔒 Allowed content types (IMPORTANT)
+ */
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"]
+
+/**
+ * 🔒 Max file size (bytes) → optional enforcement (client must respect)
+ */
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+
+/**
+ * 🔐 Resolve user (admin OR customer)
+ */
+async function resolveUser(req: NextRequest) {
+  const adminToken = (await cookies()).get(AUTH_COOKIES.ADMIN)?.value
+
+  if (adminToken?.trim()) {
+    try {
+      const { payload } = await jwtVerify(
+        adminToken.trim(),
+        ADMIN_JWT_SECRET,
+        AUTH_META.ADMIN,
+      )
+
+      return {
+        role: "admin" as const,
+        userId: payload.sub,
+      }
+    } catch {
+      // fallback
+    }
   }
 
-  try {
-    const { contentType, folder = "uploads" } = await req.json()
+  const authHeader = req.headers.get("authorization")
 
-    if (!contentType) {
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1]
+
+    if (!token?.trim()) throw AUTH_ERRORS.UNAUTHORIZED()
+
+    try {
+      const { payload } = await jwtVerify(
+        token.trim(),
+        CUSTOMER_JWT_SECRET,
+        AUTH_META.CUSTOMER,
+      )
+
+      return {
+        role: "customer" as const,
+        userId: payload.sub,
+      }
+    } catch {
+      throw AUTH_ERRORS.INVALID_TOKEN()
+    }
+  }
+
+  throw AUTH_ERRORS.UNAUTHORIZED()
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const user = await resolveUser(req)
+
+    const body = await req.json()
+    const { contentType, folder = "uploads", fileSize } = body
+
+    /**
+     * Step 1: Validate contentType
+     */
+    if (!contentType || typeof contentType !== "string") {
       return NextResponse.json(
-        { error: "Missing contentType" },
+        { error: "Invalid contentType" },
         { status: 400 },
       )
     }
 
-    // 2. ORGANIZATION: Prepend the environment root to the path
-    // Format: env/folder/uuid.ext (e.g., dev/products/1234-5678.png)
-    const ext = contentType.split("/")[1] || "bin"
-    const key = `${APP_ENV}/${folder}/${randomUUID()}.${ext}`
+    if (!ALLOWED_TYPES.includes(contentType)) {
+      return NextResponse.json(
+        { error: "File type not allowed" },
+        { status: 400 },
+      )
+    }
 
-    // 3. GENERATE SIGNATURE
+    /**
+     * Step 2: Optional file size validation
+     */
+    if (fileSize && fileSize > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "File too large (max 5MB)" },
+        { status: 400 },
+      )
+    }
+
+    /**
+     * 🔒 Step 3: Folder control
+     */
+    let finalFolder = folder
+
+    if (user.role === "customer") {
+      finalFolder = `customers/${user.userId}`
+    }
+
+    /**
+     * Step 4: Safe extension mapping
+     */
+    const EXT_MAP: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+    }
+
+    const ext = EXT_MAP[contentType] || "bin"
+
+    /**
+     * Step 5: Generate key
+     */
+    const key = `${APP_ENV}/${finalFolder}/${randomUUID()}.${ext}`
+
+    /**
+     * Step 6: Generate presigned URL
+     */
     const uploadUrl = await getSignedUrl(
       r2,
       new PutObjectCommand({
         Bucket: R2_BUCKET,
         Key: key,
         ContentType: contentType,
-        // ACL: "public-read", // Uncomment if your bucket policy requires it
       }),
-      { expiresIn: 60 * 10 }, // 10 min
+      { expiresIn: 60 * 10 },
     )
 
     const publicUrl = `${R2_PUBLIC_BASE_URL}/${key}`
 
+    /**
+     * Step 7: Response
+     */
     return NextResponse.json({
+      success: true,
       uploadUrl,
       publicUrl,
       key,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Presign error:", error)
+
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status },
+      )
+    }
+
     return NextResponse.json(
       { error: "Failed to generate presigned URL" },
       { status: 500 },

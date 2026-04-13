@@ -6,61 +6,37 @@ import bcrypt from "bcryptjs"
 import connectDB from "@/lib/db"
 import User from "@/models/User"
 import LoginHistory from "@/models/LoginHistory"
-
-/**
- * @constant JWT_SECRET
- * @description Secret used for signing admin JWT tokens.
- * Must be defined in environment variables.
- */
-if (!process.env.ADMIN_JWT_SECRET) {
-  throw new Error("ADMIN_JWT_SECRET is not defined")
-}
-
-const JWT_SECRET = process.env.ADMIN_JWT_SECRET
-
-/**
- * @constant COOKIE_NAME
- * @description Name of the HTTP-only cookie storing admin session token.
- */
-const COOKIE_NAME = "__admin_token"
+import { ADMIN_JWT_SECRET, AUTH_COOKIES, AUTH_META } from "@/lib/auth/constants"
 
 /**
  * @constant COOKIE_MAX_AGE
- * @description Cookie lifespan in seconds (8 hours).
+ * @description 8 hours session
  */
 const COOKIE_MAX_AGE = 60 * 60 * 8
 
 /**
  * @function POST
  * @summary Admin login endpoint
- * @description
- * Authenticates an admin user using email and password.
- * If valid:
- *  - Generates a signed JWT (admin scope)
- *  - Stores it in an HttpOnly cookie
- *  - Logs login event
- *
- * Security:
- *  - Prevents credential enumeration
- *  - Uses bcrypt for password validation
- *  - Enforces admin role
- *  - Uses HttpOnly + Secure cookies
- *
- * @param {Request} req - Incoming HTTP request containing JSON body
- *
- * @returns {Promise<NextResponse>} JSON response with user info or error
  */
 export async function POST(req: Request): Promise<NextResponse> {
   try {
     /**
-     * Step 1: Parse and validate input
+     * Step 1: Parse input safely
      */
-    const body = await req.json().catch(() => ({}))
+    const body = await req.json().catch(() => null)
+
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { ok: false, message: "Invalid request body" },
+        { status: 400 },
+      )
+    }
+
     const { email, password } = body
 
     if (typeof email !== "string" || typeof password !== "string") {
       return NextResponse.json(
-        { ok: false, message: "Invalid input format" },
+        { ok: false, message: "Invalid credentials" },
         { status: 400 },
       )
     }
@@ -68,17 +44,20 @@ export async function POST(req: Request): Promise<NextResponse> {
     const normalizedEmail = email.toLowerCase().trim()
 
     /**
-     * Step 2: Connect to database
+     * Step 2: DB
      */
     await connectDB()
 
     /**
-     * Step 3: Fetch user (including password)
+     * Step 3: Fetch user
      */
     const user = await User.findOne({ email: normalizedEmail }).select(
       "+password",
     )
 
+    /**
+     * 🔒 Prevent user enumeration
+     */
     if (!user) {
       return NextResponse.json(
         { ok: false, message: "Invalid credentials" },
@@ -87,11 +66,11 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     /**
-     * Step 4: Validate password
+     * Step 4: Password check
      */
-    const passwordMatches = await bcrypt.compare(password, user.password)
+    const isValid = await bcrypt.compare(password, user.password)
 
-    if (!passwordMatches) {
+    if (!isValid) {
       return NextResponse.json(
         { ok: false, message: "Invalid credentials" },
         { status: 401 },
@@ -99,7 +78,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     /**
-     * Step 5: Enforce admin role
+     * Step 5: Admin enforcement
      */
     if (user.role !== "admin") {
       return NextResponse.json(
@@ -109,10 +88,8 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     /**
-     * Step 6: Generate JWT token
+     * Step 6: Generate JWT (centralized config)
      */
-    const secret = new TextEncoder().encode(JWT_SECRET)
-
     const token = await new SignJWT({
       sub: user._id.toString(),
       email: user.email,
@@ -121,52 +98,52 @@ export async function POST(req: Request): Promise<NextResponse> {
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       .setExpirationTime("8h")
-      .setIssuer("admin")
-      .setAudience("admin-panel")
-      .sign(secret)
+      .setIssuer(AUTH_META.ADMIN.issuer)
+      .setAudience(AUTH_META.ADMIN.audience)
+      .sign(ADMIN_JWT_SECRET)
 
     /**
-     * Step 7: Log login event (non-blocking)
+     * Step 7: Async logging (non-blocking)
      */
-    try {
-      const ip =
-        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-        req.headers.get("x-real-ip") ||
-        "unknown"
+    void (async () => {
+      try {
+        const ip =
+          req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+          req.headers.get("x-real-ip") ||
+          "unknown"
 
-      const userAgent = req.headers.get("user-agent") || "unknown"
+        const userAgent = req.headers.get("user-agent") || "unknown"
 
-      await LoginHistory.create({
-        userId: user._id,
-        event: "LOGIN_SUCCESS",
-        ipAddress: ip,
-        device: userAgent,
-      })
-    } catch (logError) {
-      console.error("Login logging failed:", logError)
-    }
+        await LoginHistory.create({
+          userId: user._id,
+          event: "LOGIN_SUCCESS",
+          ipAddress: ip,
+          device: userAgent,
+        })
+      } catch (err) {
+        console.error("LoginHistory error:", err)
+      }
+    })()
 
     /**
-     * Step 8: Prepare response payload
+     * Step 8: Response payload
      */
-    const userPayload = {
-      id: user._id,
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      avatarUrl: user.avatarUrl || "",
-    }
-
     const response = NextResponse.json({
       ok: true,
-      user: userPayload,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        avatarUrl: user.avatarUrl || "",
+      },
     })
 
     /**
-     * Step 9: Set secure HttpOnly cookie
+     * Step 9: Cookie (centralized name)
      */
     response.cookies.set({
-      name: COOKIE_NAME,
+      name: AUTH_COOKIES.ADMIN,
       value: token,
       httpOnly: true,
       sameSite: "strict",

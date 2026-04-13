@@ -5,40 +5,11 @@ import { cookies } from "next/headers"
 import { jwtVerify } from "jose"
 import connectDB from "@/lib/db"
 import LoginHistory from "@/models/LoginHistory"
-
-/**
- * @constant ADMIN_JWT_SECRET
- * @description Secret used to verify admin JWT tokens.
- */
-if (!process.env.ADMIN_JWT_SECRET) {
-  throw new Error("ADMIN_JWT_SECRET is not defined")
-}
-
-const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET
-
-/**
- * @constant COOKIE_NAME
- * @description Name of the cookie storing admin session token.
- */
-const COOKIE_NAME = "__admin_token"
+import { ADMIN_JWT_SECRET, AUTH_COOKIES, AUTH_META } from "@/lib/auth/constants"
 
 /**
  * @function POST
  * @summary Admin logout endpoint
- * @description
- * Logs out an admin user by:
- *  - Verifying existing JWT (if present)
- *  - Logging logout event (non-blocking)
- *  - Clearing HttpOnly cookie
- *
- * Security:
- *  - Never fails logout even if token/logging fails
- *  - Verifies JWT issuer & audience
- *  - Prevents token misuse
- *
- * @param {Request} req - Incoming HTTP request
- *
- * @returns {Promise<NextResponse>} Always returns success response
  */
 export async function POST(req: Request): Promise<NextResponse> {
   try {
@@ -46,23 +17,22 @@ export async function POST(req: Request): Promise<NextResponse> {
      * Step 1: Read cookie
      */
     const cookieStore = await cookies()
-    const token = cookieStore.get(COOKIE_NAME)?.value
+    const token = cookieStore.get(AUTH_COOKIES.ADMIN)?.value
 
     /**
-     * Step 2: Attempt logout logging (non-blocking)
+     * Step 2: Non-blocking logout logging
      */
-    if (token) {
-      try {
-        const secret = new TextEncoder().encode(ADMIN_JWT_SECRET)
+    if (token?.trim()) {
+      void (async () => {
+        try {
+          const { payload } = await jwtVerify(
+            token.trim(),
+            ADMIN_JWT_SECRET,
+            AUTH_META.ADMIN,
+          )
 
-        const { payload } = await jwtVerify(token, secret, {
-          issuer: "admin",
-          audience: "admin-panel",
-        })
+          if (!payload.sub) return
 
-        const userId = payload.sub
-
-        if (userId) {
           await connectDB()
 
           const ip =
@@ -73,34 +43,30 @@ export async function POST(req: Request): Promise<NextResponse> {
           const userAgent = req.headers.get("user-agent") || "unknown"
 
           await LoginHistory.create({
-            userId,
+            userId: payload.sub,
             event: "LOGOUT",
             ipAddress: ip,
             device: userAgent,
           })
+        } catch (err) {
+          console.error("Logout logging failed:", err)
         }
-      } catch (logError) {
-        /**
-         * Important:
-         * Logout must never fail due to logging or token issues.
-         */
-        console.error("Logout logging failed:", logError)
-      }
+      })()
     }
 
     /**
-     * Step 3: Clear cookie (always)
+     * Step 3: Always clear cookie
      */
     const response = NextResponse.json({ success: true })
 
     response.cookies.set({
-      name: COOKIE_NAME,
+      name: AUTH_COOKIES.ADMIN,
       value: "",
       httpOnly: true,
-      sameSite: "strict", // 🔥 stricter than lax (admin panel)
+      sameSite: "strict",
       path: "/",
       secure: process.env.NODE_ENV === "production",
-      maxAge: 0, // immediate expiration
+      maxAge: 0,
     })
 
     return response
@@ -108,8 +74,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     console.error("Logout Error:", error)
 
     /**
-     * Even if something breaks,
-     * logout should still succeed from client perspective.
+     * Logout must NEVER fail
      */
     return NextResponse.json({ success: true })
   }

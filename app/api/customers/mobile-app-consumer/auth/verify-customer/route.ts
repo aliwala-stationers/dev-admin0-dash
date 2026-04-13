@@ -1,13 +1,20 @@
-// @/app/api/customers/auth/verify-customer/route.ts
+// @/app/api/customers/mobile-app-consumer/auth/verify-customer/route.ts
 
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Customer from "@/models/Customer"
 import { SignJWT } from "jose"
-import admin from "@/lib/customers/firebase-admin"
-import { JWT_SECRET } from "@/lib/customers/auth/constants"
-import { AUTH_ERRORS, AuthError } from "@/lib/customers/auth/errors"
+import { firebaseAuth } from "@/lib/customers/firebase-admin"
+import { CUSTOMER_JWT_SECRET, AUTH_META } from "@/lib/auth/constants"
+import { AUTH_ERRORS, AuthError } from "@/lib/auth/errors"
 // import { rateLimit } from "@/lib/rate-limit" // optional
+
+type CustomerDoc = {
+  _id: any
+  name?: string
+  phone: string
+  status: string
+}
 
 /**
  * @summary Verify or create customer after Firebase OTP
@@ -39,8 +46,11 @@ export async function POST(req: NextRequest) {
      */
     let decoded
     try {
-      decoded = await admin.auth().verifyIdToken(firebaseToken)
-    } catch {
+      decoded = await firebaseAuth.verifyIdToken(firebaseToken)
+    } catch (err: any) {
+      if (err?.code === "auth/id-token-expired") {
+        throw AUTH_ERRORS.TOKEN_EXPIRED()
+      }
       throw AUTH_ERRORS.INVALID_TOKEN()
     }
 
@@ -72,7 +82,10 @@ export async function POST(req: NextRequest) {
     /**
      * Step 6: Find existing
      */
-    let customerDoc = await Customer.findOne({ phone: normalizedPhone })
+    let customerDoc = (await Customer.findOne({
+      phone: normalizedPhone,
+    })) as CustomerDoc | null
+
     let isNewUser = false
 
     /**
@@ -82,14 +95,18 @@ export async function POST(req: NextRequest) {
       isNewUser = true
 
       try {
-        customerDoc = await Customer.create({
+        const created = await Customer.create({
           phone: normalizedPhone,
           name: safeName,
           status: "active",
         })
+
+        customerDoc = created.toObject()
       } catch (err: any) {
         if (err.code === 11000) {
-          customerDoc = await Customer.findOne({ phone: normalizedPhone })
+          customerDoc = await Customer.findOne({
+            phone: normalizedPhone,
+          })
           isNewUser = false
         } else {
           throw err
@@ -101,10 +118,7 @@ export async function POST(req: NextRequest) {
      * Step 8: Safety check
      */
     if (!customerDoc) {
-      return NextResponse.json(
-        { error: "Customer creation failed" },
-        { status: 500 },
-      )
+      throw new Error("Customer creation failed")
     }
 
     /**
@@ -118,9 +132,9 @@ export async function POST(req: NextRequest) {
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       .setExpirationTime("7d")
-      .setIssuer("mobile")
-      .setAudience("customer-app")
-      .sign(JWT_SECRET)
+      .setIssuer(AUTH_META.CUSTOMER.issuer)
+      .setAudience(AUTH_META.CUSTOMER.audience)
+      .sign(CUSTOMER_JWT_SECRET)
 
     /**
      * Step 10: Response
@@ -129,14 +143,14 @@ export async function POST(req: NextRequest) {
       success: true,
       isNewUser,
       customer: {
-        id: customerDoc._id,
+        id: customerDoc._id.toString(),
         name: customerDoc.name || "Customer",
         phone: customerDoc.phone,
         status: customerDoc.status,
       },
       token,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Verify Customer Error:", error)
 
     /**

@@ -1,50 +1,63 @@
 // @/app/api/customers/route.ts
 
 import { NextResponse, NextRequest } from "next/server"
-import { jwtVerify } from "jose"
+import { jwtVerify, JWTPayload } from "jose"
 import connectDB from "@/lib/db"
 import Customer from "@/models/Customer"
-import { AuthError, AUTH_ERRORS } from "@/lib/customers/auth/errors"
+import { ADMIN_JWT_SECRET, AUTH_META } from "@/lib/auth/constants"
+import { AuthError, AUTH_ERRORS } from "@/lib/auth/errors"
 
 /**
- * 🔐 ENV
+ * 🧾 Types
  */
-const SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
+type AdminJWTPayload = JWTPayload & {
+  sub: string
+  role: "admin"
+}
+
+type CustomerDoc = {
+  _id: any
+  name?: string
+  email?: string
+  phone: string
+  status: string
+  createdAt: Date
+}
 
 /**
  * 🔐 Verify admin JWT
  */
-async function verifyAdmin(req: NextRequest) {
+async function verifyAdmin(req: NextRequest): Promise<AdminJWTPayload> {
   const authHeader = req.headers.get("authorization")
 
   if (!authHeader) throw AUTH_ERRORS.UNAUTHORIZED()
 
   const [scheme, token] = authHeader.split(" ")
 
-  if (scheme !== "Bearer" || !token) {
+  if (scheme !== "Bearer" || !token?.trim()) {
     throw AUTH_ERRORS.UNAUTHORIZED()
   }
 
-  const { payload } = await jwtVerify(token, SECRET, {
-    issuer: "admin",
-    audience: "admin-panel",
+  const { payload } = await jwtVerify(token.trim(), ADMIN_JWT_SECRET, {
+    issuer: AUTH_META.ADMIN.issuer,
+    audience: AUTH_META.ADMIN.audience,
   })
 
-  if (payload.role !== "admin") {
+  if (!payload.sub || payload.role !== "admin") {
     throw AUTH_ERRORS.FORBIDDEN()
   }
 
-  return payload
+  return payload as AdminJWTPayload
 }
 
 /**
- * 📦 Serialize customer (reuse later)
+ * 📦 Serialize customer
  */
-function serializeCustomer(customer: any) {
+function serializeCustomer(customer: CustomerDoc) {
   return {
-    id: customer._id,
-    name: customer.name,
-    email: customer.email,
+    id: customer._id.toString(),
+    name: customer.name || "Customer",
+    email: customer.email || "",
     phone: customer.phone,
     status: customer.status,
     createdAt: customer.createdAt,
@@ -97,7 +110,7 @@ export async function POST(req: NextRequest) {
     }
 
     /**
-     * Step 4: Payload (your style ✔)
+     * Step 4: Payload
      */
     const customerData = {
       name,
@@ -127,15 +140,17 @@ export async function POST(req: NextRequest) {
     await connectDB()
 
     /**
-     * Step 6: Create
+     * Step 6: Create (handle duplicates)
      */
-    let customer
+    let customerDoc: CustomerDoc
+
     try {
-      customer = await Customer.create(customerData)
+      const created = await Customer.create(customerData)
+      customerDoc = created.toObject()
     } catch (err: any) {
       if (err.code === 11000) {
         return NextResponse.json(
-          { error: "Customer already exists with this phone" },
+          { error: "Customer already exists with this phone/email" },
           { status: 409 },
         )
       }
@@ -145,8 +160,11 @@ export async function POST(req: NextRequest) {
     /**
      * Step 7: Response
      */
-    return NextResponse.json(serializeCustomer(customer), { status: 201 })
-  } catch (error: any) {
+    return NextResponse.json(
+      { success: true, customer: serializeCustomer(customerDoc) },
+      { status: 201 },
+    )
+  } catch (error: unknown) {
     if (error instanceof AuthError) {
       return NextResponse.json(
         { error: error.message, code: error.code },
@@ -175,7 +193,6 @@ export async function GET(req: NextRequest) {
       Number(req.nextUrl.searchParams.get("limit")) || 20,
       100,
     )
-
     const page = Number(req.nextUrl.searchParams.get("page")) || 1
     const skip = (page - 1) * limit
 
@@ -192,7 +209,7 @@ export async function GET(req: NextRequest) {
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean(),
+        .lean<CustomerDoc[]>(),
       Customer.countDocuments(),
     ])
 
@@ -209,7 +226,7 @@ export async function GET(req: NextRequest) {
         pages: Math.ceil(total / limit),
       },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof AuthError) {
       return NextResponse.json(
         { error: error.message, code: error.code },

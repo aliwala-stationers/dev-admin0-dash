@@ -3,14 +3,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { jwtVerify } from "jose"
-
-// 🔐 ENV VALIDATION
-if (!process.env.ADMIN_JWT_SECRET) {
-  throw new Error("ADMIN_JWT_SECRET is not defined")
-}
-
-const SECRET = new TextEncoder().encode(process.env.ADMIN_JWT_SECRET)
-const COOKIE_NAME = "__admin_token"
+import { ADMIN_JWT_SECRET, AUTH_COOKIES, AUTH_META } from "@/lib/auth/constants"
 
 const PUBLIC_PATHS = ["/admin/login"]
 
@@ -18,21 +11,25 @@ export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   /**
-   * ⚡ Skip static assets
+   * ⚡ Skip static assets & API
    */
-  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/api")
+  ) {
     return NextResponse.next()
   }
 
   /**
-   * 🔓 Allow non-admin routes
+   * 🔓 Non-admin routes
    */
   if (!pathname.startsWith("/admin")) {
     return NextResponse.next()
   }
 
   /**
-   * 🔓 Allow public admin routes
+   * 🔓 Public admin routes
    */
   const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path))
 
@@ -41,40 +38,45 @@ export async function proxy(req: NextRequest) {
   }
 
   /**
-   * 🔐 Check token
+   * 🔐 Get token
    */
-  const token = req.cookies.get(COOKIE_NAME)?.value
+  const token = req.cookies.get(AUTH_COOKIES.ADMIN)?.value
 
-  if (!token) {
+  /**
+   * 🔁 Helper: redirect to login
+   */
+  const redirectToLogin = () => {
     const url = req.nextUrl.clone()
     url.pathname = "/admin/login"
     return NextResponse.redirect(url)
+  }
+
+  if (!token?.trim()) {
+    return redirectToLogin()
   }
 
   /**
    * 🔐 Verify token
    */
   try {
-    await jwtVerify(token, SECRET, {
-      issuer: "admin",
-      audience: "admin-panel",
+    await jwtVerify(token.trim(), ADMIN_JWT_SECRET, {
+      issuer: AUTH_META.ADMIN.issuer,
+      audience: AUTH_META.ADMIN.audience,
     })
 
     return NextResponse.next()
-  } catch {
-    const url = req.nextUrl.clone()
-    url.pathname = "/admin/login"
+  } catch (err: any) {
+    const res = redirectToLogin()
 
-    const res = NextResponse.redirect(url)
-    res.cookies.delete(COOKIE_NAME)
+    /**
+     * 🔥 Clean cookie if invalid
+     */
+    res.cookies.delete(AUTH_COOKIES.ADMIN)
 
     return res
   }
 }
 
-/**
- * 🎯 Apply only to admin routes
- */
 export const config = {
   matcher: ["/admin/:path*"],
 }

@@ -1,4 +1,4 @@
-// @/lib/customers/auth/errors.ts
+// @/lib/auth/errors.ts
 
 export class AuthError extends Error {
   status: number
@@ -9,10 +9,14 @@ export class AuthError extends Error {
     this.name = "AuthError"
     this.status = status
     this.code = code
+
     Object.setPrototypeOf(this, AuthError.prototype)
   }
 }
 
+/**
+ * 🔥 Centralized auth errors (admin + customer)
+ */
 export const AUTH_ERRORS = {
   UNAUTHORIZED: () => new AuthError("Unauthorized", 401, "UNAUTHORIZED"),
 

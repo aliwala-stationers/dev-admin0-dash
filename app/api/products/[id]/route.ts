@@ -1,93 +1,238 @@
-import { NextResponse } from "next/server"
+// @/app/api/products/[id]/route.ts
+
+import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Product from "@/models/Product"
+import { jwtVerify, JWTPayload } from "jose"
+import { ADMIN_JWT_SECRET, AUTH_META } from "@/lib/auth/constants"
+import { AUTH_ERRORS, AuthError } from "@/lib/auth/errors"
+import mongoose from "mongoose"
 
 type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-// GET single product
-export async function GET(req: Request, { params }: RouteContext) {
+type AdminJWTPayload = JWTPayload & {
+  sub: string
+  role: "admin"
+}
+
+/**
+ * 🔐 Verify admin
+ */
+async function verifyAdmin(req: NextRequest): Promise<AdminJWTPayload> {
+  const authHeader = req.headers.get("authorization")
+
+  if (!authHeader) throw AUTH_ERRORS.UNAUTHORIZED()
+
+  const [scheme, token] = authHeader.split(" ")
+
+  if (scheme !== "Bearer" || !token?.trim()) {
+    throw AUTH_ERRORS.UNAUTHORIZED()
+  }
+
+  const { payload } = await jwtVerify(token.trim(), ADMIN_JWT_SECRET, {
+    issuer: AUTH_META.ADMIN.issuer,
+    audience: AUTH_META.ADMIN.audience,
+  })
+
+  if (!payload.sub || payload.role !== "admin") {
+    throw AUTH_ERRORS.FORBIDDEN()
+  }
+
+  return payload as AdminJWTPayload
+}
+
+/**
+ * 📦 Serialize product
+ */
+function serializeProduct(product: any) {
+  return {
+    id: product._id.toString(),
+    name: product.name,
+    slug: product.slug,
+    sku: product.sku,
+    price: product.price,
+    status: product.status,
+    category: product.category
+      ? {
+          id: product.category._id?.toString?.(),
+          name: product.category.name,
+        }
+      : null,
+    brand: product.brand
+      ? {
+          id: product.brand._id?.toString?.(),
+          name: product.brand.name,
+          logo: product.brand.logo,
+        }
+      : null,
+    createdAt: product.createdAt,
+  }
+}
+
+/**
+ * 🔍 Validate ObjectId
+ */
+function isValidObjectId(id: string) {
+  return mongoose.Types.ObjectId.isValid(id)
+}
+
+/**
+ * 📄 GET single product
+ */
+export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
-    await connectDB()
+    await verifyAdmin(req)
+
     const { id } = await params
 
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
+    }
+
+    await connectDB()
+
     const product = await Product.findById(id)
-      .populate("category")
-      .populate("brand")
+      .populate("category", "name")
+      .populate("brand", "name logo")
+      .lean()
 
     if (!product) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
-    return NextResponse.json(product)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({
+      success: true,
+      product: serializeProduct(product),
+    })
+  } catch (error: unknown) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status },
+      )
+    }
+
+    return NextResponse.json(
+      { error: "Failed to fetch product" },
+      { status: 500 },
+    )
   }
 }
 
-// UPDATE product
-export async function PUT(req: Request, { params }: RouteContext) {
+/**
+ * ✏️ UPDATE product (PATCH style safer)
+ */
+export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
-    await connectDB()
+    await verifyAdmin(req)
+
     const { id } = await params
+
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
+    }
+
+    await connectDB()
+
     const body = await req.json()
 
-    // --- VALIDATION START ---
-    // Check if SKU or Slug is being used by a DIFFERENT product
-    // The query checks: (SKU matches OR Slug matches) AND (ID is NOT this product)
-    const conflict = await Product.findOne({
-      $and: [
-        { _id: { $ne: id } }, // Exclude current product from check
-        { $or: [{ sku: body.sku }, { slug: body.slug }] },
-      ],
-    })
+    /**
+     * 🔍 Conflict check
+     */
+    if (body.sku || body.slug) {
+      const conflict = await Product.findOne({
+        _id: { $ne: id },
+        $or: [
+          ...(body.sku ? [{ sku: body.sku }] : []),
+          ...(body.slug ? [{ slug: body.slug }] : []),
+        ],
+      })
 
-    if (conflict) {
-      if (conflict.sku === body.sku) {
+      if (conflict) {
         return NextResponse.json(
-          { error: "SKU is already used by another product" },
-          { status: 400 },
-        )
-      }
-      if (conflict.slug === body.slug) {
-        return NextResponse.json(
-          { error: "Slug is already used by another product" },
-          { status: 400 },
+          {
+            error:
+              conflict.sku === body.sku
+                ? "SKU already used"
+                : "Slug already used",
+          },
+          { status: 409 },
         )
       }
     }
-    // --- VALIDATION END ---
 
-    const product = await Product.findByIdAndUpdate(id, body, {
+    /**
+     * ✏️ Update
+     */
+    const updated = await Product.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
     })
+      .populate("category", "name")
+      .populate("brand", "name logo")
+      .lean()
 
-    if (!product) {
+    if (!updated) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
-    return NextResponse.json(product)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    return NextResponse.json({
+      success: true,
+      product: serializeProduct(updated),
+    })
+  } catch (error: unknown) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status },
+      )
+    }
+
+    return NextResponse.json(
+      { error: "Failed to update product" },
+      { status: 500 },
+    )
   }
 }
 
-// DELETE product
-export async function DELETE(req: Request, { params }: RouteContext) {
+/**
+ * ❌ DELETE product
+ */
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {
-    await connectDB()
+    await verifyAdmin(req)
+
     const { id } = await params
 
-    const deletedProduct = await Product.findByIdAndDelete(id)
+    if (!isValidObjectId(id)) {
+      return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
+    }
 
-    if (!deletedProduct) {
+    await connectDB()
+
+    const deleted = await Product.findByIdAndDelete(id)
+
+    if (!deleted) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, message: "Product deleted" })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({
+      success: true,
+      message: "Product deleted",
+    })
+  } catch (error: unknown) {
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status },
+      )
+    }
+
+    return NextResponse.json(
+      { error: "Failed to delete product" },
+      { status: 500 },
+    )
   }
 }

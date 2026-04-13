@@ -1,17 +1,28 @@
 // @/lib/customers/auth/verifyCustomer.ts
 
 import { jwtVerify, JWTPayload } from "jose"
-import { JWT_SECRET } from "@/lib/customers/auth/constants"
-import { AUTH_ERRORS } from "@/lib/customers/auth/errors"
+import { CUSTOMER_JWT_SECRET, AUTH_META } from "@/lib/auth/constants"
+import { AUTH_ERRORS } from "@/lib/auth/errors"
+
+/**
+ * 🔐 Strongly-typed payload (recommended)
+ */
+export type CustomerJWTPayload = JWTPayload & {
+  sub: string
+  phone: string
+  role: "customer"
+}
 
 /**
  * @summary Verify customer JWT from Authorization header
  */
-export async function verifyCustomer(req: Request): Promise<JWTPayload> {
+export async function verifyCustomer(
+  req: Request,
+): Promise<CustomerJWTPayload> {
   const authHeader = req.headers.get("authorization")
 
   /**
-   * Step 1: Validate header format
+   * Step 1: Validate header
    */
   if (!authHeader) {
     throw AUTH_ERRORS.UNAUTHORIZED()
@@ -19,7 +30,7 @@ export async function verifyCustomer(req: Request): Promise<JWTPayload> {
 
   const [scheme, token] = authHeader.split(" ")
 
-  if (scheme !== "Bearer" || !token) {
+  if (scheme !== "Bearer" || !token?.trim()) {
     throw AUTH_ERRORS.UNAUTHORIZED()
   }
 
@@ -29,22 +40,29 @@ export async function verifyCustomer(req: Request): Promise<JWTPayload> {
   let payload: JWTPayload
 
   try {
-    const result = await jwtVerify(token, JWT_SECRET, {
-      issuer: "mobile",
-      audience: "customer-app",
+    const result = await jwtVerify(token.trim(), CUSTOMER_JWT_SECRET, {
+      issuer: AUTH_META.CUSTOMER.issuer,
+      audience: AUTH_META.CUSTOMER.audience,
     })
 
     payload = result.payload
-  } catch {
+  } catch (err: any) {
+    /**
+     * 🔥 Optional: differentiate expiry
+     */
+    if (err?.code === "ERR_JWT_EXPIRED") {
+      throw AUTH_ERRORS.TOKEN_EXPIRED()
+    }
+
     throw AUTH_ERRORS.INVALID_TOKEN()
   }
 
   /**
-   * Step 3: Validate role
+   * Step 3: Validate payload shape
    */
-  if (payload.role !== "customer") {
-    throw AUTH_ERRORS.FORBIDDEN()
+  if (!payload.sub || payload.role !== "customer") {
+    throw AUTH_ERRORS.INVALID_PAYLOAD()
   }
 
-  return payload
+  return payload as CustomerJWTPayload
 }

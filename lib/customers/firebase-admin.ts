@@ -13,5 +13,9 @@ const app =
         credential: admin.credential.cert(FIREBASE_SERVICE_ACCOUNT),
       })
 
-export default admin
-export { app }
+/**
+ * 🔐 Export ready-to-use services
+ */
+export const firebaseAuth = app.auth()
+
+export default app
