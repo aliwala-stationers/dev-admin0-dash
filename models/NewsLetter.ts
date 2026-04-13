@@ -32,7 +32,7 @@ const NewsletterSchema = new Schema(
  * We are using the "useDb" strategy here.
  * Instead of creating a whole new connection (expensive), we fork the
  * existing default connection to target the 'user-website-enquiry' database.
- * * This shares the underlying socket pool (efficient) but isolates the data.
+ * This shares the underlying socket pool (efficient) but isolates the data.
  */
 
 // 1. Grab the default mongoose connection (singleton)
@@ -42,7 +42,9 @@ const defaultConn = mongoose.connection
 // { useCache: true } ensures we reuse the connection object if called multiple times
 const targetDB = defaultConn.useDb("user-website-enquiry", { useCache: true })
 
-// 3. Register the model on the TARGET database, not the default one
-const Newsletter = targetDB.model("newsletter_subscribers", NewsletterSchema)
+// 3. Check if model already exists to prevent recompilation in development
+const Newsletter =
+  targetDB.models.newsletter_subscribers ||
+  targetDB.model("newsletter_subscribers", NewsletterSchema)
 
 export default Newsletter

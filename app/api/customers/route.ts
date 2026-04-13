@@ -1,19 +1,10 @@
 // @/app/api/customers/route.ts
 
 import { NextResponse, NextRequest } from "next/server"
-import { jwtVerify, JWTPayload } from "jose"
 import connectDB from "@/lib/db"
 import Customer from "@/models/Customer"
-import { ADMIN_JWT_SECRET, AUTH_META } from "@/lib/auth/constants"
-import { AuthError, AUTH_ERRORS } from "@/lib/auth/errors"
-
-/**
- * 🧾 Types
- */
-type AdminJWTPayload = JWTPayload & {
-  sub: string
-  role: "admin"
-}
+import { verifyAdmin } from "@/lib/auth/verifyAdmin"
+import { AuthError } from "@/lib/auth/errors"
 
 type CustomerDoc = {
   _id: any
@@ -25,33 +16,7 @@ type CustomerDoc = {
 }
 
 /**
- * 🔐 Verify admin JWT
- */
-async function verifyAdmin(req: NextRequest): Promise<AdminJWTPayload> {
-  const authHeader = req.headers.get("authorization")
-
-  if (!authHeader) throw AUTH_ERRORS.UNAUTHORIZED()
-
-  const [scheme, token] = authHeader.split(" ")
-
-  if (scheme !== "Bearer" || !token?.trim()) {
-    throw AUTH_ERRORS.UNAUTHORIZED()
-  }
-
-  const { payload } = await jwtVerify(token.trim(), ADMIN_JWT_SECRET, {
-    issuer: AUTH_META.ADMIN.issuer,
-    audience: AUTH_META.ADMIN.audience,
-  })
-
-  if (!payload.sub || payload.role !== "admin") {
-    throw AUTH_ERRORS.FORBIDDEN()
-  }
-
-  return payload as AdminJWTPayload
-}
-
-/**
- * 📦 Serialize customer
+ *  Serialize customer
  */
 function serializeCustomer(customer: CustomerDoc) {
   return {
@@ -69,7 +34,7 @@ function serializeCustomer(customer: CustomerDoc) {
  */
 export async function POST(req: NextRequest) {
   try {
-    await verifyAdmin(req)
+    await verifyAdmin()
 
     const body = await req.json()
 
@@ -184,7 +149,7 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest) {
   try {
-    await verifyAdmin(req)
+    await verifyAdmin()
 
     /**
      * Pagination

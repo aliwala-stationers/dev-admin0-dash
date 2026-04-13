@@ -4,38 +4,11 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Newsletter from "@/models/NewsLetter"
 import mongoose from "mongoose"
-import { jwtVerify } from "jose"
-import { ADMIN_JWT_SECRET, AUTH_META } from "@/lib/auth/constants"
-import { AUTH_ERRORS, AuthError } from "@/lib/auth/errors"
+import { verifyAdmin } from "@/lib/auth/verifyAdmin"
+import { AuthError } from "@/lib/auth/errors"
 
 type RouteContext = {
   params: Promise<{ id: string }>
-}
-
-/**
- * 🔐 Verify admin
- */
-async function verifyAdmin(req: NextRequest) {
-  const authHeader = req.headers.get("authorization")
-
-  if (!authHeader) throw AUTH_ERRORS.UNAUTHORIZED()
-
-  const [scheme, token] = authHeader.split(" ")
-
-  if (scheme !== "Bearer" || !token?.trim()) {
-    throw AUTH_ERRORS.UNAUTHORIZED()
-  }
-
-  const { payload } = await jwtVerify(token.trim(), ADMIN_JWT_SECRET, {
-    issuer: AUTH_META.ADMIN.issuer,
-    audience: AUTH_META.ADMIN.audience,
-  })
-
-  if (payload.role !== "admin") {
-    throw AUTH_ERRORS.FORBIDDEN()
-  }
-
-  return payload
 }
 
 /**
@@ -61,7 +34,7 @@ function serializeSubscriber(doc: any) {
  */
 export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
-    await verifyAdmin(req)
+    await verifyAdmin()
 
     const { id } = await params
 
@@ -108,7 +81,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
  */
 export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
-    await verifyAdmin(req)
+    await verifyAdmin()
 
     const { id } = await params
 
@@ -177,7 +150,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
  */
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {
-    await verifyAdmin(req)
+    await verifyAdmin()
 
     const { id } = await params
 

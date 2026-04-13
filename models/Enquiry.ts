@@ -50,7 +50,10 @@ const defaultConn = mongoose.connection
 const targetDB = defaultConn.useDb("user-website-enquiry", { useCache: true })
 
 // 3. Register the model on the TARGET database
+// Check if model already exists to prevent recompilation in development
 // Explicitly naming the collection 'enquiries' to match the snake_case/plural convention
-const Enquiry = targetDB.model("contact_messages", EnquirySchema)
+const Enquiry =
+  targetDB.models.contact_messages ||
+  targetDB.model("contact_messages", EnquirySchema)
 
 export default Enquiry

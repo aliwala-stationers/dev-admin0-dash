@@ -3,18 +3,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Category from "@/models/Category"
-import { jwtVerify, JWTPayload } from "jose"
-import { ADMIN_JWT_SECRET, AUTH_META } from "@/lib/auth/constants"
-import { AUTH_ERRORS, AuthError } from "@/lib/auth/errors"
+import { verifyAdmin } from "@/lib/auth/verifyAdmin"
+import { AuthError } from "@/lib/auth/errors"
 import mongoose from "mongoose"
-
-/**
- * 🧾 Types
- */
-type AdminJWTPayload = JWTPayload & {
-  sub: string
-  role: "admin"
-}
 
 type CategoryDoc = {
   _id: any
@@ -29,33 +20,7 @@ type CategoryDoc = {
 }
 
 /**
- * 🔐 Verify admin
- */
-async function verifyAdmin(req: NextRequest): Promise<AdminJWTPayload> {
-  const authHeader = req.headers.get("authorization")
-
-  if (!authHeader) throw AUTH_ERRORS.UNAUTHORIZED()
-
-  const [scheme, token] = authHeader.split(" ")
-
-  if (scheme !== "Bearer" || !token?.trim()) {
-    throw AUTH_ERRORS.UNAUTHORIZED()
-  }
-
-  const { payload } = await jwtVerify(token.trim(), ADMIN_JWT_SECRET, {
-    issuer: AUTH_META.ADMIN.issuer,
-    audience: AUTH_META.ADMIN.audience,
-  })
-
-  if (!payload.sub || payload.role !== "admin") {
-    throw AUTH_ERRORS.FORBIDDEN()
-  }
-
-  return payload as AdminJWTPayload
-}
-
-/**
- * 📦 Serialize category
+ *  Serialize category
  */
 function serializeCategory(category: CategoryDoc) {
   return {
@@ -76,7 +41,7 @@ function serializeCategory(category: CategoryDoc) {
  */
 export async function GET(req: NextRequest) {
   try {
-    await verifyAdmin(req)
+    await verifyAdmin()
     await connectDB()
 
     const categories = await Category.aggregate([
@@ -127,7 +92,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    await verifyAdmin(req)
+    await verifyAdmin()
     await connectDB()
 
     const body = await req.json()

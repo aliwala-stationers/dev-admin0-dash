@@ -3,18 +3,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { PutObjectCommand } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
-import { cookies } from "next/headers"
 import { randomUUID } from "crypto"
 
 import { r2 } from "@/lib/r2storage"
 import { jwtVerify } from "jose"
-import {
-  ADMIN_JWT_SECRET,
-  CUSTOMER_JWT_SECRET,
-  AUTH_META,
-  AUTH_COOKIES,
-} from "@/lib/auth/constants"
+import { CUSTOMER_JWT_SECRET, AUTH_META } from "@/lib/auth/constants"
 import { AUTH_ERRORS, AuthError } from "@/lib/auth/errors"
+import { verifyAdmin } from "@/lib/auth/verifyAdmin"
 
 /**
  * 🔐 ENV
@@ -37,25 +32,18 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
  * 🔐 Resolve user (admin OR customer)
  */
 async function resolveUser(req: NextRequest) {
-  const adminToken = (await cookies()).get(AUTH_COOKIES.ADMIN)?.value
-
-  if (adminToken?.trim()) {
-    try {
-      const { payload } = await jwtVerify(
-        adminToken.trim(),
-        ADMIN_JWT_SECRET,
-        AUTH_META.ADMIN,
-      )
-
-      return {
-        role: "admin" as const,
-        userId: payload.sub,
-      }
-    } catch {
-      // fallback
+  // Try admin auth first (from cookies)
+  try {
+    const adminPayload = await verifyAdmin()
+    return {
+      role: "admin" as const,
+      userId: adminPayload.sub,
     }
+  } catch {
+    // Not admin, try customer auth
   }
 
+  // Customer auth from Authorization header
   const authHeader = req.headers.get("authorization")
 
   if (authHeader?.startsWith("Bearer ")) {
