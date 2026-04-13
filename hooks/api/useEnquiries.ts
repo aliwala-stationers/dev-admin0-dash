@@ -2,11 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 export interface Enquiry {
-  _id: string
+  _id?: string
+  id?: string
   name: string
   email: string
   phone?: string
-  message?: string
+  message: string
   status: "new" | "read" | "contacted"
   createdAt: string
   updatedAt: string

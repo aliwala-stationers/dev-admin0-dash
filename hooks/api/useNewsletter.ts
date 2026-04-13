@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 export interface NewsletterSubscriber {
-  _id: string
+  _id?: string
+  id?: string
   email: string
   isActive: boolean
   meta?: {

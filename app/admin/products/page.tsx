@@ -62,7 +62,7 @@ export default function ProductsPage() {
       (sum, p) => sum + (p.price || 0) * (p.stock || 0),
       0,
     )
-    const lowStock = productsArray.filter((p) => p.stock < 10).length
+    const lowStock = productsArray.filter((p) => (p.stock ?? 0) < 10).length
     const active = productsArray.filter((p) => p.status).length
 
     return {
@@ -254,13 +254,13 @@ export default function ProductsPage() {
             ) : (
               filteredProducts.map((product) => (
                 <TableRow
-                  key={product._id}
+                  key={product._id || product.id}
                   className="hover:bg-muted/50 transition-colors"
                 >
                   <TableCell className="font-medium">
                     <div className="flex flex-col">
                       <Link
-                        href={`/admin/products/${product._id}`}
+                        href={`/admin/products/${product._id || product.id}`}
                         className="text-accent-blue hover:underline"
                       >
                         {product.name}
@@ -318,10 +318,12 @@ export default function ProductsPage() {
                   <TableCell>
                     <span
                       className={
-                        product.stock < 10 ? "text-red-600 font-bold" : ""
+                        (product.stock ?? 0) < 10
+                          ? "text-red-600 font-bold"
+                          : ""
                       }
                     >
-                      {product.stock}
+                      {product.stock ?? 0}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -338,12 +340,16 @@ export default function ProductsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/products/${product._id}`}>
+                          <Link
+                            href={`/admin/products/${product._id || product.id}`}
+                          >
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/products/edit/${product._id}`}>
+                          <Link
+                            href={`/admin/products/edit/${product._id || product.id}`}
+                          >
                             Edit
                           </Link>
                         </DropdownMenuItem>
@@ -352,7 +358,10 @@ export default function ProductsPage() {
                           className="text-destructive focus:bg-destructive/10"
                           disabled={deleteMutation.isPending}
                           onClick={() =>
-                            handleDelete(product._id, product.name)
+                            handleDelete(
+                              product._id || product.id || "",
+                              product.name,
+                            )
                           }
                         >
                           <Trash2 className="mr-2 h-4 w-4" />

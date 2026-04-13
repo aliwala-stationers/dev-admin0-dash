@@ -176,17 +176,17 @@ export default function CategoriesPage() {
           </TableHeader>
           <TableBody>
             {filteredCategories.length === 0 ? (
-              <TableRow>
+              <TableRow key="no-categories">
                 <TableCell colSpan={6} className="h-24 text-center">
                   No categories found.
                 </TableCell>
               </TableRow>
             ) : (
               filteredCategories.map((category) => (
-                <TableRow key={category._id}>
+                <TableRow key={category._id || category.id}>
                   <TableCell>
                     <Link
-                      href={`/admin/categories/${category._id}`}
+                      href={`/admin/categories/${category._id || category.id}`}
                       className="text-accent-blue hover:underline flex items-center gap-3"
                     >
                       <Avatar className="h-10 w-10 border rounded-md">
@@ -226,19 +226,26 @@ export default function CategoriesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/categories/${category._id}`}>
+                          <Link
+                            href={`/admin/categories/${category._id || category.id}`}
+                          >
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/categories/edit/${category._id}`}>
+                          <Link
+                            href={`/admin/categories/edit/${category._id || category.id}`}
+                          >
                             Edit
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() =>
-                            handleDelete(category._id, category.name)
+                            handleDelete(
+                              category._id || category.id || "",
+                              category.name,
+                            )
                           }
                         >
                           <Trash2 className="mr-2 h-4 w-4" />

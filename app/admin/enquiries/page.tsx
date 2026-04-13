@@ -207,9 +207,11 @@ export default function EnquiriesPage() {
                 {filteredEnquiries.length > 0 ? (
                   filteredEnquiries.map((e) => (
                     <TableRow
-                      key={e._id}
+                      key={e._id || e.id}
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => router.push(`/admin/enquiries/${e._id}`)}
+                      onClick={() =>
+                        router.push(`/admin/enquiries/${e._id || e.id}`)
+                      }
                     >
                       <TableCell>
                         <div className="flex flex-col">
@@ -246,7 +248,7 @@ export default function EnquiriesPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={() =>
-                                router.push(`/admin/enquiries/${e._id}`)
+                                router.push(`/admin/enquiries/${e._id || e.id}`)
                               }
                             >
                               <Eye className="mr-2 h-4 w-4" />
@@ -256,7 +258,7 @@ export default function EnquiriesPage() {
                               <DropdownMenuItem
                                 onClick={() =>
                                   updateMutation.mutate({
-                                    id: e._id,
+                                    id: e._id || e.id || "",
                                     data: { status: "read" },
                                   })
                                 }
@@ -269,7 +271,7 @@ export default function EnquiriesPage() {
                               <DropdownMenuItem
                                 onClick={() =>
                                   updateMutation.mutate({
-                                    id: e._id,
+                                    id: e._id || e.id || "",
                                     data: { status: "contacted" },
                                   })
                                 }
@@ -282,7 +284,7 @@ export default function EnquiriesPage() {
                               <DropdownMenuItem
                                 onClick={() =>
                                   updateMutation.mutate({
-                                    id: e._id,
+                                    id: e._id || e.id || "",
                                     data: { status: "new" },
                                   })
                                 }
@@ -297,7 +299,7 @@ export default function EnquiriesPage() {
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow>
+                  <TableRow key="no-enquiries">
                     <TableCell colSpan={6} className="h-24 text-center">
                       No enquiries found.
                     </TableCell>
@@ -313,7 +315,7 @@ export default function EnquiriesPage() {
             {filteredEnquiries.length > 0 ? (
               filteredEnquiries.map((e) => (
                 <Card
-                  key={e._id}
+                  key={e._id || e.id}
                   className={cn(
                     "flex flex-col",
                     e.status === "new" &&
@@ -361,7 +363,9 @@ export default function EnquiriesPage() {
                       variant="outline"
                       size="sm"
                       className="h-8"
-                      onClick={() => router.push(`/admin/enquiries/${e._id}`)}
+                      onClick={() =>
+                        router.push(`/admin/enquiries/${e._id || e.id}`)
+                      }
                     >
                       <Eye className="mr-2 h-4 w-4" />
                       View Details
@@ -381,7 +385,7 @@ export default function EnquiriesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               updateMutation.mutate({
-                                id: e._id,
+                                id: e._id || e.id || "",
                                 data: { status: "read" },
                               })
                             }
@@ -394,7 +398,7 @@ export default function EnquiriesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               updateMutation.mutate({
-                                id: e._id,
+                                id: e._id || e.id || "",
                                 data: { status: "contacted" },
                               })
                             }
@@ -407,7 +411,7 @@ export default function EnquiriesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               updateMutation.mutate({
-                                id: e._id,
+                                id: e._id || e.id || "",
                                 data: { status: "new" },
                               })
                             }

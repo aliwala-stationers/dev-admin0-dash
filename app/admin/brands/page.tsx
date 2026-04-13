@@ -152,17 +152,17 @@ export default function BrandsPage() {
           </TableHeader>
           <TableBody>
             {filteredBrands.length === 0 ? (
-              <TableRow>
+              <TableRow key="no-brands">
                 <TableCell colSpan={5} className="h-24 text-center">
                   No brands found.
                 </TableCell>
               </TableRow>
             ) : (
               filteredBrands.map((brand) => (
-                <TableRow key={brand._id}>
+                <TableRow key={brand._id || brand.id}>
                   <TableCell>
                     <Link
-                      href={`/admin/brands/${brand._id}`}
+                      href={`/admin/brands/${brand._id || brand.id}`}
                       className="text-accent-blue hover:underline flex items-center gap-3"
                     >
                       <Avatar className="h-10 w-10 border rounded-md">
@@ -208,7 +208,12 @@ export default function BrandsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive"
-                          onClick={() => handleDelete(brand._id, brand.name)}
+                          onClick={() =>
+                            handleDelete(
+                              brand._id || brand.id || "",
+                              brand.name,
+                            )
+                          }
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete

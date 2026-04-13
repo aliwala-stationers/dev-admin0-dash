@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 export interface Brand {
-  _id: string // MongoDB uses _id
+  _id?: string // MongoDB uses _id
   id?: string // Fallback for UI
   name: string
   slug: string

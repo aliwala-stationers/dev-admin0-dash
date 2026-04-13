@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 export interface Category {
-  _id: string
+  _id?: string
+  id?: string
   name: string
   slug: string
   description: string

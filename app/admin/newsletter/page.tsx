@@ -193,7 +193,7 @@ export default function NewsletterPage() {
               <TableBody>
                 {filteredSubscribers.length > 0 ? (
                   filteredSubscribers.map((subscriber) => (
-                    <TableRow key={subscriber._id}>
+                    <TableRow key={subscriber._id || subscriber.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-muted-foreground" />
@@ -226,7 +226,7 @@ export default function NewsletterPage() {
                               <DropdownMenuItem
                                 onClick={() =>
                                   updateMutation.mutate({
-                                    id: subscriber._id,
+                                    id: subscriber._id || subscriber.id || "",
                                     data: { isActive: false },
                                   })
                                 }
@@ -238,7 +238,7 @@ export default function NewsletterPage() {
                               <DropdownMenuItem
                                 onClick={() =>
                                   updateMutation.mutate({
-                                    id: subscriber._id,
+                                    id: subscriber._id || subscriber.id || "",
                                     data: { isActive: true },
                                   })
                                 }
@@ -247,9 +247,9 @@ export default function NewsletterPage() {
                                 Re-activate
                               </DropdownMenuItem>
                             )}
-                            {/* <DropdownMenuItem 
+                            {/* <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
-                              onClick={() => deleteMutation.mutate(subscriber._id)}
+                              onClick={() => deleteMutation.mutate(subscriber._id || subscriber.id)}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Remove
@@ -260,7 +260,7 @@ export default function NewsletterPage() {
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow>
+                  <TableRow key="no-subscribers">
                     <TableCell colSpan={4} className="h-24 text-center">
                       No subscribers found.
                     </TableCell>
@@ -275,7 +275,10 @@ export default function NewsletterPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredSubscribers.length > 0 ? (
               filteredSubscribers.map((subscriber) => (
-                <Card key={subscriber._id} className="flex flex-col">
+                <Card
+                  key={subscriber._id || subscriber.id}
+                  className="flex flex-col"
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between gap-4">
                       <CardTitle className="text-base truncate">
@@ -316,7 +319,7 @@ export default function NewsletterPage() {
                       className="h-8"
                       onClick={() => {
                         updateMutation.mutate({
-                          id: subscriber._id,
+                          id: subscriber._id || subscriber.id || "",
                           data: { isActive: !subscriber.isActive },
                         })
                       }}
