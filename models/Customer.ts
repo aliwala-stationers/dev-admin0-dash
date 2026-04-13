@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose"
+import { Schema, model, models } from "mongoose"
 
 const AddressSchema = new Schema({
   type: { type: String, enum: ["shipping", "billing", "delivery"] },

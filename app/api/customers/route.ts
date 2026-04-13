@@ -21,6 +21,7 @@ export async function POST(req: Request) {
       const secret = new TextEncoder().encode(DUMMY_JWT_SECRET)
       await jwtVerify(token, secret)
     } catch (err) {
+      console.error("JWT Verification Error:", err)
       return NextResponse.json(
         { error: "Invalid or expired token" },
         { status: 401 },
@@ -78,7 +79,11 @@ export async function GET() {
     await connectDB()
     const customers = await Customer.find({}).sort({ createdAt: -1 })
     return NextResponse.json(customers)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    console.error("Get Customers Error:", error)
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 },
+    )
   }
 }
