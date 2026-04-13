@@ -1,3 +1,5 @@
+// @/hooks/api/useAuthQueries.ts
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
@@ -36,8 +38,6 @@ export const useCurrentUser = () => {
 export const useLogin = () => {
   const queryClient = useQueryClient()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const redirect = searchParams.get("redirect")
 
   return useMutation({
     mutationFn: async ({ email, password }: any) => {
@@ -51,7 +51,7 @@ export const useLogin = () => {
       if (!res.ok) throw new Error(data.message || "Login failed")
       return data.user
     },
-    onSuccess: (user) => {
+    onSuccess: (user, variables: any) => {
       // 1. Update the 'currentUser' cache immediately
       queryClient.setQueryData(["currentUser"], user)
 
@@ -59,9 +59,9 @@ export const useLogin = () => {
       toast.success("Welcome back")
 
       // 3. Redirect
-      // If there's a redirect param, go there. Otherwise, dashboard.
-      if (redirect) {
-        router.push(redirect)
+      // If there's a redirect param passed in variables, go there. Otherwise, dashboard.
+      if (variables.redirect) {
+        router.push(variables.redirect)
       } else {
         router.push("/admin/dashboard")
       }

@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   Card,
   CardContent,
@@ -19,7 +19,7 @@ import { Eye, EyeOff } from "lucide-react"
 // 1. Point to the NEW context
 import { useAuth } from "@/lib/auth-context"
 
-export default function LoginPage() {
+function LoginContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -28,6 +28,8 @@ export default function LoginPage() {
   // 2. Destructure from the React Query Context
   const { login, isAuthenticated } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get("redirect")
 
   // Guard: If already logged in, kick to dashboard
   useEffect(() => {
@@ -41,9 +43,9 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      // 3. The Shift: Pass as Object { email, password }
+      // 3. The Shift: Pass as Object { email, password, redirect }
       // We await this so we can toggle isLoading off when done
-      await login({ email, password })
+      await login({ email, password, redirect })
 
       // NOTE: No router.push() or toast.success() here.
       // The useLogin hook in hooks/useAuthQueries.ts handles the redirect and success message.
@@ -136,5 +138,19 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   )
 }

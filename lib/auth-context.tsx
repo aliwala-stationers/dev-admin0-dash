@@ -17,7 +17,11 @@ interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (credentials: { email: string; password: string }) => Promise<any>
+  login: (credentials: {
+    email: string
+    password: string
+    redirect?: string | null
+  }) => Promise<any>
   logout: () => void
 }
 
