@@ -1,53 +1,64 @@
-import mongoose, { Schema, model, models } from "mongoose"
+// @/models/User.ts
+
+import { Schema, model, models } from "mongoose"
+import bcrypt from "bcryptjs"
 
 const UserSchema = new Schema(
   {
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: true,
       unique: true,
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        "Email is invalid",
-      ],
+      lowercase: true,
+      trim: true,
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
-      select: false, // Security: Do not return password by default in queries
+      required: true,
+      select: false,
     },
     name: {
       type: String,
       default: "User",
+      trim: true,
     },
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
+      index: true,
     },
-    // --- FIELD ADDED FROM YOUR DUMP ---
-    isAdmin: {
-      type: Boolean,
-      default: false,
-    },
-    // --- OPTIONAL: Keep these if you plan to use them later ---
-    // The "Razorpay" Hook
     isPremium: {
       type: Boolean,
       default: false,
     },
-    // The "R2" Hook (for profile pics/uploads later)
     avatarUrl: {
       type: String,
       default: "",
     },
   },
   {
-    timestamps: true, // Auto-adds createdAt and updatedAt
+    timestamps: true,
   },
 )
 
-// Prevent model recompilation error in Next.js
+// ✅ FIXED: async middleware (no next)
+UserSchema.pre("save", async function () {
+  if (!this.isModified("password")) return
+  this.password = await bcrypt.hash(this.password, 10)
+})
+
+// ✅ FIXED: safe transform
+UserSchema.set("toJSON", {
+  transform: (_: any, ret: Record<string, any>) => {
+    delete ret.password
+    return ret
+  },
+})
+
+// ✅ Ensure index
+UserSchema.index({ email: 1 }, { unique: true })
+
 const User = models.User || model("User", UserSchema)
 
 export default User

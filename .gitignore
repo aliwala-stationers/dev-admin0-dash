@@ -40,3 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+aliwala-client-dash-firebase-adminsdk-fbsvc-ec888758cd.json

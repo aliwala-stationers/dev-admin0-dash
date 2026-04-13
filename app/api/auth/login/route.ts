@@ -1,47 +1,96 @@
+// @/app/api/admin/login/route.ts
+
 import { NextResponse } from "next/server"
-import { SignJWT } from "jose" // Lightweight JWT lib (Edge compatible)
-import { createSecretKey } from "crypto"
+import { SignJWT } from "jose"
 import bcrypt from "bcryptjs"
 import connectDB from "@/lib/db"
 import User from "@/models/User"
 import LoginHistory from "@/models/LoginHistory"
 
-const JWT_SECRET = process.env.ADMIN_JWT_SECRET || "fallback-secret"
-const COOKIE_NAME = "aliwala_admin_token"
-const COOKIE_MAX_AGE = 60 * 60 * 8 // 8 Hours
+/**
+ * @constant JWT_SECRET
+ * @description Secret used for signing admin JWT tokens.
+ * Must be defined in environment variables.
+ */
+if (!process.env.ADMIN_JWT_SECRET) {
+  throw new Error("ADMIN_JWT_SECRET is not defined")
+}
 
-export async function POST(req: Request) {
+const JWT_SECRET = process.env.ADMIN_JWT_SECRET
+
+/**
+ * @constant COOKIE_NAME
+ * @description Name of the HTTP-only cookie storing admin session token.
+ */
+const COOKIE_NAME = "__admin_token"
+
+/**
+ * @constant COOKIE_MAX_AGE
+ * @description Cookie lifespan in seconds (8 hours).
+ */
+const COOKIE_MAX_AGE = 60 * 60 * 8
+
+/**
+ * @function POST
+ * @summary Admin login endpoint
+ * @description
+ * Authenticates an admin user using email and password.
+ * If valid:
+ *  - Generates a signed JWT (admin scope)
+ *  - Stores it in an HttpOnly cookie
+ *  - Logs login event
+ *
+ * Security:
+ *  - Prevents credential enumeration
+ *  - Uses bcrypt for password validation
+ *  - Enforces admin role
+ *  - Uses HttpOnly + Secure cookies
+ *
+ * @param {Request} req - Incoming HTTP request containing JSON body
+ *
+ * @returns {Promise<NextResponse>} JSON response with user info or error
+ */
+export async function POST(req: Request): Promise<NextResponse> {
   try {
-    // 1. Parse Input
+    /**
+     * Step 1: Parse and validate input
+     */
     const body = await req.json().catch(() => ({}))
     const { email, password } = body
 
-    if (!email || !password) {
+    if (typeof email !== "string" || typeof password !== "string") {
       return NextResponse.json(
-        { ok: false, message: "Missing credentials" },
+        { ok: false, message: "Invalid input format" },
         { status: 400 },
       )
     }
 
-    // 2. Connect DB
+    const normalizedEmail = email.toLowerCase().trim()
+
+    /**
+     * Step 2: Connect to database
+     */
     await connectDB()
 
-    const users = await User.find()
-    console.log("users", users)
-    // 3. Find User (Explicitly select password)
-    const user = await User.findOne({ email }).select("+password")
+    /**
+     * Step 3: Fetch user (including password)
+     */
+    const user = await User.findOne({ email: normalizedEmail }).select(
+      "+password",
+    )
 
     if (!user) {
       return NextResponse.json(
-        { ok: false, message: "Invalid credentials" }, // Generic message for security
+        { ok: false, message: "Invalid credentials" },
         { status: 401 },
       )
     }
 
-    // 4. Verify Password (Bcrypt)
+    /**
+     * Step 4: Validate password
+     */
     const passwordMatches = await bcrypt.compare(password, user.password)
 
-    // 5. Verify Role (Admin Gatekeeper)
     if (!passwordMatches) {
       return NextResponse.json(
         { ok: false, message: "Invalid credentials" },
@@ -49,50 +98,62 @@ export async function POST(req: Request) {
       )
     }
 
-    // Optional: Enforce Admin Role
-    // if (!user.isAdmin) { ... }
+    /**
+     * Step 5: Enforce admin role
+     */
+    if (user.role !== "admin") {
+      return NextResponse.json(
+        { ok: false, message: "Access denied" },
+        { status: 403 },
+      )
+    }
 
-    // 6. Generate JWT (Session)
-    const secret = createSecretKey(Buffer.from(JWT_SECRET, "utf-8"))
-    const nowInSec = Math.floor(Date.now() / 1000)
-    const expInSec = nowInSec + COOKIE_MAX_AGE
+    /**
+     * Step 6: Generate JWT token
+     */
+    const secret = new TextEncoder().encode(JWT_SECRET)
 
     const token = await new SignJWT({
       sub: user._id.toString(),
       email: user.email,
-      role: user.role,
+      role: "admin",
     })
       .setProtectedHeader({ alg: "HS256" })
-      .setIssuedAt(nowInSec)
-      .setExpirationTime(expInSec)
+      .setIssuedAt()
+      .setExpirationTime("8h")
+      .setIssuer("admin")
+      .setAudience("admin-panel")
       .sign(secret)
 
-    // [INJECT HERE] ---------------------------------------------
-    // Fire-and-forget logging (or await it if you want strict auditing)
+    /**
+     * Step 7: Log login event (non-blocking)
+     */
     try {
-      const ip = req.headers.get("x-forwarded-for") || "unknown"
+      const ip =
+        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+        req.headers.get("x-real-ip") ||
+        "unknown"
+
       const userAgent = req.headers.get("user-agent") || "unknown"
 
-      // We await this to ensure the serverless function doesn't freeze
-      // before the write completes.
       await LoginHistory.create({
         userId: user._id,
-        event: "LOGIN",
+        event: "LOGIN_SUCCESS",
         ipAddress: ip,
         device: userAgent,
       })
     } catch (logError) {
-      // Critical: Do NOT fail the login if logging fails.
-      // Just print it to console and move on.
-      console.error("Failed to write login log:", logError)
+      console.error("Login logging failed:", logError)
     }
-    // 7. Prepare Response
+
+    /**
+     * Step 8: Prepare response payload
+     */
     const userPayload = {
       id: user._id,
       email: user.email,
       name: user.name,
       role: user.role,
-      isAdmin: user.isAdmin || false,
       avatarUrl: user.avatarUrl || "",
     }
 
@@ -101,12 +162,14 @@ export async function POST(req: Request) {
       user: userPayload,
     })
 
-    // 8. Set HttpOnly Cookie (The Security Layer)
+    /**
+     * Step 9: Set secure HttpOnly cookie
+     */
     response.cookies.set({
       name: COOKIE_NAME,
       value: token,
-      httpOnly: true, // Client JS cannot read this (prevents XSS)
-      sameSite: "lax",
+      httpOnly: true,
+      sameSite: "strict",
       path: "/",
       secure: process.env.NODE_ENV === "production",
       maxAge: COOKIE_MAX_AGE,
@@ -114,9 +177,10 @@ export async function POST(req: Request) {
 
     return response
   } catch (error) {
-    console.error("Login Error:", error)
+    console.error("Admin Login Error:", error)
+
     return NextResponse.json(
-      { ok: false, message: "Internal Server Error" },
+      { ok: false, message: "Internal server error" },
       { status: 500 },
     )
   }

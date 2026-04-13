@@ -1,75 +1,73 @@
+// @/app/api/customers/route.ts
+
 import { NextResponse, NextRequest } from "next/server"
 import { jwtVerify } from "jose"
 import connectDB from "@/lib/db"
 import Customer from "@/models/Customer"
 
-// Get JWT secret from environment variable
-const JWT_SECRET = process.env.JWT_SECRET
-
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is not defined in environment variables")
+// 🔐 ENV VALIDATION
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is not defined")
 }
 
+const JWT_SECRET = process.env.JWT_SECRET
+
 /**
- * Verify JWT token and return payload
- * Throws error if token is invalid or missing
+ * 🔐 Verify admin token
  */
 async function verifyToken(req: NextRequest) {
   const authHeader = req.headers.get("authorization")
+
   const token = authHeader?.startsWith("Bearer ")
     ? authHeader.split(" ")[1]
     : null
 
-  if (!token) {
-    throw new Error("UNAUTHORIZED")
-  }
+  if (!token) throw new Error("UNAUTHORIZED")
 
   const secret = new TextEncoder().encode(JWT_SECRET)
-  const { payload } = await jwtVerify(token, secret)
+
+  const { payload } = await jwtVerify(token, secret, {
+    issuer: "admin",
+    audience: "admin-panel",
+  })
+
+  if (!payload || payload.role !== "admin") {
+    throw new Error("FORBIDDEN")
+  }
 
   return payload
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // Verify token and check for admin role
-    const payload = await verifyToken(req)
+    await verifyToken(req)
 
-    // Role-based access control: only admins can create customers
-    if (!payload || payload.role !== "admin") {
+    await connectDB()
+
+    const body = await req.json()
+
+    /**
+     * ✅ FIX: email is optional
+     */
+    if (!body.name || !body.phone) {
       return NextResponse.json(
-        { error: "Forbidden: Admin access required" },
-        { status: 403 },
+        { error: "Missing required fields: name and phone" },
+        { status: 400 },
       )
     }
 
-    // Database Connection
-    await connectDB()
-
-    // Parse Request Body
-    const body = await req.json()
-
-    // Validation
-    const requiredFields = ["email", "name", "phone"]
-    for (const field of requiredFields) {
-      if (!body[field]) {
+    // Email validation (only if provided)
+    if (body.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(body.email)) {
         return NextResponse.json(
-          { error: `Missing required field: ${field}` },
+          { error: "Invalid email format" },
           { status: 400 },
         )
       }
     }
 
-    // Optional: Validate email format (basic)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(body.email)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 },
-      )
-    }
-
-    // Optional: Validate phone format (basic, adjust as needed)
+    // Phone validation
     const phoneRegex = /^\+?[\d\s-]{10,}$/
     if (!phoneRegex.test(body.phone)) {
       return NextResponse.json(
@@ -78,14 +76,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Input Sanitization and Whitelisting
+    /**
+     * ✅ Sanitization
+     */
     const customerData = {
       name: String(body.name).trim(),
       email: body.email ? String(body.email).toLowerCase().trim() : undefined,
       phone: String(body.phone).trim(),
-      status: body.status === "inactive" ? "inactive" : "active", // Only allow active/inactive
-      totalSpent: 0, // Backend-controlled, ignore client input
-      orders: 0, // Backend-controlled, ignore client input
+      status: body.status === "inactive" ? "inactive" : "active",
+      totalSpent: 0,
+      orders: 0,
       addresses: Array.isArray(body.addresses)
         ? body.addresses.map((addr: any) => ({
             type: ["shipping", "billing", "delivery"].includes(addr?.type)
@@ -101,38 +101,44 @@ export async function POST(req: NextRequest) {
         : [],
     }
 
-    // Create Customer - rely on MongoDB unique index for atomicity
+    /**
+     * ✅ Atomic create
+     */
+    let customer
     try {
-      const customer = await Customer.create(customerData)
-      // Return controlled response to avoid leaking internal fields
-      return NextResponse.json(
-        {
-          id: customer._id,
-          name: customer.name,
-          email: customer.email,
-          phone: customer.phone,
-          status: customer.status,
-          createdAt: customer.createdAt,
-        },
-        { status: 201 },
-      )
-    } catch (dbError: any) {
-      // Handle MongoDB duplicate key error (code 11000)
-      if (dbError.code === 11000) {
+      customer = await Customer.create(customerData)
+    } catch (err: any) {
+      if (err.code === 11000) {
         return NextResponse.json(
-          { error: "Customer already exists with this email" },
-          { status: 409 }, // Conflict is more appropriate for duplicate resource
+          { error: "Customer already exists with this phone" },
+          { status: 409 },
         )
       }
-      throw dbError // Re-throw for general error handling
+      throw err
     }
+
+    return NextResponse.json(
+      {
+        id: customer._id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        status: customer.status,
+        createdAt: customer.createdAt,
+      },
+      { status: 201 },
+    )
   } catch (error: any) {
-    console.error("Add Customer Error:", error)
     if (error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    if (error.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
     return NextResponse.json(
-      { error: error.message || "An unexpected error occurred" },
+      { error: error.message || "Internal server error" },
       { status: 500 },
     )
   }
@@ -140,64 +146,57 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    // Verify token and check for admin role
-    const payload = await verifyToken(req)
+    await verifyToken(req)
 
-    // Role-based access control: only admins can list customers
-    if (!payload || payload.role !== "admin") {
-      return NextResponse.json(
-        { error: "Forbidden: Admin access required" },
-        { status: 403 },
-      )
-    }
-
-    // Database Connection
     await connectDB()
 
-    // Pagination
-    const limit = Number(req.nextUrl.searchParams.get("limit")) || 20
+    /**
+     * ✅ FIX: limit guard
+     */
+    const limit = Math.min(
+      Number(req.nextUrl.searchParams.get("limit")) || 20,
+      100,
+    )
+
     const page = Number(req.nextUrl.searchParams.get("page")) || 1
     const skip = (page - 1) * limit
 
-    // Fetch customers with pagination and projection (performance optimization)
     const [customers, total] = await Promise.all([
-      Customer.find({}, "name email phone status createdAt") // Projection to fetch only needed fields
+      Customer.find({}, "name email phone status createdAt")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Customer.countDocuments(), // For total count
+      Customer.countDocuments(),
     ])
 
-    // Return controlled response to avoid leaking internal fields
-    const customerData = customers.map((customer) => ({
-      id: customer._id,
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-      status: customer.status,
-      createdAt: customer.createdAt,
-    }))
-
-    return NextResponse.json(
-      {
-        success: true,
-        data: customerData,
-        pagination: {
-          total,
-          page,
-          limit,
-          pages: Math.ceil(total / limit),
-        },
+    return NextResponse.json({
+      success: true,
+      data: customers.map((c) => ({
+        id: c._id,
+        name: c.name,
+        email: c.email,
+        phone: c.phone,
+        status: c.status,
+        createdAt: c.createdAt,
+      })),
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
       },
-      { status: 200 },
-    )
+    })
   } catch (error: any) {
-    console.error("Get Customers Error:", error)
     if (error.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    if (error.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
     return NextResponse.json(
-      { error: error.message || "An unexpected error occurred" },
+      { error: error.message || "Internal server error" },
       { status: 500 },
     )
   }

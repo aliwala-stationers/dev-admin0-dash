@@ -1,45 +1,116 @@
+// @/app/api/admin/logout/route.ts
+
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { jwtVerify } from "jose" // You need to read the token first
+import { jwtVerify } from "jose"
 import connectDB from "@/lib/db"
 import LoginHistory from "@/models/LoginHistory"
 
-const COOKIE_NAME = "aliwala_admin_token"
-const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET!
+/**
+ * @constant ADMIN_JWT_SECRET
+ * @description Secret used to verify admin JWT tokens.
+ */
+if (!process.env.ADMIN_JWT_SECRET) {
+  throw new Error("ADMIN_JWT_SECRET is not defined")
+}
 
-export async function POST(req: Request) {
-  const cookieStore = cookies()
-  const token = (await cookieStore).get(COOKIE_NAME)?.value
-  console.log("token", token)
-  // 1. If we have a token, log the logout event
-  if (token) {
-    try {
-      // We perform a "Silent Verification" just to get the ID
-      const secret = new TextEncoder().encode(ADMIN_JWT_SECRET)
-      const { payload } = await jwtVerify(token, secret)
-      const userId = payload.sub
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET
 
-      if (userId) {
-        await connectDB()
+/**
+ * @constant COOKIE_NAME
+ * @description Name of the cookie storing admin session token.
+ */
+const COOKIE_NAME = "__admin_token"
 
-        const userAgent = req.headers.get("user-agent") || "unknown"
-        const ip = req.headers.get("x-forwarded-for") || "unknown"
+/**
+ * @function POST
+ * @summary Admin logout endpoint
+ * @description
+ * Logs out an admin user by:
+ *  - Verifying existing JWT (if present)
+ *  - Logging logout event (non-blocking)
+ *  - Clearing HttpOnly cookie
+ *
+ * Security:
+ *  - Never fails logout even if token/logging fails
+ *  - Verifies JWT issuer & audience
+ *  - Prevents token misuse
+ *
+ * @param {Request} req - Incoming HTTP request
+ *
+ * @returns {Promise<NextResponse>} Always returns success response
+ */
+export async function POST(req: Request): Promise<NextResponse> {
+  try {
+    /**
+     * Step 1: Read cookie
+     */
+    const cookieStore = await cookies()
+    const token = cookieStore.get(COOKIE_NAME)?.value
 
-        await LoginHistory.create({
-          userId,
-          event: "LOGOUT",
-          ipAddress: ip,
-          device: userAgent,
+    /**
+     * Step 2: Attempt logout logging (non-blocking)
+     */
+    if (token) {
+      try {
+        const secret = new TextEncoder().encode(ADMIN_JWT_SECRET)
+
+        const { payload } = await jwtVerify(token, secret, {
+          issuer: "admin",
+          audience: "admin-panel",
         })
+
+        const userId = payload.sub
+
+        if (userId) {
+          await connectDB()
+
+          const ip =
+            req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+            req.headers.get("x-real-ip") ||
+            "unknown"
+
+          const userAgent = req.headers.get("user-agent") || "unknown"
+
+          await LoginHistory.create({
+            userId,
+            event: "LOGOUT",
+            ipAddress: ip,
+            device: userAgent,
+          })
+        }
+      } catch (logError) {
+        /**
+         * Important:
+         * Logout must never fail due to logging or token issues.
+         */
+        console.error("Logout logging failed:", logError)
       }
-    } catch (e) {
-      // If token is invalid, we just ignore the log and proceed to clear cookie
-      console.error("Logout Log Error", e)
     }
+
+    /**
+     * Step 3: Clear cookie (always)
+     */
+    const response = NextResponse.json({ success: true })
+
+    response.cookies.set({
+      name: COOKIE_NAME,
+      value: "",
+      httpOnly: true,
+      sameSite: "strict", // 🔥 stricter than lax (admin panel)
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 0, // immediate expiration
+    })
+
+    return response
+  } catch (error) {
+    console.error("Logout Error:", error)
+
+    /**
+     * Even if something breaks,
+     * logout should still succeed from client perspective.
+     */
+    return NextResponse.json({ success: true })
   }
-
-  // 2. Nuke the cookie (Existing logic)
-  ;(await cookieStore).delete(COOKIE_NAME)
-
-  return NextResponse.json({ success: true })
 }
