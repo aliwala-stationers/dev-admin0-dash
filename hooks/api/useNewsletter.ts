@@ -18,8 +18,22 @@ export const useNewsletter = () => {
     queryFn: async (): Promise<NewsletterSubscriber[]> => {
       const res = await fetch("/api/newsletter")
       if (!res.ok) throw new Error("Failed to fetch newsletter subscribers")
-      return res.json()
+      const json = await res.json()
+      return json.data || []
     },
+  })
+}
+
+export const useNewsletterSubscriber = (id: string) => {
+  return useQuery({
+    queryKey: ["newsletter", id],
+    queryFn: async (): Promise<NewsletterSubscriber> => {
+      const res = await fetch(`/api/newsletter/${id}`)
+      if (!res.ok) throw new Error("Failed to fetch subscriber")
+      const json = await res.json()
+      return json.data
+    },
+    enabled: !!id,
   })
 }
 

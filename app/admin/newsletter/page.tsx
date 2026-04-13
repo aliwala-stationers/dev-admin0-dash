@@ -60,15 +60,20 @@ export default function NewsletterPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"table" | "card">("table")
 
+  // Ensure newsletterSubscribers is always an array
+  const newsletterArray = Array.isArray(newsletterSubscribers)
+    ? newsletterSubscribers
+    : []
+
   const analytics = useMemo(() => {
     return {
-      total: newsletterSubscribers.length,
-      active: newsletterSubscribers.filter((s) => s.isActive).length,
-      unsubscribed: newsletterSubscribers.filter((s) => !s.isActive).length,
+      total: newsletterArray.length,
+      active: newsletterArray.filter((s) => s.isActive).length,
+      unsubscribed: newsletterArray.filter((s) => !s.isActive).length,
     }
-  }, [newsletterSubscribers])
+  }, [newsletterArray])
 
-  const filteredSubscribers = newsletterSubscribers.filter((subscriber) => {
+  const filteredSubscribers = newsletterArray.filter((subscriber) => {
     return subscriber.email.toLowerCase().includes(searchQuery.toLowerCase())
   })
 

@@ -19,7 +19,8 @@ export const useBrands = () => {
     queryFn: async (): Promise<Brand[]> => {
       const res = await fetch("/api/brands")
       if (!res.ok) throw new Error("Failed to fetch brands")
-      return res.json()
+      const json = await res.json()
+      return json.data || []
     },
   })
 }
@@ -31,7 +32,8 @@ export const useBrand = (id: string) => {
     queryFn: async (): Promise<Brand> => {
       const res = await fetch(`/api/brands/${id}`)
       if (!res.ok) throw new Error("Failed to fetch brand")
-      return res.json()
+      const json = await res.json()
+      return json.data
     },
     enabled: !!id, // Only fetch if ID exists
   })

@@ -54,21 +54,24 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
 
+  // Ensure products is always an array
+  const productsArray = Array.isArray(products) ? products : []
+
   const analytics = useMemo(() => {
-    const totalValue = products.reduce(
+    const totalValue = productsArray.reduce(
       (sum, p) => sum + (p.price || 0) * (p.stock || 0),
       0,
     )
-    const lowStock = products.filter((p) => p.stock < 10).length
-    const active = products.filter((p) => p.status).length
+    const lowStock = productsArray.filter((p) => p.stock < 10).length
+    const active = productsArray.filter((p) => p.status).length
 
     return {
-      total: products.length,
+      total: productsArray.length,
       totalValue,
       lowStock,
       active,
     }
-  }, [products])
+  }, [productsArray])
 
   // Helper to handle both populated and unpopulated fields
   const getLabel = (field: any) =>
@@ -76,12 +79,12 @@ export default function ProductsPage() {
 
   // 2. Dynamic Categories from DB products
   const categories = useMemo(() => {
-    const unique = new Set(products.map((p) => getLabel(p.category)))
+    const unique = new Set(productsArray.map((p) => getLabel(p.category)))
     return Array.from(unique).filter(Boolean).sort()
-  }, [products])
+  }, [productsArray])
 
   // 3. Filtering logic
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = productsArray.filter((product) => {
     const name = product.name.toLowerCase()
     const brand = getLabel(product.brand)?.toLowerCase() || ""
     const category = getLabel(product.category)
@@ -237,7 +240,7 @@ export default function ProductsPage() {
           </TableHeader>
           <TableBody>
             {filteredProducts.length === 0 ? (
-              <TableRow>
+              <TableRow key="no-products">
                 <TableCell
                   colSpan={7}
                   className="h-32 text-center text-muted-foreground"

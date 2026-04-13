@@ -65,18 +65,21 @@ export default function EnquiriesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewMode, setViewMode] = useState<"table" | "card">("table")
 
+  // Ensure enquiries is always an array
+  const enquiriesArray = Array.isArray(enquiries) ? enquiries : []
+
   const analytics = useMemo(() => {
     return {
-      total: enquiries.length,
-      new: enquiries.filter((e) => e.status === "new").length,
-      read: enquiries.filter((e) => e.status === "read").length,
-      contacted: enquiries.filter((e) => e.status === "contacted").length,
+      total: enquiriesArray.length,
+      new: enquiriesArray.filter((e) => e.status === "new").length,
+      read: enquiriesArray.filter((e) => e.status === "read").length,
+      contacted: enquiriesArray.filter((e) => e.status === "contacted").length,
     }
-  }, [enquiries])
+  }, [enquiriesArray])
 
   const filteredEnquiries = useMemo(() => {
     const q = searchQuery.toLowerCase()
-    return enquiries.filter((e) => {
+    return enquiriesArray.filter((e) => {
       return (
         e.name.toLowerCase().includes(q) ||
         e.email.toLowerCase().includes(q) ||
@@ -84,7 +87,7 @@ export default function EnquiriesPage() {
         (e.phone || "").toLowerCase().includes(q)
       )
     })
-  }, [enquiries, searchQuery])
+  }, [enquiriesArray, searchQuery])
 
   if (isLoading) return <div className="p-6">Loading enquiries...</div>
 

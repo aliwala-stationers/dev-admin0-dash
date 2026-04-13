@@ -18,20 +18,22 @@ export const useEnquiries = () => {
     queryFn: async (): Promise<Enquiry[]> => {
       const res = await fetch("/api/enquiries")
       if (!res.ok) throw new Error("Failed to fetch enquiries")
-      return res.json()
+      const json = await res.json()
+      return json.data || []
     },
   })
 }
 
-export const useEnquiry = (id?: string) => {
+export const useEnquiry = (id: string) => {
   return useQuery({
     queryKey: ["enquiries", id],
-    enabled: Boolean(id),
     queryFn: async (): Promise<Enquiry> => {
       const res = await fetch(`/api/enquiries/${id}`)
       if (!res.ok) throw new Error("Failed to fetch enquiry")
-      return res.json()
+      const json = await res.json()
+      return json.data
     },
+    enabled: !!id,
   })
 }
 

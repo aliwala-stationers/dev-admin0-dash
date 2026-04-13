@@ -5,7 +5,8 @@ import { toast } from "sonner"
 type PopulatedRef = { _id: string; name: string; slug?: string; logo?: string }
 
 export interface Product {
-  _id: string
+  _id?: string
+  id?: string
   name: string
   slug: string // <--- ADDED
   sku: string
@@ -21,10 +22,10 @@ export interface Product {
   tax?: number
   upc?: string
   barcode?: string
-  stock: number
+  stock?: number
   status: boolean
 
-  images: string[]
+  images?: string[]
   videoUrl?: string | null
   specs?: Record<string, string> // <--- ADDED (e.g. { Color: "Red" })
   isFeatured?: boolean
@@ -42,7 +43,8 @@ export const useProducts = (filters?: string) => {
       const queryString = filters ? `?${filters}` : ""
       const res = await fetch(`/api/products${queryString}`)
       if (!res.ok) throw new Error("Failed to fetch products")
-      return res.json()
+      const json = await res.json()
+      return json.data || []
     },
   })
 }
@@ -54,7 +56,8 @@ export const useProduct = (id: string) => {
     queryFn: async (): Promise<Product> => {
       const res = await fetch(`/api/products/${id}`)
       if (!res.ok) throw new Error("Failed to fetch product")
-      return res.json()
+      const json = await res.json()
+      return json.data
     },
     enabled: !!id,
   })

@@ -39,25 +39,28 @@ export default function CategoriesPage() {
   const deleteMutation = useDeleteCategory()
   const [searchQuery, setSearchQuery] = useState("")
 
+  // Ensure categories is always an array
+  const categoriesArray = Array.isArray(categories) ? categories : []
+
   const analytics = useMemo(() => {
-    const active = categories.filter((c) => c.status).length
-    const totalProducts = categories.reduce(
+    const active = categoriesArray.filter((c) => c.status).length
+    const totalProducts = categoriesArray.reduce(
       (sum, c) => sum + (c.productCount || 0),
       0,
     )
-    const topCategory = [...categories].sort(
+    const topCategory = [...categoriesArray].sort(
       (a, b) => (b.productCount || 0) - (a.productCount || 0),
     )[0]
 
     return {
-      total: categories.length,
+      total: categoriesArray.length,
       active,
       totalProducts,
       topCategory: topCategory?.name || "N/A",
     }
-  }, [categories])
+  }, [categoriesArray])
 
-  const filteredCategories = categories.filter((category) =>
+  const filteredCategories = categoriesArray.filter((category) =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 

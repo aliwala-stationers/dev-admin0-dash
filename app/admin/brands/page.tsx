@@ -40,17 +40,20 @@ export default function BrandsPage() {
   const deleteMutation = useDeleteBrand()
   const [searchQuery, setSearchQuery] = useState("")
 
+  // Ensure brands is always an array
+  const brandsArray = Array.isArray(brands) ? brands : []
+
   const analytics = useMemo(() => {
-    const active = brands.filter((b) => b.status).length
+    const active = brandsArray.filter((b) => b.status).length
 
     return {
-      total: brands.length,
+      total: brandsArray.length,
       active,
-      inactive: brands.length - active,
+      inactive: brandsArray.length - active,
     }
-  }, [brands])
+  }, [brandsArray])
 
-  const filteredBrands = brands.filter((brand) =>
+  const filteredBrands = brandsArray.filter((brand) =>
     brand.name.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
@@ -68,7 +71,7 @@ export default function BrandsPage() {
         <div>
           <h1 className="text-3xl font-semibold">Brands</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your product brands ({brands.length} total)
+            Manage your product brands ({brandsArray.length} total)
           </p>
         </div>
         <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>

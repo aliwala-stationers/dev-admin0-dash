@@ -37,14 +37,30 @@ export default function DashboardPage() {
     useNewsletter()
   const { orders, customers, payments } = useData()
 
+  // Ensure all data arrays are actually arrays (safety for API errors)
+  const productsArray = Array.isArray(products) ? products : []
+  const categoriesArray = Array.isArray(categories) ? categories : []
+  const brandsArray = Array.isArray(brands) ? brands : []
+  const enquiriesArray = Array.isArray(enquiries) ? enquiries : []
+  const newsletterArray = Array.isArray(newsletterSubscribers)
+    ? newsletterSubscribers
+    : []
+
   // 2. Calculate Real Metrics
   const inventoryData = useMemo(() => {
-    const totalValue = products.reduce((sum, p) => sum + p.price * p.stock, 0)
-    const lowStockCount = products.filter((p) => p.stock < 10).length
-    const outOfStockCount = products.filter((p) => p.stock === 0).length
+    const totalValue = productsArray.reduce(
+      (sum, p) => sum + (p.price || 0) * (p.stock || 0),
+      0,
+    )
+    const lowStockCount = productsArray.filter(
+      (p) => (p.stock || 0) < 10,
+    ).length
+    const outOfStockCount = productsArray.filter(
+      (p) => (p.stock || 0) === 0,
+    ).length
 
     // Sort products by newest first for "Recent" list
-    const recent = [...products]
+    const recent = [...productsArray]
       .sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -52,7 +68,7 @@ export default function DashboardPage() {
       .slice(0, 5)
 
     return { totalValue, lowStockCount, outOfStockCount, recent }
-  }, [products])
+  }, [productsArray])
 
   // 3. Real Data Metrics
   const dashboardStats = useMemo(() => {
@@ -64,12 +80,12 @@ export default function DashboardPage() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5)
 
-    const activeNewsletter = newsletterSubscribers.filter(
+    const activeNewsletter = newsletterArray.filter(
       (s: any) => s.isActive,
     ).length
 
     return { recentOrders, recentPayments, activeNewsletter }
-  }, [orders, payments, newsletterSubscribers])
+  }, [orders, payments, newsletterArray])
 
   if (pLoading || cLoading || bLoading || eLoading || nLoading) {
     return (
@@ -102,7 +118,7 @@ export default function DashboardPage() {
     },
     {
       title: "Total Products",
-      value: products.length.toString(),
+      value: productsArray.length.toString(),
       change: `${inventoryData.lowStockCount} Low Stock`, // Showing actionable data
       trend: inventoryData.lowStockCount > 0 ? "down" : ("up" as const), // Red trend if low stock
       icon: Package,
@@ -119,12 +135,12 @@ export default function DashboardPage() {
   const subStats = [
     {
       title: "Brands",
-      value: brands.length,
+      value: brandsArray.length,
       icon: Tag,
     },
     {
       title: "Categories",
-      value: categories.length,
+      value: categoriesArray.length,
       icon: Layers,
     },
     {
@@ -135,12 +151,12 @@ export default function DashboardPage() {
     },
     {
       title: "Enquiries",
-      value: enquiries.length,
+      value: enquiriesArray.length,
       icon: MessageSquare,
     },
     {
       title: "Newsletter",
-      value: newsletterSubscribers.length,
+      value: newsletterArray.length,
       icon: Mail,
     },
     {
@@ -161,36 +177,33 @@ export default function DashboardPage() {
 
       {/* TOP ROW STATS */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <Card key={stat.title} className="border-border/50 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </CardTitle>
-                <Icon className="h-4 w-4 text-accent-blue" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="flex items-center gap-1 text-xs mt-1">
-                  <TrendingUp
-                    className={`h-3 w-3 ${
-                      stat.trend === "up" ? "text-green-600" : "text-red-600"
-                    }`}
-                  />
-                  <span
-                    className={
-                      stat.trend === "up" ? "text-green-600" : "text-red-600"
-                    }
-                  >
-                    {stat.change}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+        {stats.map((stat) => (
+          <Card key={stat.title} className="border-border/50 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.title}
+              </CardTitle>
+              <stat.icon className="h-4 w-4 text-accent-blue" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="flex items-center gap-1 text-xs mt-1">
+                <TrendingUp
+                  className={`h-3 w-3 ${
+                    stat.trend === "up" ? "text-green-600" : "text-red-600"
+                  }`}
+                />
+                <span
+                  className={
+                    stat.trend === "up" ? "text-green-600" : "text-red-600"
+                  }
+                >
+                  {stat.change}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* SECOND ROW SUB-STATS */}
@@ -316,12 +329,12 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {inventoryData.recent.map((product) => (
                 <div
-                  key={product._id}
+                  key={product._id || product.id}
                   className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent-blue/10">
-                      {product.images[0] ? (
+                      {product.images && product.images[0] ? (
                         <img
                           src={product.images[0]}
                           alt="p"
@@ -365,12 +378,12 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {products
-                .filter((p) => p.stock < 10)
+              {productsArray
+                .filter((p) => (p.stock ?? 0) < 10)
                 .slice(0, 5)
                 .map((product) => (
                   <div
-                    key={product._id}
+                    key={product._id || product.id}
                     className="flex flex-col border-b border-border/50 pb-4 last:border-0 last:pb-0"
                   >
                     <div className="flex items-center justify-between">
@@ -391,7 +404,8 @@ export default function DashboardPage() {
                     </p>
                   </div>
                 ))}
-              {products.filter((p) => p.stock < 10).length === 0 && (
+              {productsArray.filter((p) => (p.stock ?? 0) < 10).length ===
+                0 && (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <Package className="h-8 w-8 text-green-200 mb-2" />
                   <p className="text-sm text-muted-foreground">
