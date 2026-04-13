@@ -1,4 +1,4 @@
-import { Schema, model, models } from "mongoose"
+import mongoose, { Schema } from "mongoose"
 
 const AddressSchema = new Schema({
   type: { type: String, enum: ["shipping", "billing", "delivery"] },
@@ -18,7 +18,6 @@ const CustomerSchema = new Schema(
     },
     email: {
       type: String,
-      // required: [false, "Email is required"],
       unique: true,
       match: [
         /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
@@ -56,6 +55,21 @@ const CustomerSchema = new Schema(
   },
 )
 
-const Customer = models.Customer || model("Customer", CustomerSchema)
+/**
+ * SYSTEMS ARCHITECT NOTE:
+ * Standardization Protocol:
+ * We are using the "useDb" strategy to target the 'mobile-app-dev' database.
+ * This ensures customer data is isolated from the main admin/app database
+ * while sharing the same connection pool for efficiency.
+ */
+
+// 1. Grab the default mongoose connection (singleton)
+const defaultConn = mongoose.connection
+
+// 2. Fork it to the specific database
+const targetDB = defaultConn.useDb("mobile-app-dev", { useCache: true })
+
+// 3. Register the model on the TARGET database
+const Customer = targetDB.model("customers", CustomerSchema)
 
 export default Customer
