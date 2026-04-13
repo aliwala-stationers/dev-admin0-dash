@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 const notifications = [
   {
@@ -105,13 +106,15 @@ export function NotificationsNav() {
           </div>
         </ScrollArea>
         <div className="border-t px-4 py-2 text-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full text-xs text-muted-foreground hover:text-foreground"
-          >
-            View all notifications
-          </Button>
+          <Link href="/admin/notifications">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs text-muted-foreground hover:text-foreground"
+            >
+              View all notifications
+            </Button>
+          </Link>
         </div>
       </PopoverContent>
     </Popover>
