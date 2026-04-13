@@ -1,3 +1,5 @@
+// @/lib/changelog-data.ts
+
 export interface ChangelogEntry {
   id: string
   version: string

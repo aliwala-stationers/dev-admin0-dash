@@ -1,37 +1,24 @@
-// @/app/api/auth/verify-customer/route.ts
+// @/app/api/customers/auth/verify-customer/route.ts
 
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Customer from "@/models/Customer"
 import { SignJWT } from "jose"
-import admin from "@/lib/firebase-admin"
-
-// 🔐 ENV VALIDATION
-if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET is not defined")
-}
-
-const JWT_SECRET = process.env.JWT_SECRET
+import admin from "@/lib/customers/firebase-admin"
+import { JWT_SECRET } from "@/lib/customers/auth/constants"
+import { AUTH_ERRORS, AuthError } from "@/lib/customers/auth/errors"
+// import { rateLimit } from "@/lib/rate-limit" // optional
 
 /**
- * @function POST
  * @summary Verify or create customer after Firebase OTP
- * @description
- * - Verifies Firebase ID token
- * - Extracts phone securely
- * - Finds or creates customer
- * - Returns app JWT
  */
 export async function POST(req: NextRequest) {
   try {
-    await connectDB()
-
     const body = await req.json()
-
     const { firebaseToken, name } = body
 
     /**
-     * 🔥 Step 1: Validate Firebase token presence
+     * Step 1: Validate input
      */
     if (!firebaseToken || typeof firebaseToken !== "string") {
       return NextResponse.json(
@@ -41,49 +28,91 @@ export async function POST(req: NextRequest) {
     }
 
     /**
-     * 🔐 Step 2: Verify Firebase token (CRITICAL)
+     * (Optional) Step 1.5: Rate limit
      */
-    const decoded = await admin.auth().verifyIdToken(firebaseToken)
+    // const ip =
+    //   req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown"
+    // rateLimit(ip)
+
+    /**
+     * Step 2: Verify Firebase token
+     */
+    let decoded
+    try {
+      decoded = await admin.auth().verifyIdToken(firebaseToken)
+    } catch {
+      throw AUTH_ERRORS.INVALID_TOKEN()
+    }
 
     const phone = decoded.phone_number
 
     if (!phone) {
       return NextResponse.json(
-        { error: "Phone number not found in token" },
+        { error: "Phone not found in token" },
         { status: 400 },
       )
     }
 
-    const normalizedPhone = phone.replace(/\s+/g, "")
+    /**
+     * Step 3: Normalize phone
+     */
+    const normalizedPhone = phone.replace(/[^\d+]/g, "")
 
     /**
-     * Step 3: Find existing customer
+     * Step 4: Safe name
      */
-    let customer = await Customer.findOne({ phone: normalizedPhone })
+    const safeName =
+      typeof name === "string" && name.trim() ? name.trim() : "Customer"
 
+    /**
+     * Step 5: DB connection
+     */
+    await connectDB()
+
+    /**
+     * Step 6: Find existing
+     */
+    let customerDoc = await Customer.findOne({ phone: normalizedPhone })
     let isNewUser = false
 
     /**
-     * Step 4: Create if new
+     * Step 7: Create if not exists (race-safe)
      */
-    if (!customer) {
+    if (!customerDoc) {
       isNewUser = true
 
-      customer = await Customer.create({
-        phone: normalizedPhone,
-        name: name ? String(name).trim() : "Customer",
-        status: "active",
-      })
+      try {
+        customerDoc = await Customer.create({
+          phone: normalizedPhone,
+          name: safeName,
+          status: "active",
+        })
+      } catch (err: any) {
+        if (err.code === 11000) {
+          customerDoc = await Customer.findOne({ phone: normalizedPhone })
+          isNewUser = false
+        } else {
+          throw err
+        }
+      }
     }
 
     /**
-     * 🔐 Step 5: Generate YOUR app JWT
+     * Step 8: Safety check
      */
-    const secret = new TextEncoder().encode(JWT_SECRET)
+    if (!customerDoc) {
+      return NextResponse.json(
+        { error: "Customer creation failed" },
+        { status: 500 },
+      )
+    }
 
+    /**
+     * Step 9: Generate JWT
+     */
     const token = await new SignJWT({
-      sub: customer._id.toString(),
-      phone: customer.phone,
+      sub: customerDoc._id.toString(),
+      phone: customerDoc.phone,
       role: "customer",
     })
       .setProtectedHeader({ alg: "HS256" })
@@ -91,19 +120,19 @@ export async function POST(req: NextRequest) {
       .setExpirationTime("7d")
       .setIssuer("mobile")
       .setAudience("customer-app")
-      .sign(secret)
+      .sign(JWT_SECRET)
 
     /**
-     * Step 6: Response
+     * Step 10: Response
      */
     return NextResponse.json({
       success: true,
       isNewUser,
       customer: {
-        id: customer._id,
-        name: customer.name,
-        phone: customer.phone,
-        status: customer.status,
+        id: customerDoc._id,
+        name: customerDoc.name || "Customer",
+        phone: customerDoc.phone,
+        status: customerDoc.status,
       },
       token,
     })
@@ -111,20 +140,20 @@ export async function POST(req: NextRequest) {
     console.error("Verify Customer Error:", error)
 
     /**
-     * 🔥 Handle Firebase errors cleanly
+     * 🔥 Structured auth errors
      */
-    if (
-      error.code === "auth/argument-error" ||
-      error.code === "auth/id-token-expired"
-    ) {
+    if (error instanceof AuthError) {
       return NextResponse.json(
-        { error: "Invalid or expired Firebase token" },
-        { status: 401 },
+        { error: error.message, code: error.code },
+        { status: error.status },
       )
     }
 
+    /**
+     * 🔥 Fallback
+     */
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 },
     )
   }

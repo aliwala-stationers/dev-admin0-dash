@@ -4,85 +4,105 @@ import { NextResponse, NextRequest } from "next/server"
 import { jwtVerify } from "jose"
 import connectDB from "@/lib/db"
 import Customer from "@/models/Customer"
-
-// 🔐 ENV VALIDATION
-if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET is not defined")
-}
-
-const JWT_SECRET = process.env.JWT_SECRET
+import { AuthError, AUTH_ERRORS } from "@/lib/customers/auth/errors"
 
 /**
- * 🔐 Verify admin token
+ * 🔐 ENV
  */
-async function verifyToken(req: NextRequest) {
+const SECRET = new TextEncoder().encode(process.env.JWT_SECRET!)
+
+/**
+ * 🔐 Verify admin JWT
+ */
+async function verifyAdmin(req: NextRequest) {
   const authHeader = req.headers.get("authorization")
 
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.split(" ")[1]
-    : null
+  if (!authHeader) throw AUTH_ERRORS.UNAUTHORIZED()
 
-  if (!token) throw new Error("UNAUTHORIZED")
+  const [scheme, token] = authHeader.split(" ")
 
-  const secret = new TextEncoder().encode(JWT_SECRET)
+  if (scheme !== "Bearer" || !token) {
+    throw AUTH_ERRORS.UNAUTHORIZED()
+  }
 
-  const { payload } = await jwtVerify(token, secret, {
+  const { payload } = await jwtVerify(token, SECRET, {
     issuer: "admin",
     audience: "admin-panel",
   })
 
-  if (!payload || payload.role !== "admin") {
-    throw new Error("FORBIDDEN")
+  if (payload.role !== "admin") {
+    throw AUTH_ERRORS.FORBIDDEN()
   }
 
   return payload
 }
 
+/**
+ * 📦 Serialize customer (reuse later)
+ */
+function serializeCustomer(customer: any) {
+  return {
+    id: customer._id,
+    name: customer.name,
+    email: customer.email,
+    phone: customer.phone,
+    status: customer.status,
+    createdAt: customer.createdAt,
+  }
+}
+
+/**
+ * ➕ Create customer (admin only)
+ */
 export async function POST(req: NextRequest) {
   try {
-    await verifyToken(req)
-
-    await connectDB()
+    await verifyAdmin(req)
 
     const body = await req.json()
 
     /**
-     * ✅ FIX: email is optional
+     * Step 1: Validate
      */
     if (!body.name || !body.phone) {
       return NextResponse.json(
-        { error: "Missing required fields: name and phone" },
-        { status: 400 },
-      )
-    }
-
-    // Email validation (only if provided)
-    if (body.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(body.email)) {
-        return NextResponse.json(
-          { error: "Invalid email format" },
-          { status: 400 },
-        )
-      }
-    }
-
-    // Phone validation
-    const phoneRegex = /^\+?[\d\s-]{10,}$/
-    if (!phoneRegex.test(body.phone)) {
-      return NextResponse.json(
-        { error: "Invalid phone number format" },
+        { error: "Name and phone are required" },
         { status: 400 },
       )
     }
 
     /**
-     * ✅ Sanitization
+     * Step 2: Normalize
+     */
+    const name = String(body.name).trim()
+    const phone = String(body.phone).replace(/[^\d+]/g, "")
+    const email = body.email
+      ? String(body.email).toLowerCase().trim()
+      : undefined
+
+    /**
+     * Step 3: Validate formats
+     */
+    if (!/^\+?\d{10,15}$/.test(phone)) {
+      return NextResponse.json(
+        { error: "Invalid phone format" },
+        { status: 400 },
+      )
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { error: "Invalid email format" },
+        { status: 400 },
+      )
+    }
+
+    /**
+     * Step 4: Payload (your style ✔)
      */
     const customerData = {
-      name: String(body.name).trim(),
-      email: body.email ? String(body.email).toLowerCase().trim() : undefined,
-      phone: String(body.phone).trim(),
+      name,
+      email,
+      phone,
       status: body.status === "inactive" ? "inactive" : "active",
       totalSpent: 0,
       orders: 0,
@@ -102,7 +122,12 @@ export async function POST(req: NextRequest) {
     }
 
     /**
-     * ✅ Atomic create
+     * Step 5: DB
+     */
+    await connectDB()
+
+    /**
+     * Step 6: Create
      */
     let customer
     try {
@@ -117,41 +142,34 @@ export async function POST(req: NextRequest) {
       throw err
     }
 
-    return NextResponse.json(
-      {
-        id: customer._id,
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
-        status: customer.status,
-        createdAt: customer.createdAt,
-      },
-      { status: 201 },
-    )
+    /**
+     * Step 7: Response
+     */
+    return NextResponse.json(serializeCustomer(customer), { status: 201 })
   } catch (error: any) {
-    if (error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    if (error.message === "FORBIDDEN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status },
+      )
     }
 
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 },
     )
   }
 }
 
+/**
+ * 📄 List customers (admin only)
+ */
 export async function GET(req: NextRequest) {
   try {
-    await verifyToken(req)
-
-    await connectDB()
+    await verifyAdmin(req)
 
     /**
-     * ✅ FIX: limit guard
+     * Pagination
      */
     const limit = Math.min(
       Number(req.nextUrl.searchParams.get("limit")) || 20,
@@ -161,24 +179,29 @@ export async function GET(req: NextRequest) {
     const page = Number(req.nextUrl.searchParams.get("page")) || 1
     const skip = (page - 1) * limit
 
+    /**
+     * DB
+     */
+    await connectDB()
+
+    /**
+     * Fetch
+     */
     const [customers, total] = await Promise.all([
       Customer.find({}, "name email phone status createdAt")
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
       Customer.countDocuments(),
     ])
 
+    /**
+     * Response
+     */
     return NextResponse.json({
       success: true,
-      data: customers.map((c) => ({
-        id: c._id,
-        name: c.name,
-        email: c.email,
-        phone: c.phone,
-        status: c.status,
-        createdAt: c.createdAt,
-      })),
+      data: customers.map(serializeCustomer),
       pagination: {
         total,
         page,
@@ -187,16 +210,15 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error: any) {
-    if (error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    if (error.message === "FORBIDDEN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    if (error instanceof AuthError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status },
+      )
     }
 
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 },
     )
   }
