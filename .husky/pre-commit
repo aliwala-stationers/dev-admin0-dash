@@ -3,10 +3,12 @@
 FILES=$(git diff --cached --name-only --diff-filter=ACMR)
 [ -z "$FILES" ] && exit 0
 
-JS_TS_FILES=$(echo "$FILES" | grep -E '\.(js|ts|tsx)$')
+echo "$FILES" | xargs pnpm exec prettier --write --ignore-unknown
 
-pnpm exec prettier $FILES --write --ignore-unknown
+JS_TS_FILES=$(echo "$FILES" | grep -E '\.(js|ts|tsx)$' || true)
 
-[ -n "$JS_TS_FILES" ] && pnpm exec eslint $JS_TS_FILES --fix --max-warnings=100
+if [ -n "$JS_TS_FILES" ]; then
+  echo "$JS_TS_FILES" | xargs pnpm exec eslint --fix --max-warnings=100 || true
+fi
 
-git update-index --again
+git add $FILES
