@@ -11,8 +11,11 @@ type BrandDoc = {
   _id: any
   name: string
   slug: string
+  description: string
+  status: boolean
   logo?: string
   createdAt: Date
+  updatedAt: Date
 }
 
 /**
@@ -23,8 +26,11 @@ function serializeBrand(brand: BrandDoc) {
     id: brand._id.toString(),
     name: brand.name,
     slug: brand.slug,
+    description: brand.description,
+    status: brand.status,
     logo: brand.logo || "",
     createdAt: brand.createdAt,
+    updatedAt: brand.updatedAt,
   }
 }
 
@@ -66,7 +72,7 @@ export async function POST(req: NextRequest) {
     await connectDB()
 
     const body = await req.json()
-    const { name, slug, logo } = body
+    const { name, slug, description, status, logo } = body
 
     /**
      * 🔐 Validate
@@ -96,6 +102,8 @@ export async function POST(req: NextRequest) {
     const created = await Brand.create({
       name: String(name).trim(),
       slug: String(slug).trim(),
+      description: description?.trim() || "",
+      status: status === false ? false : true,
       logo: logo || "",
     })
 

@@ -15,6 +15,7 @@ export interface Product {
   // These can be ID strings OR Objects depending on API population
   category: string | PopulatedRef
   brand: string | PopulatedRef
+  subcategory?: string | PopulatedRef
 
   price: number
   salePrice?: number

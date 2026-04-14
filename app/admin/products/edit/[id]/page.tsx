@@ -13,6 +13,7 @@ import { useState, useRef, useEffect, use } from "react"
 import { useProduct, useUpdateProduct } from "@/hooks/api/useProducts"
 import { useCategories } from "@/hooks/api/useCategories"
 import { useBrands } from "@/hooks/api/useBrands"
+import { useSubcategories } from "@/hooks/api/useSubcategories"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -44,6 +45,7 @@ const productSchema = z.object({
     .string()
     .min(10, "Description must be at least 10 characters."),
   category: z.string().min(1, "Please select a category."),
+  subcategory: z.string().optional(),
   brand: z.string().min(1, "Please select a brand."),
   price: z
     .string()
@@ -86,6 +88,7 @@ export default function EditProductPage({
   const { data: product, isLoading: isProductLoading } = useProduct(id)
   const { data: categories = [] } = useCategories()
   const { data: brands = [] } = useBrands()
+  const { data: subcategories = [] } = useSubcategories()
   const updateMutation = useUpdateProduct()
 
   const form = useForm<ProductFormValues>({
@@ -103,6 +106,7 @@ export default function EditProductPage({
       barcode: "",
       status: true,
       category: "",
+      subcategory: "",
       brand: "",
       images: [],
       videoUrl: null,
@@ -502,8 +506,36 @@ export default function EditProductPage({
                         </FormControl>
                         <SelectContent>
                           {categories.map((c) => (
-                            <SelectItem key={c._id} value={c._id}>
+                            <SelectItem key={c._id} value={c._id || ""}>
                               {c.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="subcategory"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subcategory (Optional)</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select subcategory" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">None</SelectItem>
+                          {subcategories.map((sub) => (
+                            <SelectItem key={sub._id} value={sub._id || ""}>
+                              {sub.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -529,7 +561,7 @@ export default function EditProductPage({
                         </FormControl>
                         <SelectContent>
                           {brands.map((b) => (
-                            <SelectItem key={b._id} value={b._id}>
+                            <SelectItem key={b._id} value={b._id || ""}>
                               {b.name}
                             </SelectItem>
                           ))}

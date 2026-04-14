@@ -5,6 +5,7 @@ import connectDB from "@/lib/db"
 import Product from "@/models/Product"
 import Category from "@/models/Category"
 import Brand from "@/models/Brand"
+import Subcategory from "@/models/Subcategory"
 import { verifyAdmin } from "@/lib/auth/verifyAdmin"
 import { AuthError } from "@/lib/auth/errors"
 
@@ -17,8 +18,19 @@ function serializeProduct(product: any) {
     name: product.name,
     slug: product.slug,
     sku: product.sku,
+    description: product.description,
     price: product.price,
+    salePrice: product.salePrice,
+    hsn: product.hsn,
+    tax: product.tax,
+    upc: product.upc,
+    barcode: product.barcode,
+    stock: product.stock,
     status: product.status,
+    images: product.images,
+    videoUrl: product.videoUrl,
+    specs: product.specs,
+    isFeatured: product.isFeatured,
     category: product.category
       ? {
           id: product.category._id?.toString?.(),
@@ -32,7 +44,14 @@ function serializeProduct(product: any) {
           logo: product.brand.logo,
         }
       : null,
+    subcategory: product.subcategory
+      ? {
+          id: product.subcategory._id?.toString?.(),
+          name: product.subcategory.name,
+        }
+      : null,
     createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
   }
 }
 
@@ -60,6 +79,9 @@ export async function GET(req: NextRequest) {
      * DB
      */
     await connectDB()
+    await Category.init()
+    await Brand.init()
+    await Subcategory.init()
 
     /**
      * Query
@@ -77,6 +99,7 @@ export async function GET(req: NextRequest) {
       Product.find(query)
         .populate("category", "name")
         .populate("brand", "name logo")
+        .populate("subcategory", "name")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -102,8 +125,12 @@ export async function GET(req: NextRequest) {
       )
     }
 
+    console.error("Products fetch error:", error)
     return NextResponse.json(
-      { error: "Failed to fetch products" },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to fetch products",
+      },
       { status: 500 },
     )
   }
@@ -119,6 +146,7 @@ export async function POST(req: NextRequest) {
     await connectDB()
     await Category.init()
     await Brand.init()
+    await Subcategory.init()
 
     const body = await req.json()
 

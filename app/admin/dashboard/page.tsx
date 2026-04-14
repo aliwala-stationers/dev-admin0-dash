@@ -16,6 +16,7 @@ import {
   Mail,
   Loader2,
   AlertTriangle,
+  FolderTree,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -23,6 +24,7 @@ import Link from "next/link"
 import { useProducts } from "@/hooks/api/useProducts"
 import { useCategories } from "@/hooks/api/useCategories"
 import { useBrands } from "@/hooks/api/useBrands"
+import { useSubcategories } from "@/hooks/api/useSubcategories"
 import { useEnquiries } from "@/hooks/api/useEnquiries"
 import { useNewsletter } from "@/hooks/api/useNewsletter"
 import { useData } from "@/lib/data-context"
@@ -32,6 +34,7 @@ export default function DashboardPage() {
   const { data: products = [], isLoading: pLoading } = useProducts()
   const { data: categories = [], isLoading: cLoading } = useCategories()
   const { data: brands = [], isLoading: bLoading } = useBrands()
+  const { data: subcategories = [], isLoading: sLoading } = useSubcategories()
   const { data: enquiries = [], isLoading: eLoading } = useEnquiries()
   const { data: newsletterSubscribers = [], isLoading: nLoading } =
     useNewsletter()
@@ -41,6 +44,7 @@ export default function DashboardPage() {
   const productsArray = Array.isArray(products) ? products : []
   const categoriesArray = Array.isArray(categories) ? categories : []
   const brandsArray = Array.isArray(brands) ? brands : []
+  const subcategoriesArray = Array.isArray(subcategories) ? subcategories : []
   const enquiriesArray = Array.isArray(enquiries) ? enquiries : []
   const newsletterArray = Array.isArray(newsletterSubscribers)
     ? newsletterSubscribers
@@ -87,7 +91,7 @@ export default function DashboardPage() {
     return { recentOrders, recentPayments, activeNewsletter }
   }, [orders, payments, newsletterArray])
 
-  if (pLoading || cLoading || bLoading || eLoading || nLoading) {
+  if (pLoading || cLoading || bLoading || sLoading || eLoading || nLoading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-accent-blue" />
@@ -142,6 +146,11 @@ export default function DashboardPage() {
       title: "Categories",
       value: categoriesArray.length,
       icon: Layers,
+    },
+    {
+      title: "Subcategories",
+      value: subcategoriesArray.length,
+      icon: FolderTree,
     },
     {
       title: "Stock Alerts",

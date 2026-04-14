@@ -116,7 +116,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
         await LoginHistory.create({
           userId: user._id,
-          event: "LOGIN_SUCCESS",
+          event: "LOGIN",
           ipAddress: ip,
           device: userAgent,
         })

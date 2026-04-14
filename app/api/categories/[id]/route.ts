@@ -17,14 +17,14 @@ type CategoryDoc = {
   name: string
   slug: string
   description?: string
-  status: string
+  status: boolean
   image?: string
   createdAt: Date
   updatedAt: Date
 }
 
 /**
- * 📦 Serialize category
+ * Serialize category
  */
 function serializeCategory(category: CategoryDoc, productCount = 0) {
   return {

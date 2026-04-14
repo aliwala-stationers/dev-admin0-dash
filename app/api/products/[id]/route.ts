@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Product from "@/models/Product"
+import Subcategory from "@/models/Subcategory"
 import { verifyAdmin } from "@/lib/auth/verifyAdmin"
 import { AuthError } from "@/lib/auth/errors"
 import mongoose from "mongoose"
@@ -46,6 +47,12 @@ function serializeProduct(product: any) {
           logo: product.brand.logo,
         }
       : null,
+    subcategory: product.subcategory
+      ? {
+          id: product.subcategory._id?.toString?.(),
+          name: product.subcategory.name,
+        }
+      : null,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
   }
@@ -76,6 +83,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     const product = await Product.findById(id)
       .populate("category", "name")
       .populate("brand", "name logo")
+      .populate("subcategory", "name")
       .lean()
 
     if (!product) {
@@ -115,6 +123,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     }
 
     await connectDB()
+    await Subcategory.init()
 
     const body = await req.json()
 
@@ -152,6 +161,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     })
       .populate("category", "name")
       .populate("brand", "name logo")
+      .populate("subcategory", "name")
       .lean()
 
     if (!updated) {

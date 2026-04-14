@@ -12,7 +12,7 @@ type CategoryDoc = {
   name: string
   slug: string
   description?: string
-  status: string
+  status: boolean
   image?: string
   productCount?: number
   createdAt: Date
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
       name: String(name).trim(),
       slug: String(slug).trim(),
       description: description?.trim() || "",
-      status: status === "inactive" ? "inactive" : "active",
+      status: status === false ? false : true,
       image: image || "",
     })
 
@@ -144,8 +144,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    console.error("Category creation error:", error)
     return NextResponse.json(
-      { error: "Failed to create category" },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to create category",
+      },
       { status: 500 },
     )
   }

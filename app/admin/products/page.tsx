@@ -232,6 +232,7 @@ export default function ProductsPage() {
               <TableHead className="w-[300px]">Product Name</TableHead>
               <TableHead>Brand</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Subcategory</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Stock</TableHead>
               <TableHead>Status</TableHead>
@@ -242,7 +243,7 @@ export default function ProductsPage() {
             {filteredProducts.length === 0 ? (
               <TableRow key="no-products">
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="h-32 text-center text-muted-foreground"
                 >
                   <div className="flex flex-col items-center justify-center gap-2">
@@ -294,6 +295,17 @@ export default function ProductsPage() {
                     <Badge variant="outline" className="font-normal">
                       {getLabel(product.category)}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {product.subcategory ? (
+                      <Badge variant="secondary" className="font-normal">
+                        {getLabel(product.subcategory)}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm italic">
+                        None
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">

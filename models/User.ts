@@ -56,9 +56,6 @@ UserSchema.set("toJSON", {
   },
 })
 
-// ✅ Ensure index
-UserSchema.index({ email: 1 }, { unique: true })
-
 const User = models.User || model("User", UserSchema)
 
 export default User
