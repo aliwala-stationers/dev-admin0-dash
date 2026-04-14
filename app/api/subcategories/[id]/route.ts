@@ -1,8 +1,8 @@
-// @/app/api/categories/[id]/route.ts
+// @/app/api/subcategories/[id]/route.ts
 
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
-import Category from "@/models/Category"
+import Subcategory from "@/models/Subcategory"
 import Product from "@/models/Product"
 import mongoose from "mongoose"
 import { verifyAdmin } from "@/lib/auth/verifyAdmin"
@@ -12,31 +12,33 @@ type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-type CategoryDoc = {
+type SubcategoryDoc = {
   _id: any
   name: string
   slug: string
   description?: string
   status: string
   image?: string
+  category?: any
   createdAt: Date
   updatedAt: Date
 }
 
 /**
- * 📦 Serialize category
+ * 📦 Serialize subcategory
  */
-function serializeCategory(category: CategoryDoc, productCount = 0) {
+function serializeSubcategory(subcategory: SubcategoryDoc, productCount = 0) {
   return {
-    id: category._id.toString(),
-    name: category.name,
-    slug: category.slug,
-    description: category.description || "",
-    status: category.status,
-    image: category.image || "",
+    id: subcategory._id.toString(),
+    name: subcategory.name,
+    slug: subcategory.slug,
+    description: subcategory.description || "",
+    status: subcategory.status,
+    image: subcategory.image || "",
+    category: subcategory.category?.toString?.() || null,
     productCount,
-    createdAt: category.createdAt,
-    updatedAt: category.updatedAt,
+    createdAt: subcategory.createdAt,
+    updatedAt: subcategory.updatedAt,
   }
 }
 
@@ -48,7 +50,7 @@ function isValidObjectId(id: string) {
 }
 
 /**
- * 📄 GET single category
+ * 📄 GET single subcategory
  */
 export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
@@ -58,24 +60,27 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 
     if (!isValidObjectId(id)) {
       return NextResponse.json(
-        { error: "Invalid category ID" },
+        { error: "Invalid subcategory ID" },
         { status: 400 },
       )
     }
 
     await connectDB()
 
-    const category = await Category.findById(id).lean()
+    const subcategory = await Subcategory.findById(id).lean()
 
-    if (!category) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 })
+    if (!subcategory) {
+      return NextResponse.json(
+        { error: "Subcategory not found" },
+        { status: 404 },
+      )
     }
 
-    const productCount = await Product.countDocuments({ category: id })
+    const productCount = await Product.countDocuments({ subcategory: id })
 
     return NextResponse.json({
       success: true,
-      category: serializeCategory(category, productCount),
+      subcategory: serializeSubcategory(subcategory, productCount),
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
@@ -86,14 +91,14 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     }
 
     return NextResponse.json(
-      { error: "Failed to fetch category" },
+      { error: "Failed to fetch subcategory" },
       { status: 500 },
     )
   }
 }
 
 /**
- * ✏️ UPDATE category
+ * ✏️ UPDATE subcategory
  */
 export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
@@ -103,7 +108,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 
     if (!isValidObjectId(id)) {
       return NextResponse.json(
-        { error: "Invalid category ID" },
+        { error: "Invalid subcategory ID" },
         { status: 400 },
       )
     }
@@ -116,7 +121,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
      * 🔍 Slug conflict (exclude current)
      */
     if (body.slug) {
-      const conflict = await Category.findOne({
+      const conflict = await Subcategory.findOne({
         _id: { $ne: id },
         slug: body.slug,
       })
@@ -130,20 +135,30 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     }
 
     /**
+     * 🔗 Validate category (if provided)
+     */
+    if (body.category && !isValidObjectId(body.category)) {
+      return NextResponse.json({ error: "Invalid category" }, { status: 400 })
+    }
+
+    /**
      * ✏️ Update
      */
-    const updated = await Category.findByIdAndUpdate(id, body, {
+    const updated = await Subcategory.findByIdAndUpdate(id, body, {
       new: true,
       runValidators: true,
     }).lean()
 
     if (!updated) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 })
+      return NextResponse.json(
+        { error: "Subcategory not found" },
+        { status: 404 },
+      )
     }
 
     return NextResponse.json({
       success: true,
-      category: serializeCategory(updated),
+      subcategory: serializeSubcategory(updated),
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
@@ -154,14 +169,14 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     }
 
     return NextResponse.json(
-      { error: "Failed to update category" },
+      { error: "Failed to update subcategory" },
       { status: 500 },
     )
   }
 }
 
 /**
- * ❌ DELETE category
+ * ❌ DELETE subcategory
  */
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {
@@ -171,7 +186,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
 
     if (!isValidObjectId(id)) {
       return NextResponse.json(
-        { error: "Invalid category ID" },
+        { error: "Invalid subcategory ID" },
         { status: 400 },
       )
     }
@@ -181,24 +196,27 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     /**
      * 🔒 Safety: prevent delete if products exist
      */
-    const hasProducts = await Product.exists({ category: id })
+    const hasProducts = await Product.exists({ subcategory: id })
 
     if (hasProducts) {
       return NextResponse.json(
-        { error: "Cannot delete category with products" },
+        { error: "Cannot delete subcategory with products" },
         { status: 400 },
       )
     }
 
-    const deleted = await Category.findByIdAndDelete(id)
+    const deleted = await Subcategory.findByIdAndDelete(id)
 
     if (!deleted) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 })
+      return NextResponse.json(
+        { error: "Subcategory not found" },
+        { status: 404 },
+      )
     }
 
     return NextResponse.json({
       success: true,
-      message: "Category deleted",
+      message: "Subcategory deleted",
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
@@ -209,7 +227,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     }
 
     return NextResponse.json(
-      { error: "Failed to delete category" },
+      { error: "Failed to delete subcategory" },
       { status: 500 },
     )
   }

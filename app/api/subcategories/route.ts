@@ -1,53 +1,63 @@
-// @/app/api/categories/route.ts
+// @/app/api/subcategories/route.ts
 
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
-import Category from "@/models/Category"
+import Subcategory from "@/models/Subcategory"
 import { verifyAdmin } from "@/lib/auth/verifyAdmin"
 import { AuthError } from "@/lib/auth/errors"
 import mongoose from "mongoose"
 
-type CategoryDoc = {
+type SubcategoryDoc = {
   _id: any
   name: string
   slug: string
   description?: string
   status: string
   image?: string
+  category?: any
   productCount?: number
   createdAt: Date
 }
 
 /**
- *  Serialize category
+ *  Serialize subcategory
  */
-function serializeCategory(category: CategoryDoc) {
+function serializeSubcategory(subcategory: SubcategoryDoc) {
   return {
-    id: category._id.toString(),
-    name: category.name,
-    slug: category.slug,
-    description: category.description || "",
-    status: category.status,
-    image: category.image || "",
-    productCount: category.productCount || 0,
-    createdAt: category.createdAt,
+    id: subcategory._id.toString(),
+    name: subcategory.name,
+    slug: subcategory.slug,
+    description: subcategory.description || "",
+    status: subcategory.status,
+    image: subcategory.image || "",
+    category: subcategory.category?.toString?.() || null,
+    productCount: subcategory.productCount || 0,
+    createdAt: subcategory.createdAt,
   }
 }
 
 /**
- * 📄 GET categories (admin)
+ * 📄 GET subcategories (admin)
  */
 export async function GET(req: NextRequest) {
   try {
     await verifyAdmin()
     await connectDB()
 
-    const categories = await Category.aggregate([
+    const { searchParams } = new URL(req.url)
+    const categoryId = searchParams.get("categoryId")
+
+    const matchStage: any = {}
+    if (categoryId) {
+      matchStage.category = new mongoose.Types.ObjectId(categoryId)
+    }
+
+    const pipeline: any[] = [
       {
         $lookup: {
           from: "products",
           localField: "_id",
-          foreignField: "category",
+          foreignField: "subcategory",
           as: "products",
         },
       },
@@ -64,11 +74,17 @@ export async function GET(req: NextRequest) {
       {
         $sort: { createdAt: -1 },
       },
-    ])
+    ]
+
+    if (Object.keys(matchStage).length > 0) {
+      pipeline.unshift({ $match: matchStage })
+    }
+
+    const subcategories = await Subcategory.aggregate(pipeline)
 
     return NextResponse.json({
       success: true,
-      data: categories.map(serializeCategory),
+      data: subcategories.map(serializeSubcategory),
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
@@ -79,14 +95,14 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Failed to fetch categories" },
+      { error: "Failed to fetch subcategories" },
       { status: 500 },
     )
   }
 }
 
 /**
- * ➕ POST category (admin)
+ * ➕ POST subcategory (admin)
  */
 export async function POST(req: NextRequest) {
   try {
@@ -94,14 +110,14 @@ export async function POST(req: NextRequest) {
     await connectDB()
 
     const body = await req.json()
-    const { name, slug, description, status, image } = body
+    const { name, slug, description, status, image, category } = body
 
     /**
      * 🔐 Validate
      */
-    if (!name || !slug) {
+    if (!name || !slug || !category) {
       return NextResponse.json(
-        { error: "Name and slug are required" },
+        { error: "Name, slug, and category are required" },
         { status: 400 },
       )
     }
@@ -109,7 +125,7 @@ export async function POST(req: NextRequest) {
     /**
      * 🔍 Slug uniqueness
      */
-    const exists = await Category.findOne({ slug })
+    const exists = await Subcategory.findOne({ slug })
 
     if (exists) {
       return NextResponse.json(
@@ -119,20 +135,28 @@ export async function POST(req: NextRequest) {
     }
 
     /**
+     * 🔗 Validate category
+     */
+    if (!mongoose.Types.ObjectId.isValid(category)) {
+      return NextResponse.json({ error: "Invalid category" }, { status: 400 })
+    }
+
+    /**
      * ➕ Create
      */
-    const created = await Category.create({
+    const created = await Subcategory.create({
       name: String(name).trim(),
       slug: String(slug).trim(),
       description: description?.trim() || "",
       status: status === "inactive" ? "inactive" : "active",
       image: image || "",
+      category,
     })
 
     return NextResponse.json(
       {
         success: true,
-        category: serializeCategory(created.toObject()),
+        subcategory: serializeSubcategory(created.toObject()),
       },
       { status: 201 },
     )
@@ -145,7 +169,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Failed to create category" },
+      { error: "Failed to create subcategory" },
       { status: 500 },
     )
   }

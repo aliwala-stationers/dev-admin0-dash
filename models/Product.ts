@@ -26,11 +26,16 @@ const ProductSchema = new Schema(
     barcode: { type: String }, // URL to barcode image
 
     // --- RELATIONS (Strict Reference) ---
-    // We use ObjectId to link strictly to the Category/Brand documents
+    // We use ObjectId to link strictly to the Category/Brand/Subcategory documents
     category: {
       type: Schema.Types.ObjectId,
       ref: "Category",
       required: true,
+      index: true,
+    },
+    subcategory: {
+      type: Schema.Types.ObjectId,
+      ref: "Subcategory",
       index: true,
     },
     brand: {
