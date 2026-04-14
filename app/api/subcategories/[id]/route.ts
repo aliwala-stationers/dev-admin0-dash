@@ -142,9 +142,17 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     }
 
     /**
+     * 🔧 Convert status to boolean if provided
+     */
+    const updateData: any = { ...body }
+    if (body.status !== undefined) {
+      updateData.status = body.status === false ? false : true
+    }
+
+    /**
      * ✏️ Update
      */
-    const updated = await Subcategory.findByIdAndUpdate(id, body, {
+    const updated = await Subcategory.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     }).lean()

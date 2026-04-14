@@ -42,7 +42,9 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import Link from "next/link"
-import { useProducts, useDeleteProduct } from "@/hooks/api/useProducts" // Updated import
+import { useProducts, useDeleteProduct } from "@/hooks/api/useProducts"
+import { useSubcategories } from "@/hooks/api/useSubcategories"
+import { useBrands } from "@/hooks/api/useBrands"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 // import { toast } from "sonner";
 
@@ -50,9 +52,13 @@ export default function ProductsPage() {
   // 1. Fetching data with React Query
   const { data: products = [], isLoading } = useProducts()
   const deleteMutation = useDeleteProduct()
+  const { data: subcategories = [] } = useSubcategories()
+  const { data: brands = [] } = useBrands()
 
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
+  const [subcategoryFilter, setSubcategoryFilter] = useState("all")
+  const [brandFilter, setBrandFilter] = useState("all")
 
   // Ensure products is always an array
   const productsArray = Array.isArray(products) ? products : []
@@ -83,20 +89,45 @@ export default function ProductsPage() {
     return Array.from(unique).filter(Boolean).sort()
   }, [productsArray])
 
-  // 3. Filtering logic
+  // 3. Dynamic Subcategories from DB
+  const subcategoriesList = useMemo(() => {
+    const unique = new Set(productsArray.map((p) => getLabel(p.subcategory)))
+    return Array.from(unique).filter(Boolean).sort()
+  }, [productsArray])
+
+  // 4. Dynamic Brands from DB
+  const brandsList = useMemo(() => {
+    const unique = new Set(productsArray.map((p) => getLabel(p.brand)))
+    return Array.from(unique).filter(Boolean).sort()
+  }, [productsArray])
+
+  // 5. Filtering logic
   const filteredProducts = productsArray.filter((product) => {
     const name = product.name.toLowerCase()
     const brand = getLabel(product.brand)?.toLowerCase() || ""
-    const category = getLabel(product.category)
+    const category = getLabel(product.category)?.toLowerCase() || ""
+    const subcategory = getLabel(product.subcategory)?.toLowerCase() || ""
+    const searchLower = searchQuery.toLowerCase()
 
     const matchesSearch =
-      name.includes(searchQuery.toLowerCase()) ||
-      brand.includes(searchQuery.toLowerCase())
+      name.includes(searchLower) ||
+      brand.includes(searchLower) ||
+      category.includes(searchLower) ||
+      subcategory.includes(searchLower)
 
     const matchesCategory =
-      categoryFilter === "all" || category === categoryFilter
+      categoryFilter === "all" || getLabel(product.category) === categoryFilter
 
-    return matchesSearch && matchesCategory
+    const matchesSubcategory =
+      subcategoryFilter === "all" ||
+      getLabel(product.subcategory) === subcategoryFilter
+
+    const matchesBrand =
+      brandFilter === "all" || getLabel(product.brand) === brandFilter
+
+    return (
+      matchesSearch && matchesCategory && matchesSubcategory && matchesBrand
+    )
   })
 
   const handleDelete = async (id: string, name: string) => {
@@ -203,14 +234,14 @@ export default function ProductsPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name or brand..."
+            placeholder="Search by name, brand, category, subcategory..."
             className="pl-10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-full sm:w-[200px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
@@ -219,6 +250,34 @@ export default function ProductsPage() {
             {categories.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
+          <SelectTrigger className="w-full sm:w-[240px]">
+            <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+            <SelectValue placeholder="All Subcategories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Subcategories</SelectItem>
+            {subcategoriesList.map((sub) => (
+              <SelectItem key={sub} value={sub}>
+                {sub}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={brandFilter} onValueChange={setBrandFilter}>
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
+            <SelectValue placeholder="All Brands" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Brands</SelectItem>
+            {brandsList.map((brand) => (
+              <SelectItem key={brand} value={brand}>
+                {brand}
               </SelectItem>
             ))}
           </SelectContent>

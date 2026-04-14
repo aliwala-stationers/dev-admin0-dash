@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
       name: String(name).trim(),
       slug: String(slug).trim(),
       description: description?.trim() || "",
-      status: status === "inactive" ? "inactive" : "active",
+      status: status === false ? false : true,
       image: image || "",
       category,
     })

@@ -1,8 +1,16 @@
 "use client"
 
 import { useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Separator } from "@/components/ui/separator"
 import {
   Package,
   ShoppingCart,
@@ -17,8 +25,12 @@ import {
   Loader2,
   AlertTriangle,
   FolderTree,
+  ArrowUpRight,
+  Clock,
+  ChevronRight,
 } from "lucide-react"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 
 // IMPORT REAL DATA HOOKS
 import { useProducts } from "@/hooks/api/useProducts"
@@ -28,6 +40,7 @@ import { useSubcategories } from "@/hooks/api/useSubcategories"
 import { useEnquiries } from "@/hooks/api/useEnquiries"
 import { useNewsletter } from "@/hooks/api/useNewsletter"
 import { useData } from "@/lib/data-context"
+import { Button } from "@/components/ui/button"
 
 export default function DashboardPage() {
   // 1. Fetch Real Data
@@ -176,253 +189,377 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold text-accent-blue">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
-          Store overview and real-time inventory metrics.
-        </p>
+    <div className="p-6 space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-1 flex items-center gap-2">
+            <Clock className="h-3 w-3" />
+            Last updated: {new Date().toLocaleTimeString()}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge
+            variant="outline"
+            className="bg-background/50 backdrop-blur-sm border-accent-blue/20 text-accent-blue px-3 py-1"
+          >
+            <div className="h-2 w-2 rounded-full bg-accent-blue mr-2 animate-pulse" />
+            Live Store Updates
+          </Badge>
+        </div>
       </div>
 
-      {/* TOP ROW STATS */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title} className="border-border/50 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <stat.icon className="h-4 w-4 text-accent-blue" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="flex items-center gap-1 text-xs mt-1">
-                <TrendingUp
-                  className={`h-3 w-3 ${
-                    stat.trend === "up" ? "text-green-600" : "text-red-600"
-                  }`}
-                />
-                <span
-                  className={
-                    stat.trend === "up" ? "text-green-600" : "text-red-600"
-                  }
-                >
-                  {stat.change}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-fr lg:auto-rows-[minmax(160px,auto)]">
+        {/* HERO STAT: TOTAL VALUE (Bento: 2x2) */}
+        <Card className="lg:col-span-2 lg:row-span-2 border-none shadow-xl bg-accent-blue text-white overflow-hidden relative group">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+            <DollarSign className="h-32 w-32 rotate-12" />
+          </div>
+          <CardHeader className="relative z-10">
+            <p className="text-xs font-bold uppercase tracking-widest text-white/70">
+              Estimated Inventory Value
+            </p>
+            <CardTitle className="text-4xl md:text-5xl font-black mt-2">
+              {inventoryData.totalValue.toLocaleString("en-IN", {
+                style: "currency",
+                currency: "INR",
+              })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="relative z-10 mt-auto">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
+                <TrendingUp className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  Real-time calculations
                 </span>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* SECOND ROW SUB-STATS */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {subStats.map((stat) => (
-          <Card key={stat.title} className="border-border/50 shadow-sm">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-2 rounded-md bg-accent-blue/10">
-                  <stat.icon
-                    className={`h-5 w-5 ${stat.color || "text-accent-blue"}`}
-                  />
+              <div className="grid grid-cols-2 gap-4 mt-4 border-t border-white/10 pt-4">
+                <div>
+                  <p className="text-xs text-white/60 uppercase font-bold tracking-tighter">
+                    Products
+                  </p>
+                  <p className="text-xl font-bold">{productsArray.length}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {stat.title}
+                  <p className="text-xs text-white/60 uppercase font-bold tracking-tighter">
+                    Avg. Price
                   </p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-xl font-bold">
+                    &#8377;
+                    {productsArray.length > 0
+                      ? (
+                          inventoryData.totalValue / productsArray.length
+                        ).toFixed(0)
+                      : 0}
+                  </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* BOTTOM ROW TABLES */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* RECENT ORDERS */}
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-accent-blue">Recent Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {dashboardStats.recentOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0"
-                >
-                  <div>
-                    <Link
-                      href={`/admin/orders/${order.id}`}
-                      className="text-sm font-medium hover:underline"
-                    >
-                      {order.id}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">
-                      {order.customer}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">
-                      &#8377;{order.total.toFixed(2)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {order.date}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {dashboardStats.recentOrders.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No orders yet.
-                </p>
-              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* RECENT PAYMENTS */}
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-accent-blue">Recent Payments</CardTitle>
+        {/* TOP STAT: ORDERS (Bento: 1x1) */}
+        <Card className="border-border/50 hover:border-accent-blue/50 transition-colors cursor-default group">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Total Orders
+            </p>
+            <div className="p-2 rounded-lg bg-accent-blue/10 group-hover:bg-accent-blue group-hover:text-white transition-colors">
+              <ShoppingCart className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {dashboardStats.recentPayments.map((payment) => (
+            <div className="text-3xl font-bold">{orders.length}</div>
+            <div className="flex items-center gap-1 text-[10px] mt-1 text-green-600 font-bold">
+              <ArrowUpRight className="h-3 w-3" />
+              <span>LIFETIME GROWTH</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* TOP STAT: CUSTOMERS (Bento: 1x1) */}
+        <Card className="border-border/50 hover:border-accent-blue/50 transition-colors cursor-default group">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Customers
+            </p>
+            <div className="p-2 rounded-lg bg-accent-blue/10 group-hover:bg-accent-blue group-hover:text-white transition-colors">
+              <Users className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{customers.length}</div>
+            <p className="text-[10px] mt-1 text-muted-foreground font-medium">
+              ACTIVE USERS BASE
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* TOP STAT: STOCK ALERTS (Bento: 1x1) - High Impact */}
+        <Card
+          className={cn(
+            "border-border/50 transition-all cursor-default group",
+            inventoryData.lowStockCount > 0
+              ? "border-red-200 bg-red-50/30 dark:bg-red-950/10"
+              : "hover:border-accent-blue/50",
+          )}
+        >
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Inventory Alert
+            </p>
+            <div
+              className={cn(
+                "p-2 rounded-lg transition-colors",
+                inventoryData.lowStockCount > 0
+                  ? "bg-red-100 text-red-600 group-hover:bg-red-600 group-hover:text-white"
+                  : "bg-green-100 text-green-600",
+              )}
+            >
+              <AlertTriangle className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div
+              className={cn(
+                "text-3xl font-bold",
+                inventoryData.lowStockCount > 0 && "text-red-600",
+              )}
+            >
+              {inventoryData.lowStockCount}
+            </div>
+            <p className="text-[10px] mt-1 text-muted-foreground font-medium uppercase tracking-tighter">
+              Items requiring restock
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* TOP STAT: BRANDS (Bento: 1x1) */}
+        <Card className="border-border/50 hover:border-accent-blue/50 transition-colors cursor-default group">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Brands
+            </p>
+            <div className="p-2 rounded-lg bg-accent-blue/10 group-hover:bg-accent-blue group-hover:text-white transition-colors">
+              <Tag className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{brandsArray.length}</div>
+            <p className="text-[10px] mt-1 text-muted-foreground font-medium">
+              PARTNER ECOSYSTEM
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* RECENT ORDERS (Bento: 2x3) */}
+        <Card className="lg:col-span-2 lg:row-span-3 border-border/50 flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <div>
+              <CardTitle className="text-xl font-bold text-accent-blue">
+                Recent Orders
+              </CardTitle>
+              <CardDescription className="text-[10px] uppercase font-bold tracking-widest mt-0.5">
+                Live Transactions
+              </CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="text-xs h-8">
+              <Link href="/admin/orders">
+                View All <ChevronRight className="h-3 w-3 ml-1" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-auto">
+            <div className="space-y-6">
+              {dashboardStats.recentOrders.map((order) => (
                 <div
-                  key={payment.id}
-                  className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0"
+                  key={order.id}
+                  className="flex items-center justify-between group cursor-pointer"
                 >
-                  <div>
-                    <Link
-                      href={`/admin/payments/${payment.id}`}
-                      className="text-sm font-medium hover:underline"
-                    >
-                      {payment.id}
-                    </Link>
-                    <p className="text-xs text-muted-foreground uppercase">
-                      {payment.method.replace("_", " ")}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center font-bold text-xs text-accent-blue group-hover:bg-accent-blue group-hover:text-white transition-colors">
+                      {order.customer.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold group-hover:text-accent-blue transition-colors truncate max-w-[150px]">
+                        {order.customer}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] font-bold h-4 px-1 leading-none uppercase tracking-tighter"
+                        >
+                          #{order.id.slice(-6)}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground uppercase">
+                          {order.date}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">
-                      &#8377;{payment.amount.toFixed(2)}
+                    <p className="text-sm font-bold">
+                      &#8377;{order.total.toLocaleString("en-IN")}
                     </p>
                     <Badge
-                      variant={
-                        payment.status === "completed" ? "success" : "secondary"
-                      }
-                      className="text-[10px] h-4 px-1"
+                      variant="secondary"
+                      className="text-[9px] h-3.5 px-1 uppercase font-black tracking-tighter mt-1"
                     >
-                      {payment.status}
+                      {order.status.replace(/_/g, " ")}
                     </Badge>
                   </div>
                 </div>
               ))}
-              {dashboardStats.recentPayments.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No payments yet.
-                </p>
+              {dashboardStats.recentOrders.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <ShoppingCart className="h-8 w-8 mb-2 opacity-20" />
+                  <p className="text-sm italic">Queue is empty</p>
+                </div>
               )}
             </div>
           </CardContent>
+          <div className="p-4 bg-muted/30 border-t border-border/50 mt-auto">
+            <p className="text-[10px] text-center text-muted-foreground font-medium uppercase tracking-widest">
+              Total {orders.length} orders processed
+            </p>
+          </div>
         </Card>
 
-        {/* TOP PRODUCTS (REAL DATA - NEWEST) */}
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-accent-blue">New Arrivals</CardTitle>
+        {/* NEW ARRIVALS (Bento: 2x2) */}
+        <Card className="lg:col-span-2 lg:row-span-2 border-border/50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl font-bold text-accent-blue">
+              New Arrivals
+            </CardTitle>
+            <CardDescription className="text-[10px] uppercase font-bold tracking-widest mt-0.5">
+              Latest Inventory Additions
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {inventoryData.recent.map((product) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {inventoryData.recent.slice(0, 4).map((product) => (
                 <div
                   key={product._id || product.id}
-                  className="flex items-center justify-between border-b border-border/50 pb-4 last:border-0 last:pb-0"
+                  className="flex gap-3 p-2 rounded-xl border border-border/40 hover:bg-secondary/50 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-accent-blue/10">
-                      {product.images && product.images[0] ? (
-                        <img
-                          src={product.images[0]}
-                          alt="p"
-                          className="w-8 h-8 object-cover rounded"
-                        />
-                      ) : (
-                        <Package className="h-5 w-5 text-accent-blue" />
-                      )}
-                    </div>
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted relative">
+                    {product.images?.[0] ? (
+                      <img
+                        src={product.images[0]}
+                        alt="p"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center">
+                        <Package className="h-6 w-6 text-muted-foreground/30" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col justify-between overflow-hidden">
                     <div>
-                      <p className="text-sm font-medium truncate max-w-[120px]">
+                      <p className="text-xs font-bold truncate pr-2">
                         {product.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground uppercase font-medium mt-0.5">
                         {typeof product.category === "object"
                           ? product.category.name
-                          : "Category"}
+                          : "Uncategorized"}
                       </p>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm font-medium">
-                      &#8377;{product.price}
-                    </span>
+                    <p className="text-xs font-black text-accent-blue">
+                      &#8377;{product.price.toLocaleString("en-IN")}
+                    </p>
                   </div>
                 </div>
               ))}
               {inventoryData.recent.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No products yet.
-                </p>
+                <div className="col-span-2 py-12 text-center text-muted-foreground">
+                  <Package className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                  <p className="text-sm italic">Warehouse empty</p>
+                </div>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* LOW STOCK ALERTS (REAL DATA) */}
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-accent-blue">Low Stock Alerts</CardTitle>
+        {/* RECENT PAYMENTS (Bento: 2x1) */}
+        <Card className="lg:col-span-2 lg:row-span-1 border-border/50 bg-secondary/20">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Recent Activity
+            </p>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="text-[9px] font-black h-4 uppercase"
+              >
+                {payments.length} Payments
+              </Badge>
+              <Badge
+                variant="outline"
+                className="text-[9px] font-black h-4 uppercase"
+              >
+                {enquiriesArray.length} Enquiries
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {productsArray
-                .filter((p) => (p.stock ?? 0) < 10)
-                .slice(0, 5)
-                .map((product) => (
-                  <div
-                    key={product._id || product.id}
-                    className="flex flex-col border-b border-border/50 pb-4 last:border-0 last:pb-0"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium truncate max-w-[150px]">
-                        {product.name}
-                      </p>
-                      <Badge
-                        variant="destructive"
-                        className="text-[10px] h-4 px-1"
-                      >
-                        {product.stock === 0
-                          ? "Out of Stock"
-                          : `Low: ${product.stock}`}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      SKU: {product.sku}
+            <div className="flex items-center gap-6 overflow-x-auto pb-2 scrollbar-hide">
+              {dashboardStats.recentPayments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="flex items-center gap-2 shrink-0 bg-background border border-border/50 rounded-lg p-2 pr-4 shadow-sm"
+                >
+                  <div className="h-8 w-8 rounded bg-accent-blue/10 flex items-center justify-center text-accent-blue">
+                    <CreditCard className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold">&#8377;{payment.amount}</p>
+                    <p className="text-[8px] text-muted-foreground uppercase font-black">
+                      {payment.method}
                     </p>
                   </div>
-                ))}
-              {productsArray.filter((p) => (p.stock ?? 0) < 10).length ===
-                0 && (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Package className="h-8 w-8 text-green-200 mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Inventory looks healthy!
-                  </p>
                 </div>
-              )}
+              ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* MINI STATS (Bento: 1x1 each) */}
+        <Card className="border-border/50 hover:border-accent-blue/50 transition-colors cursor-default group">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Categories
+            </p>
+            <div className="p-2 rounded-lg bg-accent-blue/10 group-hover:bg-accent-blue group-hover:text-white transition-colors">
+              <Layers className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{categoriesArray.length}</div>
+            <p className="text-[10px] mt-1 text-muted-foreground font-medium uppercase tracking-tighter">
+              Main tax groups
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 hover:border-accent-blue/50 transition-colors cursor-default group">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Enquiries
+            </p>
+            <div className="p-2 rounded-lg bg-accent-blue/10 group-hover:bg-accent-blue group-hover:text-white transition-colors">
+              <MessageSquare className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{enquiriesArray.length}</div>
+            <p className="text-[10px] mt-1 text-muted-foreground font-medium uppercase tracking-tighter">
+              Support tickets
+            </p>
           </CardContent>
         </Card>
       </div>

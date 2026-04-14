@@ -49,7 +49,10 @@ const ProductSchema = new Schema(
     description: { type: String },
 
     // --- PRICING ---
-    price: { type: Number, required: true, min: 0 },
+    costPrice: { type: Number, min: 0 }, // Cost price for profit calculations
+    b2cPrice: { type: Number, required: true, min: 0 }, // B2C (retail) price
+    b2bPrice: { type: Number, min: 0 }, // B2B (wholesale) price
+    b2bMinQty: { type: Number, min: 1, default: 1 }, // Minimum quantity for B2B pricing
     salePrice: { type: Number, min: 0 }, // Optional: If set, show "Was $100, Now $80"
 
     // --- INVENTORY ---
