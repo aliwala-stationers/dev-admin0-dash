@@ -80,7 +80,7 @@ export default function ViewBrandPage({
         </div>
         <div className="flex items-center gap-3">
           <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
-            <Link href={`/admin/brands/edit/${brand._id}`}>
+            <Link href={`/admin/brands/edit/${brand._id || brand.id}`}>
               <Edit className="mr-2 h-4 w-4" />
               Edit Brand
             </Link>

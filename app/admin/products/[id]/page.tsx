@@ -93,7 +93,7 @@ export default function ViewProductPage({
         </div>
         <div className="flex items-center gap-3">
           <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
-            <Link href={`/admin/products/edit/${product._id}`}>
+            <Link href={`/admin/products/edit/${product._id || product.id}`}>
               <Edit className="mr-2 h-4 w-4" />
               Edit Product
             </Link>
@@ -116,19 +116,28 @@ export default function ViewProductPage({
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {product.images.map((url, index) => (
-                  <div
-                    key={index}
-                    className={`rounded-lg overflow-hidden border bg-muted flex items-center justify-center 
-                      ${index === 0 && product.images.length % 2 !== 0 ? "sm:col-span-2 aspect-[21/9]" : "aspect-square"}`}
-                  >
-                    <img
-                      src={url}
-                      alt={`${product.name} view ${index + 1}`}
-                      className="h-full w-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
+                {product.images && product.images.length > 0 ? (
+                  product.images.map((url, index) => (
+                    <div
+                      key={index}
+                      className={`rounded-lg overflow-hidden border bg-muted flex items-center justify-center 
+                      ${index === 0 && product.images && product.images.length % 2 !== 0 ? "sm:col-span-2 aspect-[21/9]" : "aspect-square"}`}
+                    >
+                      <img
+                        src={url}
+                        alt={`${product.name} view ${index + 1}`}
+                        className="h-full w-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full flex items-center justify-center h-48 border-2 border-dashed rounded-lg">
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Package className="h-8 w-8" />
+                      <p className="text-sm">No images uploaded</p>
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
@@ -240,11 +249,11 @@ export default function ViewProductPage({
                 </div>
                 <div className="text-right">
                   <span
-                    className={`font-bold ${product.stock < 10 ? "text-red-500" : "text-green-600"}`}
+                    className={`font-bold ${(product.stock ?? 0) < 10 ? "text-red-500" : "text-green-600"}`}
                   >
-                    {product.stock} units
+                    {product.stock ?? 0} units
                   </span>
-                  {product.stock < 10 && (
+                  {(product.stock ?? 0) < 10 && (
                     <div className="flex items-center gap-1 text-[10px] text-red-500 font-bold uppercase mt-1">
                       <AlertTriangle className="h-3 w-3" />
                       Low Stock Warning

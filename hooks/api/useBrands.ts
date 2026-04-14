@@ -10,6 +10,7 @@ export interface Brand {
   status: boolean
   logo: string
   createdAt: string
+  updatedAt: string
 }
 
 // 1. FETCH ALL
@@ -33,7 +34,7 @@ export const useBrand = (id: string) => {
       const res = await fetch(`/api/brands/${id}`)
       if (!res.ok) throw new Error("Failed to fetch brand")
       const json = await res.json()
-      return json.data
+      return json.brand
     },
     enabled: !!id, // Only fetch if ID exists
   })

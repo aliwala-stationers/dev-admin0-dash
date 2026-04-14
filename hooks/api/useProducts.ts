@@ -57,7 +57,7 @@ export const useProduct = (id: string) => {
       const res = await fetch(`/api/products/${id}`)
       if (!res.ok) throw new Error("Failed to fetch product")
       const json = await res.json()
-      return json.data
+      return json.product
     },
     enabled: !!id,
   })

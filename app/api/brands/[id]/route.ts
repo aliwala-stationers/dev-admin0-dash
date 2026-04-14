@@ -16,8 +16,11 @@ type BrandDoc = {
   _id: any
   name: string
   slug: string
+  description: string
+  status: boolean
   logo?: string
   createdAt: Date
+  updatedAt: Date
 }
 
 /**
@@ -28,8 +31,11 @@ function serializeBrand(brand: BrandDoc) {
     id: brand._id.toString(),
     name: brand.name,
     slug: brand.slug,
+    description: brand.description,
+    status: brand.status,
     logo: brand.logo || "",
     createdAt: brand.createdAt,
+    updatedAt: brand.updatedAt,
   }
 }
 

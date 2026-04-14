@@ -20,8 +20,19 @@ function serializeProduct(product: any) {
     name: product.name,
     slug: product.slug,
     sku: product.sku,
+    description: product.description,
     price: product.price,
+    salePrice: product.salePrice,
+    hsn: product.hsn,
+    tax: product.tax,
+    upc: product.upc,
+    barcode: product.barcode,
+    stock: product.stock,
     status: product.status,
+    images: product.images,
+    videoUrl: product.videoUrl,
+    specs: product.specs,
+    isFeatured: product.isFeatured,
     category: product.category
       ? {
           id: product.category._id?.toString?.(),
@@ -36,6 +47,7 @@ function serializeProduct(product: any) {
         }
       : null,
     createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
   }
 }
 

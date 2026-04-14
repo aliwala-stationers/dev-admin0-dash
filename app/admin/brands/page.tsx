@@ -139,7 +139,7 @@ export default function BrandsPage() {
         </div>
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className="rounded-md border bg-card overflow-x-auto max-w-[85vw] md:max-w-[90vw] lg:max-w-full">
         <Table>
           <TableHeader>
             <TableRow>
@@ -197,12 +197,14 @@ export default function BrandsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/brands/${brand._id}`}>
+                          <Link href={`/admin/brands/${brand._id || brand.id}`}>
                             View Details
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/brands/edit/${brand._id}`}>
+                          <Link
+                            href={`/admin/brands/edit/${brand._id || brand.id}`}
+                          >
                             Edit
                           </Link>
                         </DropdownMenuItem>

@@ -180,7 +180,7 @@ export default function NewsletterPage() {
         </div>
 
         <TabsContent value="table" className="m-0">
-          <div className="rounded-md border bg-card">
+          <div className="rounded-md border bg-card overflow-x-auto max-w-[85vw] md:max-w-[90vw] lg:max-w-full">
             <Table>
               <TableHeader>
                 <TableRow>

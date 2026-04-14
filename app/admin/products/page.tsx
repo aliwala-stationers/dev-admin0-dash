@@ -225,7 +225,7 @@ export default function ProductsPage() {
         </Select>
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className="rounded-md border bg-card overflow-x-auto max-w-[85vw] md:max-w-[90vw] lg:max-w-full">
         <Table>
           <TableHeader>
             <TableRow>

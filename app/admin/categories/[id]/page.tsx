@@ -74,7 +74,9 @@ export default function ViewCategoryPage({
         </div>
         <div className="flex items-center gap-3">
           <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
-            <Link href={`/admin/categories/edit/${category._id}`}>
+            <Link
+              href={`/admin/categories/edit/${category._id || category.id}`}
+            >
               <Edit className="mr-2 h-4 w-4" />
               Edit Category
             </Link>

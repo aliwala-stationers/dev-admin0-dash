@@ -21,6 +21,7 @@ type CategoryDoc = {
   image?: string
   parentId?: any
   createdAt: Date
+  updatedAt: Date
 }
 
 /**
@@ -37,6 +38,7 @@ function serializeCategory(category: CategoryDoc, productCount = 0) {
     parentId: category.parentId?.toString?.() || null,
     productCount,
     createdAt: category.createdAt,
+    updatedAt: category.updatedAt,
   }
 }
 

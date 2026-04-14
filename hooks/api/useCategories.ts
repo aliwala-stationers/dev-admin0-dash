@@ -35,7 +35,7 @@ export const useCategory = (id: string) => {
       const res = await fetch(`/api/categories/${id}`)
       if (!res.ok) throw new Error("Failed to fetch category")
       const json = await res.json()
-      return json.data
+      return json.category
     },
     enabled: !!id,
   })
