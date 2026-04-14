@@ -363,7 +363,7 @@ export default function OrderDetailPage() {
             "order_packed",
             "order_shipped",
           ].includes(order.status) && (
-            <Card className="no-print relative overflow-hidden border-accent-blue/30 dark:border-accent-blue/40 bg-gradient-to-br from-background via-background to-accent-blue/5 dark:to-accent-blue/10 shadow-sm transition-all duration-300">
+            <Card className="no-print relative overflow-hidden border-accent-blue/30 dark:border-accent-blue/40 bg-linear-to-br from-background via-background to-accent-blue/5 dark:to-accent-blue/10 shadow-sm transition-all duration-300">
               {/* Decorative background glow */}
               <div className="absolute -top-12 -right-12 w-40 h-40 bg-accent-blue/10 dark:bg-accent-blue/20 blur-3xl rounded-full pointer-events-none" />
 
@@ -437,7 +437,7 @@ export default function OrderDetailPage() {
 
           {/* Locked State: Delivered */}
           {order.status === "order_delivered" && (
-            <Card className="no-print relative overflow-hidden border-emerald-500/20 dark:border-emerald-500/30 bg-gradient-to-r from-emerald-500/5 to-transparent dark:from-emerald-500/10">
+            <Card className="no-print relative overflow-hidden border-emerald-500/20 dark:border-emerald-500/30 bg-linear-to-r from-emerald-500/5 to-transparent dark:from-emerald-500/10">
               <div className="absolute -left-8 -top-8 w-24 h-24 bg-emerald-500/20 dark:bg-emerald-500/20 blur-2xl rounded-full pointer-events-none" />
               <CardContent className="pt-6 relative z-10">
                 <div className="flex items-center gap-3 text-emerald-700 dark:text-emerald-400">
@@ -454,7 +454,7 @@ export default function OrderDetailPage() {
           {["order_rejected_by_seller", "order_cancelled_by_customer"].includes(
             order.status,
           ) && (
-            <Card className="no-print relative overflow-hidden border-destructive/20 dark:border-destructive/30 bg-gradient-to-r from-destructive/5 to-transparent dark:from-destructive/10">
+            <Card className="no-print relative overflow-hidden border-destructive/20 dark:border-destructive/30 bg-linear-to-r from-destructive/5 to-transparent dark:from-destructive/10">
               <div className="absolute -left-8 -top-8 w-24 h-24 bg-destructive/20 dark:bg-destructive/20 blur-2xl rounded-full pointer-events-none" />
               <CardContent className="pt-6 relative z-10">
                 <div className="flex items-center gap-3 text-destructive dark:text-red-400">

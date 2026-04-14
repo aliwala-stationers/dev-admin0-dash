@@ -121,7 +121,7 @@ export default function ViewProductPage({
                     <div
                       key={index}
                       className={`rounded-lg overflow-hidden border bg-muted flex items-center justify-center 
-                      ${index === 0 && product.images && product.images.length % 2 !== 0 ? "sm:col-span-2 aspect-[21/9]" : "aspect-square"}`}
+                      ${index === 0 && product.images && product.images.length % 2 !== 0 ? "sm:col-span-2 aspect-21/9" : "aspect-square"}`}
                     >
                       <img
                         src={url}

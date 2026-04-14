@@ -30,7 +30,7 @@ export default function ProfilePage() {
         <div className="space-y-6">
           <Card className="border-border/50 shadow-sm overflow-hidden">
             <CardContent className="p-0">
-              <div className="h-24 bg-gradient-to-r from-accent-blue to-accent-blue/60" />
+              <div className="h-24 bg-linear-to-r from-accent-blue to-accent-blue/60" />
               <div className="px-6 pb-6 -mt-12 flex flex-col items-center space-y-4">
                 <div className="relative group">
                   <Avatar className="h-24 w-24 border-4 border-white dark:border-slate-900 shadow-xl">

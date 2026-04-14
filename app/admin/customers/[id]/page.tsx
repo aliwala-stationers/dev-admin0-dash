@@ -486,7 +486,7 @@ export default function CustomerDetailPage() {
                       <div className="flex items-center justify-between">
                         <Badge
                           variant="outline"
-                          className="text-[10px] uppercase bg-muted/50"
+                          className="text-[10px] bg-muted/50 capitalize"
                         >
                           Billing
                         </Badge>
@@ -541,7 +541,7 @@ export default function CustomerDetailPage() {
                       <div className="flex items-center justify-between">
                         <Badge
                           variant="outline"
-                          className="text-[10px] uppercase bg-muted/50 capitalize"
+                          className="text-[10px] bg-muted/50 capitalize"
                         >
                           {addr.type}
                         </Badge>
