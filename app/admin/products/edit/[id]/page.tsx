@@ -47,6 +47,7 @@ import { TaxationSection } from "@/components/admin/products/taxation-section"
 import { CategorizationSection } from "@/components/admin/products/categorization-section"
 import { BarcodeSection } from "@/components/admin/products/barcode-section"
 import {
+  useProductImageUploader,
   ImageUploadCard,
   VideoUploadCard,
 } from "@/components/admin/products/product-image-uploader"
@@ -58,14 +59,8 @@ export default function EditProductPage({
 }) {
   const { id } = use(params)
   const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const videoInputRef = useRef<HTMLInputElement>(null)
 
   const [isUploading, setIsUploading] = useState(false)
-  const [newImageFiles, setNewImageFiles] = useState<
-    { index: number; file: File }[]
-  >([])
-  const [newVideoFile, setNewVideoFile] = useState<File | null>(null)
 
   const { data: product, isLoading: isProductLoading } = useProduct(id)
   const { data: categories = [] } = useCategories()
@@ -98,8 +93,30 @@ export default function EditProductPage({
     },
   })
 
-  const previews = form.watch("images")
-  const videoPreview = form.watch("videoUrl")
+  // Use shared image uploader hook for edit mode
+  const imageUploader = useProductImageUploader({ form, mode: "edit" })
+  const {
+    fileInputRef,
+    videoInputRef,
+    previews,
+    videoPreview,
+    newImageFiles,
+    newVideoFile,
+    handleImageChange,
+    handleVideoChange,
+    removeImage,
+    removeVideo,
+  } = imageUploader
+
+  // Handle form validation errors
+  const onFormError = (errors: any) => {
+    const firstError = Object.values(errors)[0] as any
+    if (firstError?.message) {
+      toast.error(firstError.message)
+    } else {
+      toast.error("Please fill in all required fields")
+    }
+  }
 
   useEffect(() => {
     if (product) {
@@ -157,76 +174,16 @@ export default function EditProductPage({
     return publicUrl
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    const currentImages = form.getValues("images")
-
-    if (currentImages.length + files.length > 5) {
-      toast.error("Maximum 5 images allowed")
-      return
-    }
-
-    files.forEach((file) => {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const result = reader.result as string
-        const currentImages = form.getValues("images")
-        const newIndex = currentImages.length
-
-        form.setValue("images", [...currentImages, result], {
-          shouldValidate: true,
-        })
-        setNewImageFiles((prev) => [...prev, { index: newIndex, file }])
-      }
-      reader.readAsDataURL(file)
-    })
-  }
-
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (!file.type.startsWith("video/")) {
-      toast.error("Please select a valid video file")
-      return
-    }
-
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error("Video too large (max 50MB)")
-      return
-    }
-
-    setNewVideoFile(file)
-    form.setValue("videoUrl", "pending-upload", { shouldValidate: true })
-  }
-
-  const removeImage = (index: number) => {
-    const updatedImages = form.getValues("images").filter((_, i) => i !== index)
-    form.setValue("images", updatedImages, { shouldValidate: true })
-
-    setNewImageFiles((prev) =>
-      prev
-        .filter((item) => item.index !== index)
-        .map((item) => {
-          if (item.index > index) return { ...item, index: item.index - 1 }
-          return item
-        }),
-    )
-  }
-
-  const removeVideo = () => {
-    setNewVideoFile(null)
-    form.setValue("videoUrl", null, { shouldValidate: true })
-  }
-
   async function onSubmit(values: ProductFormValues) {
     setIsUploading(true)
     try {
       const currentImages = [...values.images]
-      for (const item of newImageFiles) {
-        if (currentImages[item.index].startsWith("data:")) {
-          const url = await uploadFile(item.file)
-          currentImages[item.index] = url
+      if (newImageFiles) {
+        for (const item of newImageFiles) {
+          if (currentImages[item.index].startsWith("data:")) {
+            const url = await uploadFile(item.file)
+            currentImages[item.index] = url
+          }
         }
       }
 
@@ -239,6 +196,7 @@ export default function EditProductPage({
         ...values,
         hsn: values.hsn || "",
         tax: values.tax ? parseFloat(values.tax) : 0,
+        price: parseFloat(values.b2cPrice), // Map b2cPrice to price for backward compatibility
         costPrice: values.costPrice ? parseFloat(values.costPrice) : 0,
         b2cPrice: parseFloat(values.b2cPrice),
         b2bPrice: values.b2bPrice ? parseFloat(values.b2bPrice) : 0,
@@ -251,11 +209,16 @@ export default function EditProductPage({
       updateMutation.mutate(
         { id, data: payload },
         {
-          onSuccess: () => {
-            router.push("/admin/products")
+          onSuccess: (result) => {
+            if (result && (result as any).error) {
+              toast.error((result as any).error)
+            } else {
+              toast.success("Product updated successfully")
+              router.push("/admin/products")
+            }
           },
           onError: () => {
-            setIsUploading(false)
+            toast.error("Failed to update product")
           },
         },
       )
@@ -299,7 +262,7 @@ export default function EditProductPage({
             <Link href="/admin/products">Cancel</Link>
           </Button>
           <Button
-            onClick={form.handleSubmit(onSubmit)}
+            onClick={form.handleSubmit(onSubmit, onFormError)}
             className="bg-accent-blue hover:bg-accent-blue-hover"
             disabled={isUploading || updateMutation.isPending}
           >

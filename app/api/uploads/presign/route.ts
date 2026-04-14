@@ -10,6 +10,7 @@ import { jwtVerify } from "jose"
 import { CUSTOMER_JWT_SECRET, AUTH_META } from "@/lib/auth/constants"
 import { AUTH_ERRORS, AuthError } from "@/lib/auth/errors"
 import { verifyAdmin } from "@/lib/auth/verifyAdmin"
+import { logServerError } from "@/lib/server/errorlogs"
 
 /**
  * 🔐 ENV
@@ -157,15 +158,32 @@ export async function POST(req: NextRequest) {
     console.error("Presign error:", error)
 
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: "/api/uploads/presign",
+        method: "POST",
+        requestData: await req.json().catch(() => ({})),
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to generate presigned URL" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to generate presigned URL"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: "/api/uploads/presign",
+      method: "POST",
+      requestData: await req.json().catch(() => ({})),
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

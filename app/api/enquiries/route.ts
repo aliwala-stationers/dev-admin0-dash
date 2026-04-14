@@ -5,6 +5,7 @@ import connectDB from "@/lib/db"
 import Enquiry from "@/models/Enquiry"
 import { verifyAdmin } from "@/lib/auth/verifyAdmin"
 import { AuthError } from "@/lib/auth/errors"
+import { logServerError } from "@/lib/server/errorlogs"
 
 /**
  * 📦 Serialize enquiry
@@ -37,16 +38,29 @@ export async function GET(req: NextRequest) {
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: "/api/enquiries",
+        method: "GET",
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to fetch enquiries" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch enquiries"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: "/api/enquiries",
+      method: "GET",
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -113,10 +127,17 @@ export async function POST(req: Request) {
       },
       { status: 201 },
     )
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to submit enquiry" },
-      { status: 500 },
-    )
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to submit enquiry"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: "/api/enquiries",
+      method: "POST",
+      requestData: await (req as Request).json().catch(() => ({})),
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

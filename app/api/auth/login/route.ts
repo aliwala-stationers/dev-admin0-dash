@@ -7,6 +7,7 @@ import connectDB from "@/lib/db"
 import User from "@/models/User"
 import LoginHistory from "@/models/LoginHistory"
 import { ADMIN_JWT_SECRET, AUTH_COOKIES, AUTH_META } from "@/lib/auth/constants"
+import { logServerError } from "@/lib/server/errorlogs"
 
 /**
  * @constant COOKIE_MAX_AGE
@@ -153,11 +154,22 @@ export async function POST(req: Request): Promise<NextResponse> {
     })
 
     return response
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Admin Login Error:", error)
 
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: "/api/auth/login",
+      method: "POST",
+      requestData: await (req as Request).json().catch(() => ({})),
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+
     return NextResponse.json(
-      { ok: false, message: "Internal server error" },
+      { ok: false, message: errorMessage },
       { status: 500 },
     )
   }

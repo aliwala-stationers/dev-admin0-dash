@@ -40,7 +40,7 @@ import { TaxationSection } from "@/components/admin/products/taxation-section"
 import { CategorizationSection } from "@/components/admin/products/categorization-section"
 import { BarcodeSection } from "@/components/admin/products/barcode-section"
 import {
-  ProductImageUploader,
+  useProductImageUploader,
   ImageUploadCard,
   VideoUploadCard,
 } from "@/components/admin/products/product-image-uploader"
@@ -80,7 +80,7 @@ export default function AddProductPage() {
   })
 
   // Use shared image uploader hook
-  const imageUploader = ProductImageUploader({ form, mode: "add" })
+  const imageUploader = useProductImageUploader({ form, mode: "add" })
   const {
     fileInputRef,
     videoInputRef,
@@ -120,15 +120,24 @@ export default function AddProductPage() {
 
   // MAIN SUBMIT
   async function onSubmit(values: ProductFormValues) {
-    if (!filesToUpload || filesToUpload.length === 0) {
+    console.log("Form submitted with values:", values)
+    console.log("Files to upload:", filesToUpload)
+    console.log("Video file:", videoFile)
+
+    if (!values.images || values.images.length === 0) {
       toast.error("Please select at least one image")
+      return
+    }
+
+    if (!filesToUpload || filesToUpload.length === 0) {
+      toast.error("No files to upload. Please select images.")
       return
     }
 
     setIsUploading(true)
     try {
       const uploadedUrls = await Promise.all(
-        filesToUpload.map((file) => uploadFile(file)),
+        filesToUpload.map((file: File) => uploadFile(file)),
       )
 
       let uploadedVideoUrl = null
@@ -140,6 +149,7 @@ export default function AddProductPage() {
         ...values,
         hsn: values.hsn || "",
         tax: values.tax ? parseFloat(values.tax) : 0,
+        price: parseFloat(values.b2cPrice), // Map b2cPrice to price for backward compatibility
         costPrice: values.costPrice ? parseFloat(values.costPrice) : 0,
         b2cPrice: parseFloat(values.b2cPrice),
         b2bPrice: values.b2bPrice ? parseFloat(values.b2bPrice) : 0,
@@ -150,11 +160,17 @@ export default function AddProductPage() {
       }
 
       createProduct(finalProductData, {
-        onSuccess: () => {
-          router.push("/admin/products")
+        onSuccess: (result) => {
+          if (result && (result as any).error) {
+            toast.error((result as any).error)
+          } else {
+            toast.success("Product created successfully")
+            router.push("/admin/products")
+          }
         },
         onError: (err) => {
           console.error(err)
+          toast.error("Failed to create product")
         },
       })
     } catch (error) {
@@ -168,6 +184,16 @@ export default function AddProductPage() {
   }
 
   const isBusy = isUploading || isCreating
+
+  // Handle form validation errors
+  const onFormError = (errors: any) => {
+    const firstError = Object.values(errors)[0] as any
+    if (firstError?.message) {
+      toast.error(firstError.message)
+    } else {
+      toast.error("Please fill in all required fields")
+    }
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -192,7 +218,7 @@ export default function AddProductPage() {
           <Button
             className="bg-accent-blue hover:bg-accent-blue-hover"
             disabled={isBusy}
-            onClick={form.handleSubmit(onSubmit)}
+            onClick={form.handleSubmit(onSubmit, onFormError)}
           >
             {isBusy ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

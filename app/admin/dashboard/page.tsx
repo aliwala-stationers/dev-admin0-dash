@@ -9,6 +9,7 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -42,9 +43,48 @@ import { useNewsletter } from "@/hooks/api/useNewsletter"
 import { useData } from "@/lib/data-context"
 import { Button } from "@/components/ui/button"
 
+// Skeleton loading state component
+const DashboardSkeleton = () => (
+  <div className="p-6 space-y-8 max-w-[1600px] mx-auto">
+    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <Skeleton className="h-12 w-48" />
+      <Skeleton className="h-8 w-40" />
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-fr lg:auto-rows-[minmax(160px,auto)]">
+      {/* Large card skeleton */}
+      <Card className="lg:col-span-2 lg:row-span-2 border-none shadow-xl">
+        <CardHeader>
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-16 w-64 mt-4" />
+        </CardHeader>
+        <CardContent className="mt-8">
+          <Skeleton className="h-10 w-32 mb-4" />
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <Skeleton className="h-16" />
+            <Skeleton className="h-16" />
+          </div>
+        </CardContent>
+      </Card>
+      {/* Small card skeletons */}
+      {[1, 2, 3, 4].map((i) => (
+        <Card key={i} className="border-border/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-8 w-8 rounded-lg" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-3 w-32 mt-2" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  </div>
+)
+
 export default function DashboardPage() {
   // 1. Fetch Real Data
-  const { data: products = [], isLoading: pLoading } = useProducts()
+  const { data: productsData, isLoading: pLoading } = useProducts()
   const { data: categories = [], isLoading: cLoading } = useCategories()
   const { data: brands = [], isLoading: bLoading } = useBrands()
   const { data: subcategories = [], isLoading: sLoading } = useSubcategories()
@@ -54,7 +94,9 @@ export default function DashboardPage() {
   const { orders, customers, payments } = useData()
 
   // Ensure all data arrays are actually arrays (safety for API errors)
-  const productsArray = Array.isArray(products) ? products : []
+  const productsArray = Array.isArray(productsData?.data)
+    ? productsData.data
+    : []
   const categoriesArray = Array.isArray(categories) ? categories : []
   const brandsArray = Array.isArray(brands) ? brands : []
   const subcategoriesArray = Array.isArray(subcategories) ? subcategories : []
@@ -105,11 +147,7 @@ export default function DashboardPage() {
   }, [orders, payments, newsletterArray])
 
   if (pLoading || cLoading || bLoading || sLoading || eLoading || nLoading) {
-    return (
-      <div className="h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent-blue" />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   // Configuration for Top Stats Cards

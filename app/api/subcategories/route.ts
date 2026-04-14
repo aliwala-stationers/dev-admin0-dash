@@ -5,6 +5,7 @@ import connectDB from "@/lib/db"
 import Subcategory from "@/models/Subcategory"
 import { verifyAdmin } from "@/lib/auth/verifyAdmin"
 import { AuthError } from "@/lib/auth/errors"
+import { logServerError } from "@/lib/server/errorlogs"
 import mongoose from "mongoose"
 
 type SubcategoryDoc = {
@@ -88,16 +89,29 @@ export async function GET(req: NextRequest) {
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: "/api/subcategories",
+        method: "GET",
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to fetch subcategories" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch subcategories"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: "/api/subcategories",
+      method: "GET",
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -128,6 +142,13 @@ export async function POST(req: NextRequest) {
     const exists = await Subcategory.findOne({ slug })
 
     if (exists) {
+      await logServerError({
+        errorType: "duplicate",
+        errorMessage: "Slug already exists",
+        endpoint: "/api/subcategories",
+        method: "POST",
+        requestData: body,
+      })
       return NextResponse.json(
         { error: "Slug already exists" },
         { status: 409 },
@@ -162,15 +183,30 @@ export async function POST(req: NextRequest) {
     )
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: "/api/subcategories",
+        method: "POST",
+        requestData: await req.json().catch(() => ({})),
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to create subcategory" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to create subcategory"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: "/api/subcategories",
+      method: "POST",
+      requestData: await req.json().catch(() => ({})),
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

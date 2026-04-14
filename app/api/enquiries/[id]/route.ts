@@ -6,6 +6,7 @@ import Enquiry from "@/models/Enquiry"
 import mongoose from "mongoose"
 import { verifyAdmin } from "@/lib/auth/verifyAdmin"
 import { AuthError } from "@/lib/auth/errors"
+import { logServerError } from "@/lib/server/errorlogs"
 
 type RouteContext = {
   params: Promise<{ id: string }>
@@ -37,10 +38,10 @@ function serializeEnquiry(doc: any) {
  * 📄 GET (admin)
  */
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const { id } = await params
+
   try {
     await verifyAdmin()
-
-    const { id } = await params
 
     if (!isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid enquiry ID" }, { status: 400 })
@@ -60,16 +61,29 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: `/api/enquiries/${id}`,
+        method: "GET",
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to fetch enquiry" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch enquiry"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: `/api/enquiries/${id}`,
+      method: "GET",
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -77,10 +91,10 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
  * ✏️ UPDATE (admin)
  */
 export async function PUT(req: NextRequest, { params }: RouteContext) {
+  const { id } = await params
+
   try {
     await verifyAdmin()
-
-    const { id } = await params
 
     if (!isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid enquiry ID" }, { status: 400 })
@@ -124,16 +138,31 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: `/api/enquiries/${id}`,
+        method: "PUT",
+        requestData: await req.json().catch(() => ({})),
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to update enquiry" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to update enquiry"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: `/api/enquiries/${id}`,
+      method: "PUT",
+      requestData: await req.json().catch(() => ({})),
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -141,10 +170,10 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
  * ❌ DELETE (admin)
  */
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
+  const { id } = await params
+
   try {
     await verifyAdmin()
-
-    const { id } = await params
 
     if (!isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid enquiry ID" }, { status: 400 })
@@ -164,15 +193,28 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: `/api/enquiries/${id}`,
+        method: "DELETE",
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to delete enquiry" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to delete enquiry"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: `/api/enquiries/${id}`,
+      method: "DELETE",
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

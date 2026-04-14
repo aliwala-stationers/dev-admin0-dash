@@ -1,6 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+// Helper function to log errors to API
+const logError = async (errorData: {
+  errorType: "validation" | "duplicate" | "server" | "network" | "unknown"
+  errorMessage: string
+  endpoint: string
+  method: string
+  requestData?: any
+  stackTrace?: string
+}) => {
+  try {
+    await fetch("/api/error-logs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(errorData),
+    })
+  } catch (logError) {
+    console.error("Failed to log error:", logError)
+  }
+}
+
 // Helper types for populated fields
 type PopulatedRef = { _id: string; name: string; slug?: string; logo?: string }
 
@@ -35,17 +55,39 @@ export interface Product {
   updatedAt: string
 }
 
-// 1. FETCH ALL PRODUCTS
-// Optional: Accept filters like ?category=...
-export const useProducts = (filters?: string) => {
+// 1. FETCH ALL PRODUCTS WITH PAGINATION
+// Accepts pagination and filtering parameters
+export interface ProductsParams {
+  page?: number
+  limit?: number
+  search?: string
+  category?: string
+  subcategory?: string
+  brand?: string
+}
+
+export const useProducts = (params: ProductsParams = {}) => {
+  const { page = 1, limit = 20, search, category, subcategory, brand } = params
+
+  const queryParams = new URLSearchParams()
+  queryParams.append("page", page.toString())
+  queryParams.append("limit", limit.toString())
+  if (search) queryParams.append("search", search)
+  if (category && category !== "all") queryParams.append("category", category)
+  if (subcategory && subcategory !== "all")
+    queryParams.append("subcategory", subcategory)
+  if (brand && brand !== "all") queryParams.append("brand", brand)
+
   return useQuery({
-    queryKey: ["products", filters], // Key changes when filter changes
-    queryFn: async (): Promise<Product[]> => {
-      const queryString = filters ? `?${filters}` : ""
-      const res = await fetch(`/api/products${queryString}`)
+    queryKey: ["products", params],
+    queryFn: async () => {
+      const res = await fetch(`/api/products?${queryParams.toString()}`)
       if (!res.ok) throw new Error("Failed to fetch products")
       const json = await res.json()
-      return json.data || []
+      return {
+        data: json.data || [],
+        pagination: json.pagination || { total: 0, page, limit, pages: 0 },
+      }
     },
   })
 }
@@ -76,16 +118,49 @@ export const useCreateProduct = () => {
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || "Failed to create product")
+        const errorMessage = err.error || "Failed to create product"
+
+        // Log error to API
+        const errorType =
+          errorMessage.toLowerCase().includes("sku") ||
+          errorMessage.toLowerCase().includes("slug") ||
+          errorMessage.toLowerCase().includes("name")
+            ? "duplicate"
+            : "server"
+
+        await logError({
+          errorType,
+          errorMessage,
+          endpoint: "/api/products",
+          method: "POST",
+          requestData: data,
+        })
+
+        console.log("Product creation error:", errorMessage)
+        return { error: errorMessage }
       }
       return res.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] })
-      toast.success("Product created successfully")
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      const message = error.message.toLowerCase()
+      if (message.includes("sku")) {
+        toast.error(
+          "A product with this SKU already exists. Please use a different SKU.",
+        )
+      } else if (message.includes("slug")) {
+        toast.error(
+          "A product with this slug already exists. Please use a different slug.",
+        )
+      } else if (message.includes("name")) {
+        toast.error(
+          "A product with this name already exists. Please use a different name.",
+        )
+      } else {
+        toast.error(error.message)
+      }
     },
   })
 }
@@ -108,7 +183,26 @@ export const useUpdateProduct = () => {
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err.error || "Failed to update product")
+        const errorMessage = err.error || "Failed to update product"
+
+        // Log error to API
+        const errorType =
+          errorMessage.toLowerCase().includes("sku") ||
+          errorMessage.toLowerCase().includes("slug") ||
+          errorMessage.toLowerCase().includes("name")
+            ? "duplicate"
+            : "server"
+
+        await logError({
+          errorType,
+          errorMessage,
+          endpoint: `/api/products/${id}`,
+          method: "PUT",
+          requestData: data,
+        })
+
+        console.log("Product update error:", errorMessage)
+        return { error: errorMessage }
       }
       return res.json()
     },
@@ -116,10 +210,24 @@ export const useUpdateProduct = () => {
       // Invalidate list AND the specific item
       queryClient.invalidateQueries({ queryKey: ["products"] })
       queryClient.invalidateQueries({ queryKey: ["products", variables.id] })
-      toast.success("Product updated successfully")
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      const message = error.message.toLowerCase()
+      if (message.includes("sku")) {
+        toast.error(
+          "A product with this SKU already exists. Please use a different SKU.",
+        )
+      } else if (message.includes("slug")) {
+        toast.error(
+          "A product with this slug already exists. Please use a different slug.",
+        )
+      } else if (message.includes("name")) {
+        toast.error(
+          "A product with this name already exists. Please use a different name.",
+        )
+      } else {
+        toast.error(error.message)
+      }
     },
   })
 }

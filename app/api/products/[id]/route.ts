@@ -6,6 +6,7 @@ import Product from "@/models/Product"
 import Subcategory from "@/models/Subcategory"
 import { verifyAdmin } from "@/lib/auth/verifyAdmin"
 import { AuthError } from "@/lib/auth/errors"
+import { logServerError } from "@/lib/server/errorlogs"
 import mongoose from "mongoose"
 
 type RouteContext = {
@@ -69,10 +70,11 @@ function isValidObjectId(id: string) {
  * 📄 GET single product
  */
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  // Hoisted outside the try/catch block so the error logger can access it cleanly.
+  const { id } = await params
+
   try {
     await verifyAdmin()
-
-    const { id } = await params
 
     if (!isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
@@ -96,16 +98,29 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: `/api/products/${id}`, // Clean reference
+        method: "GET",
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to fetch product" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch product"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: `/api/products/${id}`, // Clean reference
+      method: "GET",
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -113,10 +128,14 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
  * ✏️ UPDATE product (PATCH style safer)
  */
 export async function PUT(req: NextRequest, { params }: RouteContext) {
+  const { id } = await params
+
+  // Hoisted state container to preserve the request body for error logging.
+  // This prevents the "body stream already read" fatal crash in the catch block.
+  let parsedBody: Record<string, any> = {}
+
   try {
     await verifyAdmin()
-
-    const { id } = await params
 
     if (!isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
@@ -125,37 +144,41 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     await connectDB()
     await Subcategory.init()
 
-    const body = await req.json()
+    // Single point of stream consumption
+    parsedBody = await req.json()
 
     /**
      * 🔍 Conflict check
      */
-    if (body.sku || body.slug) {
+    if (parsedBody.sku || parsedBody.slug) {
       const conflict = await Product.findOne({
         _id: { $ne: id },
         $or: [
-          ...(body.sku ? [{ sku: body.sku }] : []),
-          ...(body.slug ? [{ slug: body.slug }] : []),
+          ...(parsedBody.sku ? [{ sku: parsedBody.sku }] : []),
+          ...(parsedBody.slug ? [{ slug: parsedBody.slug }] : []),
         ],
       })
 
       if (conflict) {
-        return NextResponse.json(
-          {
-            error:
-              conflict.sku === body.sku
-                ? "SKU already used"
-                : "Slug already used",
-          },
-          { status: 409 },
-        )
+        const errorMessage =
+          conflict.sku === parsedBody.sku
+            ? "SKU already used"
+            : "Slug already used"
+        await logServerError({
+          errorType: "duplicate",
+          errorMessage,
+          endpoint: `/api/products/${id}`,
+          method: "PUT",
+          requestData: parsedBody,
+        })
+        return NextResponse.json({ error: errorMessage }, { status: 409 })
       }
     }
 
     /**
      * ✏️ Update
      */
-    const updated = await Product.findByIdAndUpdate(id, body, {
+    const updated = await Product.findByIdAndUpdate(id, parsedBody, {
       new: true,
       runValidators: true,
     })
@@ -174,16 +197,31 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: `/api/products/${id}`,
+        method: "PUT",
+        requestData: parsedBody, // Safe reference to the hoisted state
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to update product" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to update product"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: `/api/products/${id}`,
+      method: "PUT",
+      requestData: parsedBody, // Safe reference to the hoisted state
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -191,10 +229,10 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
  * ❌ DELETE product
  */
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
+  const { id } = await params
+
   try {
     await verifyAdmin()
-
-    const { id } = await params
 
     if (!isValidObjectId(id)) {
       return NextResponse.json({ error: "Invalid product ID" }, { status: 400 })
@@ -214,15 +252,28 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: `/api/products/${id}`,
+        method: "DELETE",
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to delete product" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to delete product"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: `/api/products/${id}`,
+      method: "DELETE",
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

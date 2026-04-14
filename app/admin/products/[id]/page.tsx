@@ -98,10 +98,10 @@ export default function ViewProductPage({
               Edit Product
             </Link>
           </Button>
-          <Button variant="outline">
+          {/* <Button variant="outline">
             <Eye className="mr-2 h-4 w-4" />
             View on Store
-          </Button>
+          </Button> */}
         </div>
       </div>
 

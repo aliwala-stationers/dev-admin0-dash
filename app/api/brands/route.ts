@@ -6,6 +6,7 @@ import Brand from "@/models/Brand"
 import mongoose from "mongoose"
 import { verifyAdmin } from "@/lib/auth/verifyAdmin"
 import { AuthError } from "@/lib/auth/errors"
+import { logServerError } from "@/lib/server/errorlogs"
 
 type BrandDoc = {
   _id: any
@@ -50,16 +51,29 @@ export async function GET(req: NextRequest) {
     })
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: "/api/brands",
+        method: "GET",
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to fetch brands" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch brands"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: "/api/brands",
+      method: "GET",
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
 
@@ -90,6 +104,13 @@ export async function POST(req: NextRequest) {
     const exists = await Brand.findOne({ slug })
 
     if (exists) {
+      await logServerError({
+        errorType: "duplicate",
+        errorMessage: "Slug already exists",
+        endpoint: "/api/brands",
+        method: "POST",
+        requestData: body,
+      })
       return NextResponse.json(
         { error: "Slug already exists" },
         { status: 409 },
@@ -116,6 +137,14 @@ export async function POST(req: NextRequest) {
     )
   } catch (error: unknown) {
     if (error instanceof AuthError) {
+      await logServerError({
+        errorType: "validation",
+        errorMessage: error.message,
+        endpoint: "/api/brands",
+        method: "POST",
+        requestData: await req.json().catch(() => ({})),
+        stackTrace: error.stack,
+      })
       return NextResponse.json(
         { error: error.message, code: error.code },
         { status: error.status },
@@ -126,15 +155,29 @@ export async function POST(req: NextRequest) {
      * Handle duplicate index fallback (race condition)
      */
     if (error instanceof mongoose.Error && (error as any).code === 11000) {
+      await logServerError({
+        errorType: "duplicate",
+        errorMessage: "Brand already exists",
+        endpoint: "/api/brands",
+        method: "POST",
+        requestData: await req.json().catch(() => ({})),
+      })
       return NextResponse.json(
         { error: "Brand already exists" },
         { status: 409 },
       )
     }
 
-    return NextResponse.json(
-      { error: "Failed to create brand" },
-      { status: 500 },
-    )
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to create brand"
+    await logServerError({
+      errorType: "server",
+      errorMessage,
+      endpoint: "/api/brands",
+      method: "POST",
+      requestData: await req.json().catch(() => ({})),
+      stackTrace: error instanceof Error ? error.stack : undefined,
+    })
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

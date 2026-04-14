@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import {
   Table,
   TableBody,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import {
@@ -48,17 +49,132 @@ import { useBrands } from "@/hooks/api/useBrands"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 // import { toast } from "sonner";
 
-export default function ProductsPage() {
-  // 1. Fetching data with React Query
-  const { data: products = [], isLoading } = useProducts()
-  const deleteMutation = useDeleteProduct()
-  const { data: subcategories = [] } = useSubcategories()
-  const { data: brands = [] } = useBrands()
+// Skeleton loading state components
+const TableSkeleton = ({ limit }: { limit: number }) => (
+  <>
+    {Array.from({ length: limit }).map((_, i) => (
+      <TableRow key={i}>
+        <TableCell>
+          <Skeleton className="h-4 w-[200px]" />
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <Skeleton className="h-4 w-[100px]" />
+          </div>
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-6 w-[80px]" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-6 w-[80px]" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-4 w-[60px]" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-4 w-[40px]" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-6 w-[60px]" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-8 w-8" />
+        </TableCell>
+      </TableRow>
+    ))}
+  </>
+)
 
+const AnalyticsCardsSkeleton = () => (
+  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    {[1, 2, 3, 4].map((i) => (
+      <Card key={i} className="border-border/50 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <Skeleton className="h-4 w-[120px]" />
+          <Skeleton className="h-4 w-4" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-[100px]" />
+          <Skeleton className="h-3 w-[140px] mt-2" />
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+)
+
+export default function ProductsPage() {
+  // Pagination state
+  const [page, setPage] = useState(1)
+  const limit = 20
+
+  // Filter state
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [subcategoryFilter, setSubcategoryFilter] = useState("all")
   const [brandFilter, setBrandFilter] = useState("all")
+
+  // Debounced search state
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Reset page when filters change (using ref to track and update synchronously)
+  const prevFiltersRef = useRef({
+    debouncedSearch,
+    categoryFilter,
+    subcategoryFilter,
+    brandFilter,
+  })
+  const pageRef = useRef(page)
+
+  // Update pageRef when page state changes (for pagination controls)
+  useEffect(() => {
+    pageRef.current = page
+  }, [page])
+
+  useEffect(() => {
+    const prev = prevFiltersRef.current
+    const filtersChanged =
+      prev.debouncedSearch !== debouncedSearch ||
+      prev.categoryFilter !== categoryFilter ||
+      prev.subcategoryFilter !== subcategoryFilter ||
+      prev.brandFilter !== brandFilter
+
+    if (filtersChanged) {
+      pageRef.current = 1
+      prevFiltersRef.current = {
+        debouncedSearch,
+        categoryFilter,
+        subcategoryFilter,
+        brandFilter,
+      }
+      // Force a re-render to pick up the new page value
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPage(1)
+    }
+  }, [debouncedSearch, categoryFilter, subcategoryFilter, brandFilter])
+
+  // 1. Fetching data with React Query (paginated)
+  const { data: productsData, isLoading } = useProducts({
+    page,
+    limit,
+    search: debouncedSearch,
+    category: categoryFilter,
+    subcategory: subcategoryFilter,
+    brand: brandFilter,
+  })
+  const deleteMutation = useDeleteProduct()
+  const { data: subcategories = [] } = useSubcategories()
+  const { data: brands = [] } = useBrands()
+
+  const products = productsData?.data || []
+  const pagination = productsData?.pagination || { total: 0, pages: 0 }
 
   // Ensure products is always an array
   const productsArray = Array.isArray(products) ? products : []
@@ -83,7 +199,7 @@ export default function ProductsPage() {
   const getLabel = (field: any) =>
     typeof field === "object" ? field?.name : field
 
-  // 2. Dynamic Categories from DB products
+  // 2. Dynamic Categories from DB products (use subcategories hook for full list)
   const categories = useMemo(() => {
     const unique = new Set(productsArray.map((p) => getLabel(p.category)))
     return Array.from(unique).filter(Boolean).sort()
@@ -101,34 +217,8 @@ export default function ProductsPage() {
     return Array.from(unique).filter(Boolean).sort()
   }, [productsArray])
 
-  // 5. Filtering logic
-  const filteredProducts = productsArray.filter((product) => {
-    const name = product.name.toLowerCase()
-    const brand = getLabel(product.brand)?.toLowerCase() || ""
-    const category = getLabel(product.category)?.toLowerCase() || ""
-    const subcategory = getLabel(product.subcategory)?.toLowerCase() || ""
-    const searchLower = searchQuery.toLowerCase()
-
-    const matchesSearch =
-      name.includes(searchLower) ||
-      brand.includes(searchLower) ||
-      category.includes(searchLower) ||
-      subcategory.includes(searchLower)
-
-    const matchesCategory =
-      categoryFilter === "all" || getLabel(product.category) === categoryFilter
-
-    const matchesSubcategory =
-      subcategoryFilter === "all" ||
-      getLabel(product.subcategory) === subcategoryFilter
-
-    const matchesBrand =
-      brandFilter === "all" || getLabel(product.brand) === brandFilter
-
-    return (
-      matchesSearch && matchesCategory && matchesSubcategory && matchesBrand
-    )
-  })
+  // 5. Products are now filtered server-side, so we use the paginated results directly
+  const filteredProducts = productsArray
 
   const handleDelete = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to delete ${name}?`)) {
@@ -141,21 +231,14 @@ export default function ProductsPage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-accent-blue" />
-      </div>
-    )
-  }
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold">Products</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your inventory ({filteredProducts.length} showing)
+            Manage your inventory ({pagination.total} total,{" "}
+            {filteredProducts.length} showing)
           </p>
         </div>
         <Button className="bg-accent-blue hover:bg-accent-blue-hover" asChild>
@@ -166,69 +249,73 @@ export default function ProductsPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Products
-            </CardTitle>
-            <Package className="h-4 w-4 text-accent-blue" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Unique items in catalog
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Inventory Value
-            </CardTitle>
-            <IndianRupee className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              &#8377;
-              {analytics.totalValue.toLocaleString("en-IN", {
-                maximumFractionDigits: 0,
-              })}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Total value of stock
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Low Stock Alerts
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.lowStock}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Items below threshold
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active Listings
-            </CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.active}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Visible to customers
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {isLoading ? (
+        <AnalyticsCardsSkeleton />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Products
+              </CardTitle>
+              <Package className="h-4 w-4 text-accent-blue" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{pagination.total}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Unique items in catalog
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Inventory Value
+              </CardTitle>
+              <IndianRupee className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                &#8377;
+                {analytics.totalValue.toLocaleString("en-IN", {
+                  maximumFractionDigits: 0,
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Total value of stock
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Low Stock Alerts
+              </CardTitle>
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analytics.lowStock}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Items below threshold
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Active Listings
+              </CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analytics.active}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Visible to customers
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative flex-1 max-w-sm">
@@ -299,7 +386,9 @@ export default function ProductsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProducts.length === 0 ? (
+            {isLoading ? (
+              <TableSkeleton limit={limit} />
+            ) : filteredProducts.length === 0 ? (
               <TableRow key="no-products">
                 <TableCell
                   colSpan={8}
@@ -447,6 +536,59 @@ export default function ProductsPage() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {pagination.pages > 1 && (
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-sm text-muted-foreground">
+            Page {page} of {pagination.pages} ({pagination.total} total)
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1 || isLoading}
+            >
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                let pageNum
+                if (pagination.pages <= 5) {
+                  pageNum = i + 1
+                } else if (page <= 3) {
+                  pageNum = i + 1
+                } else if (page >= pagination.pages - 2) {
+                  pageNum = pagination.pages - 4 + i
+                } else {
+                  pageNum = page - 2 + i
+                }
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={page === pageNum ? "default" : "outline"}
+                    size="sm"
+                    className="w-8 h-8"
+                    onClick={() => setPage(pageNum)}
+                    disabled={isLoading}
+                  >
+                    {pageNum}
+                  </Button>
+                )
+              })}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(pagination.pages, p + 1))}
+              disabled={page === pagination.pages || isLoading}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -4,15 +4,15 @@ import { toast } from "sonner"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./product-schema"
 
-interface ProductImageUploaderProps {
+interface UseProductImageUploaderProps {
   form: UseFormReturn<ProductFormValues>
   mode?: "add" | "edit"
 }
 
-export function ProductImageUploader({
+export function useProductImageUploader({
   form,
   mode = "add",
-}: ProductImageUploaderProps) {
+}: UseProductImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
 

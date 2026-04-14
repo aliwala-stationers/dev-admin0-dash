@@ -6,6 +6,7 @@ import { cookies } from "next/headers"
 import connectDB from "@/lib/db"
 import User from "@/models/User"
 import { ADMIN_JWT_SECRET, AUTH_COOKIES, AUTH_META } from "@/lib/auth/constants"
+import { logServerError } from "@/lib/server/errorlogs"
 
 /**
  * @function GET
@@ -73,10 +74,23 @@ export async function GET(): Promise<NextResponse> {
         avatarUrl: user.avatarUrl || "",
       },
     })
-  } catch {
+  } catch (error: unknown) {
     /**
      * Any failure = unauthenticated
+     * Log error non-blocking for debugging
      */
+    void (async () => {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown auth error"
+      await logServerError({
+        errorType: "server",
+        errorMessage,
+        endpoint: "/api/auth/me",
+        method: "GET",
+        stackTrace: error instanceof Error ? error.stack : undefined,
+      })
+    })()
+
     return NextResponse.json({ user: null }, { status: 401 })
   }
 }
