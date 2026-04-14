@@ -1,11 +1,129 @@
 # AI Skills / Project Notes
 
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Architecture Overview](#architecture-overview)
+- [UI / Admin Area Conventions](#ui--admin-area-conventions)
+- [TanStack React Table Usage](#tanstack-react-table-usage)
+- [TanStack React Query Setup](#tanstack-react-query-setup)
+- [Existing Global Providers](#existing-global-providers)
+- [DataContext Notes](#datacontext-notes)
+- [API Routes](#api-routes)
+- [Suggested Patterns for API Fetching](#suggested-patterns-for-api-fetching)
+- [Install / Troubleshooting](#install--troubleshooting)
+- [Package Manager](#package-manager)
+- [Product Management System](#product-management-system)
+- [Error Logging System](#error-logging-system)
+- [API Route Patterns](#api-route-patterns)
+- [Dashboard Improvements](#dashboard-improvements)
+- [React Key Prop Best Practices](#react-key-prop-best-practices)
+- [Git Hooks](#git-hooks)
+- [Subcategory System](#subcategory-system)
+- [CSS/Tailwind Notes](#csstailwind-notes)
+- [Recent UI Improvements](#recent-ui-improvements)
+- [Sequential Subcategory Filtering](#sequential-subcategory-filtering)
+- [Product Image Uploader Hook](#product-image-uploader-hook)
+- [Form Validation Error Handling](#form-validation-error-handling)
+- [Pagination with Debounced Search](#pagination-with-debounced-search)
+- [Skeleton Loading Pattern](#skeleton-loading-pattern)
+- [Numeric Input Validation](#numeric-input-validation)
+- [Form Section Organization](#form-section-organization)
+- [Code Formatting Patterns](#code-formatting-patterns)
+- [Money Formatting Utilities](#money-formatting-utilities)
+
+## Quick Reference
+
+### Common Patterns
+
+- **API Route Structure**: Hoist params and parsedBody outside try/catch, use `logServerError()` for errors
+- **Skeleton Loading**: Define skeleton components outside component body, use `Skeleton` from shadcn/ui
+- **Pagination Reset**: Use refs to track previous filter state, reset page when filters change
+- **Currency Formatting**: Use `formatCurrency()`, `formatCurrencyWithSign()`, `formatProfitMargin()` from `lib/utils.ts`
+- **Form Validation**: Use Zod schema with regex validation for numeric fields, handle errors with toast
+- **Image Upload**: Use `useProductImageUploader` hook with presigned URLs
+- **Error Logging**: Server-side via `logServerError()`, client-side via `logError()` in hooks
+
+### Key Files
+
+- `lib/utils.ts` - Currency formatting utilities
+- `lib/server/errorlogs.ts` - Server-side error logging
+- `app/providers.tsx` - React Query provider setup
+- `hooks/api/useProducts.ts` - Product data fetching with error handling
+- `.husky/pre-commit` - Git pre-commit hook (Prettier + ESLint)
+
+### Common Commands
+
+- `pnpm install` - Install dependencies
+- `pnpm exec prettier --write` - Format files
+- `pnpm exec eslint --fix` - Fix linting issues
+
 ## Project overview
 
 - Next.js App Router project (`app/` directory)
 - React 19
 - Uses Mongoose (`mongoose`) for DB access
 - Has API routes under `app/api/**/route.ts`
+
+## Architecture Overview
+
+### Frontend
+
+- **Next.js App Router**
+  - File-based routing in `app/` directory
+  - Server and client components
+  - Layouts and loading states
+  - Route handlers for API endpoints
+
+- **React Query (TanStack Query)**
+  - Data fetching and caching
+  - Provider setup in `app/providers.tsx`
+  - Custom hooks in `hooks/api/` for data fetching
+  - Devtools enabled in development
+  - Default options: 30s stale time, no window focus refetch, 1 retry
+
+- **shadcn/ui**
+  - UI component library built on Radix UI
+  - Components in `components/ui/`
+  - Tailwind CSS for styling
+  - Configured via `components.json`
+
+### Backend
+
+- **API Routes (Next.js)**
+  - Route handlers in `app/api/**/route.ts`
+  - RESTful endpoints for CRUD operations
+  - Admin verification middleware
+  - Centralized error logging
+  - Consistent response patterns with pagination
+
+- **MongoDB (Mongoose)**
+  - ODM for MongoDB interactions
+  - Models in `models/` directory
+  - Schema validation
+  - Connection handling in `lib/db.ts`
+  - Population for related documents
+
+### Cross-cutting
+
+- **Error Logging**
+  - Server-side: `lib/server/errorlogs.ts` with `logServerError()`
+  - Client-side: `logError()` helper in API hooks
+  - Categorized error types (validation, duplicate, server, network, unknown)
+  - Non-blocking in critical paths (logout, auth-me)
+
+- **Auth**
+  - Firebase Authentication for customer auth
+  - Admin verification via `lib/auth/verifyAdmin.ts`
+  - Auth context provider: `lib/auth-context.tsx`
+  - Protected API routes
+  - Session management
+
+- **Data Context**
+  - Global data provider: `lib/data-context.tsx`
+  - localStorage persistence with fallback to initial datasets
+  - Used for list data (orders, categories, brands)
+  - Composed with AuthProvider and React Query Provider in root layout
 
 ## UI / Admin area conventions
 
@@ -106,13 +224,13 @@
 - Product add/edit forms use shared components under `components/admin/products/`:
   - `product-schema.ts` - Zod validation schema with B2B/B2C pricing fields
   - `general-info-section.tsx` - Product name, slug, description fields
-  - `pricing-section.tsx` - Cost price, B2C price, B2B price, SKU/UPC fields
+  - `pricing-section.tsx` - Cost price, B2C price, B2B price, SKU/UPC fields (uses `formatCurrency()` for display)
   - `inventory-section.tsx` - Stock quantity management
-  - `taxation-section.tsx` - HSN code and GST percentage
+  - `taxation-section.tsx` - HSN code and GST percentage (uses `formatPercentage()` for tax display)
   - `categorization-section.tsx` - Category, subcategory, brand selection
   - `barcode-section.tsx` - Barcode image upload
   - `product-image-uploader.tsx` - Shared hook and components for image/video upload
-  - `profit-margin-calculator.tsx` - Real-time profit/margin analysis
+  - `profit-margin-calculator.tsx` - Real-time profit/margin analysis (uses `formatProfitMargin()`, `formatMarkup()`, `formatCurrencyWithSign()`)
 
 ### Product Schema Fields
 
@@ -125,6 +243,7 @@
 - Relations: category, subcategory, brand (populated objects)
 - Media: images (array, max 5), videoUrl (optional)
 - Status: boolean active flag
+- Pricing display uses `formatCurrency()`, `formatCurrencyWithSign()`, `formatProfitMargin()`, and `formatMarkup()` from `lib/utils.ts`
 
 ### Image/Video Upload Pattern
 
@@ -413,41 +532,145 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 
 ## Skeleton Loading Pattern
 
-- Skeleton components provide better UX than single spinners
-- Dashboard: `DashboardSkeleton` with bento grid layout
-- Products page:
-  - `TableSkeleton` - table row skeletons matching column count (accepts `limit` prop)
-  - `AnalyticsCardsSkeleton` - analytics card placeholders
-- Pattern: Replace loading state with skeleton component, render actual content when data loads
-- Skeleton components use `Skeleton` from `@/components/ui/skeleton`
-- Skeleton components can accept props (e.g., `limit` for table row count) for dynamic rendering
-- **Important**: Define skeleton components outside the component body to avoid re-creation on every render:
+### Overview
 
-  ```typescript
-  // ✅ Correct: Outside component body
-  const DashboardSkeleton = () => (
-    <div className="p-6 space-y-8">
-      {/* Skeleton content */}
-    </div>
+- Skeleton components provide better UX than single spinners by showing placeholder content that mimics the actual layout
+- Reduces perceived loading time and provides visual continuity
+- Uses `Skeleton` from `@/components/ui/skeleton` (shadcn/ui component)
+- Skeleton components should be defined outside component body to avoid re-creation on every render
+- Can accept props for dynamic rendering (e.g., `limit` for row count)
+
+### Current Implementations
+
+**Dashboard** (`app/admin/dashboard/page.tsx`)
+
+- `DashboardSkeleton` - Bento grid layout with large card and small card skeletons
+- Shows when any data fetching hook is loading (products, categories, brands, etc.)
+
+**Products Page** (`app/admin/products/page.tsx`)
+
+- `TableSkeleton` - Table row skeletons matching column count (accepts `limit` prop)
+- `AnalyticsCardsSkeleton` - Analytics card placeholders (4 cards grid)
+- Table skeleton shows when table data is loading
+- Analytics cards skeleton shows when analytics data is loading
+
+### Implementation Pattern
+
+```typescript
+// ✅ Correct: Define skeleton component outside the component body
+const TableSkeleton = ({ limit }: { limit: number }) => (
+  <>
+    {Array.from({ length: limit }).map((_, i) => (
+      <TableRow key={i}>
+        <TableCell>
+          <Skeleton className="h-4 w-[200px]" />
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <Skeleton className="h-4 w-[100px]" />
+          </div>
+        </TableCell>
+        {/* More skeleton cells */}
+      </TableRow>
+    ))}
+  </>
+)
+
+export default function ProductsPage() {
+  const { data, isLoading } = useProducts()
+
+  return (
+    <Table>
+      <TableBody>
+        {isLoading ? (
+          <TableSkeleton limit={20} />
+        ) : data.length === 0 ? (
+          <EmptyState />
+        ) : (
+          data.map((item) => <TableRow key={item.id}>...</TableRow>)
+        )}
+      </TableBody>
+    </Table>
   )
+}
+```
 
-  export default function DashboardPage() {
-    if (isLoading) return <DashboardSkeleton />
-    // ...
-  }
+### Skeleton Component Best Practices
 
-  // ❌ Incorrect: Inside component body (re-creates on every render)
-  export default function DashboardPage() {
-    const DashboardSkeleton = () => (
-      <div className="p-6 space-y-8">
-        {/* Skeleton content */}
-      </div>
-    )
+1. **Match the actual layout** - Skeleton should mimic the real component's structure
+2. **Use appropriate sizing** - Skeleton dimensions should match expected content size
+3. **Define outside component body** - Prevents re-creation on every render
+4. **Accept props for flexibility** - Use props for dynamic row counts, sizes, etc.
+5. **Handle empty states separately** - Skeleton is for loading, not empty data
+6. **Use consistent spacing** - Match the spacing of the actual content
 
-    if (isLoading) return <DashboardSkeleton />
-    // ...
-  }
-  ```
+### Common Skeleton Patterns
+
+**Card Skeleton**
+
+```typescript
+const CardSkeleton = () => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <Skeleton className="h-4 w-[120px]" />
+      <Skeleton className="h-8 w-8 rounded-lg" />
+    </CardHeader>
+    <CardContent>
+      <Skeleton className="h-8 w-[100px]" />
+      <Skeleton className="h-3 w-[140px] mt-2" />
+    </CardContent>
+  </Card>
+)
+```
+
+**Table Row Skeleton**
+
+```typescript
+const TableRowSkeleton = () => (
+  <TableRow>
+    <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
+    <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
+    <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+  </TableRow>
+)
+```
+
+**List Item Skeleton**
+
+```typescript
+const ListItemSkeleton = () => (
+  <div className="flex items-center gap-3">
+    <Skeleton className="h-10 w-10 rounded-full" />
+    <div className="space-y-2">
+      <Skeleton className="h-4 w-[200px]" />
+      <Skeleton className="h-3 w-[150px]" />
+    </div>
+  </div>
+)
+```
+
+### Loading State Pattern
+
+```typescript
+export default function Page() {
+  const { data, isLoading, error } = useData()
+
+  if (isLoading) return <PageSkeleton />
+  if (error) return <ErrorState error={error} />
+  if (!data || data.length === 0) return <EmptyState />
+
+  return <ActualContent data={data} />
+}
+```
+
+### Performance Considerations
+
+- Skeleton components are lightweight (no network requests, no complex logic)
+- Defining outside component body prevents React from re-creating them
+- Use `Array.from({ length: n })` for efficient skeleton row generation
+- Avoid complex calculations inside skeleton components
+- Keep skeleton structure simple and static
 
 ## Numeric Input Validation
 
@@ -458,6 +681,8 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
   - `tax`: `/^\d+(\.\d{1,2})?$/` - validates tax percentage
 - Pattern: Remove `type="number"` attributes, add regex validation to schema
 - Provides better UX while maintaining data integrity
+- Price display uses `formatCurrency()` from `lib/utils.ts` for consistent formatting
+- Tax display uses `formatPercentage()` from `lib/utils.ts` for consistent percentage formatting
 
 ## Form Section Organization
 
@@ -649,3 +874,19 @@ import {
 - All currency calculations use integer math (cents) to prevent floating point precision issues
 - Safe parsing with default values prevents crashes on invalid input
 - Full TSDoc documentation provides IDE autocomplete and hover information
+
+## Recent Changes
+
+### April 15, 2026
+
+- Added comprehensive money formatting utilities to `lib/utils.ts`
+- Added table of contents and quick reference section to ai-skills.md
+- Fixed pre-commit hook to properly handle empty JS/TS file lists
+- Added ESLint disable comment for setState-in-effect warning in products page
+- Moved skeleton components outside render functions to fix React linting errors
+
+### April 14, 2026
+
+- Fixed React linting errors for components created during render
+- Updated dashboard and products page skeleton loading patterns
+- Added error logging to API routes

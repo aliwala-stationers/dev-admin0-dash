@@ -1,3 +1,10 @@
+import {
+  formatCurrencyWithSign,
+  formatProfitMargin,
+  formatCurrency,
+  formatPercentage,
+} from "@/lib/utils"
+
 export function ProfitMarginCalculator({ form }: { form: any }) {
   const costPrice = form.watch("costPrice")
   const b2cPrice = form.watch("b2cPrice")
@@ -8,9 +15,9 @@ export function ProfitMarginCalculator({ form }: { form: any }) {
   const b2b = parseFloat(b2bPrice) || 0
 
   const b2cProfit = b2c - cost
-  const b2cMargin = cost > 0 ? ((b2cProfit / cost) * 100).toFixed(2) : "0.00"
+  const b2cMargin = formatProfitMargin(cost, b2c)
   const b2bProfit = b2b - cost
-  const b2bMargin = cost > 0 ? ((b2bProfit / cost) * 100).toFixed(2) : "0.00"
+  const b2bMargin = formatProfitMargin(cost, b2b)
 
   const b2cProfitClass = b2cProfit >= 0 ? "text-green-600" : "text-red-600"
   const b2bProfitClass = b2bProfit >= 0 ? "text-green-600" : "text-red-600"
@@ -35,13 +42,13 @@ export function ProfitMarginCalculator({ form }: { form: any }) {
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Profit</p>
                 <p className={`text-xl font-bold ${b2cProfitClass}`}>
-                  &#8377;{b2cProfit.toFixed(2)}
+                  {formatCurrencyWithSign(b2cProfit)}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground mb-1">Margin</p>
                 <p className={`text-xl font-bold ${b2cMarginClass}`}>
-                  {b2cMargin}%
+                  {b2cMargin}
                 </p>
               </div>
             </div>
@@ -60,13 +67,13 @@ export function ProfitMarginCalculator({ form }: { form: any }) {
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Profit</p>
                   <p className={`text-xl font-bold ${b2bProfitClass}`}>
-                    &#8377;{b2bProfit.toFixed(2)}
+                    {formatCurrencyWithSign(b2bProfit)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Margin</p>
                   <p className={`text-xl font-bold ${b2bMarginClass}`}>
-                    {b2bMargin}%
+                    {b2bMargin}
                   </p>
                 </div>
               </div>
@@ -82,26 +89,22 @@ export function ProfitMarginCalculator({ form }: { form: any }) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">B2C Price:</span>
-                  <span className="font-semibold">&#8377;{b2c.toFixed(2)}</span>
+                  <span className="font-semibold">{formatCurrency(b2c)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">B2B Price:</span>
-                  <span className="font-semibold">&#8377;{b2b.toFixed(2)}</span>
+                  <span className="font-semibold">{formatCurrency(b2b)}</span>
                 </div>
                 <div className="flex justify-between text-sm pt-2 border-t border-purple-200 dark:border-purple-800">
                   <span className="text-muted-foreground">Difference:</span>
                   <span className="font-semibold">
-                    {b2c > b2b
-                      ? `+\u20B9${(b2c - b2b).toFixed(2)}`
-                      : `-\u20B9${(b2b - b2c).toFixed(2)}`}
+                    {formatCurrencyWithSign(b2c - b2b)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">B2B Discount:</span>
                   <span className="font-semibold text-green-600">
-                    {b2c > 0
-                      ? `${(((b2c - b2b) / b2c) * 100).toFixed(1)}%`
-                      : "0%"}
+                    {formatPercentage((b2c - b2b) / b2c, true)}
                   </span>
                 </div>
               </div>

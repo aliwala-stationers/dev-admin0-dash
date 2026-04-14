@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { formatCurrency } from "@/lib/utils"
 
 // NEW HOOK
 import { useProduct } from "@/hooks/api/useProducts"
@@ -208,10 +209,7 @@ export default function ViewProductPage({
                 </div>
                 <div className="text-right">
                   <span className="font-bold text-2xl text-accent-blue">
-                    &#8377;
-                    {product.price.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
+                    {formatCurrency(product.price)}
                   </span>
                   <div className="flex flex-col text-[10px] text-muted-foreground uppercase font-bold mt-1">
                     {product.hsn && <span>HSN: {product.hsn}</span>}

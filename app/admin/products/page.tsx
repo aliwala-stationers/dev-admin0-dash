@@ -47,6 +47,7 @@ import { useProducts, useDeleteProduct } from "@/hooks/api/useProducts"
 import { useSubcategories } from "@/hooks/api/useSubcategories"
 import { useBrands } from "@/hooks/api/useBrands"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { formatCurrency } from "@/lib/utils"
 // import { toast } from "sonner";
 
 // Skeleton loading state components
@@ -276,10 +277,7 @@ export default function ProductsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                &#8377;
-                {analytics.totalValue.toLocaleString("en-IN", {
-                  maximumFractionDigits: 0,
-                })}
+                {formatCurrency(analytics.totalValue, { showDecimals: false })}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Total value of stock
@@ -458,10 +456,7 @@ export default function ProductsPage() {
                   <TableCell>
                     <div className="flex flex-col">
                       <span className=" font-medium">
-                        &#8377;
-                        {product.price.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}
+                        {formatCurrency(product.price)}
                       </span>
                       {product.hsn && (
                         <span className="text-[10px] text-muted-foreground uppercase font-medium">
