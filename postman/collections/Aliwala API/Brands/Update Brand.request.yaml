@@ -1,0 +1,22 @@
+$kind: http-request
+method: PUT
+url: "{{baseUrl}}/api/brands/{{brandId}}"
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "Updated Brand",
+      "slug": "updated-brand",
+      "description": "Updated description",
+      "status": true,
+      "image": "https://example.com/brand.jpg"
+    }

@@ -1,0 +1,9 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/api/customers?page=1&limit=10&search={{searchTerm}}&status=all"
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"

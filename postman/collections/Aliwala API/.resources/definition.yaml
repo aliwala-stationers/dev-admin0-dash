@@ -1,0 +1,21 @@
+$kind: collection
+name: "Aliwala API"
+variables:
+  - key: baseUrl
+    value: "http://localhost:3000"
+  - key: authToken
+    value: ""
+  - key: brandId
+    value: ""
+  - key: categoryId
+    value: ""
+  - key: subcategoryId
+    value: ""
+  - key: productId
+    value: ""
+  - key: enquiryId
+    value: ""
+  - key: subscriberId
+    value: ""
+  - key: searchTerm
+    value: ""

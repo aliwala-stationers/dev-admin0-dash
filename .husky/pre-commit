@@ -1,14 +1,18 @@
 #!/bin/sh
 
+# Get staged files
 FILES=$(git diff --cached --name-only --diff-filter=ACMR)
 [ -z "$FILES" ] && exit 0
 
-echo "$FILES" | xargs pnpm exec prettier --write --ignore-unknown
+# Format ALL staged files (safe for spaces)
+git diff --cached --name-only -z --diff-filter=ACMR \
+  | xargs -0 pnpm exec prettier --write --ignore-unknown
 
-JS_TS_FILES=$(echo "$FILES" | grep -E '\.(js|ts|tsx)$' || true)
+# Lint only JS/TS files (safe for spaces + no-match)
+git diff --cached --name-only -z --diff-filter=ACMR \
+  | grep -zE '\.(js|ts|tsx)$' \
+  | xargs -0 pnpm exec eslint --fix --max-warnings=100 || true
 
-if [ -n "$JS_TS_FILES" ]; then
-  echo "$JS_TS_FILES" | xargs pnpm exec eslint --fix --max-warnings=100 || true
-fi
-
-git add $FILES
+# Re-add ONLY staged files (not entire repo)
+git diff --cached --name-only -z --diff-filter=ACMR \
+  | xargs -0 git add

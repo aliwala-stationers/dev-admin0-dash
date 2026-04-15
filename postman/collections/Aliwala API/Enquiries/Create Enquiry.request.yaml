@@ -1,0 +1,18 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/api/enquiries"
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: noauth
+body:
+  type: json
+  content: |-
+    {
+      "name": "Visitor Name",
+      "email": "visitor@example.com",
+      "phone": "+15555550123",
+      "message": "I would like more information."
+    }

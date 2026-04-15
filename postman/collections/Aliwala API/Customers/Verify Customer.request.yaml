@@ -1,0 +1,21 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/api/customers/mobile-app-consumer/auth/verify-customer"
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"
+body:
+  type: json
+  content: |-
+    {
+      "uid": "firebase-uid",
+      "phoneNumber": "+15555550123",
+      "name": "Sample Customer",
+      "email": "customer@example.com"
+    }

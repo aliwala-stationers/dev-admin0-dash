@@ -1,0 +1,30 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/api/products"
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "Sample Product",
+      "slug": "sample-product",
+      "description": "Sample description",
+      "price": 99.99,
+      "brand": "{{brandId}}",
+      "category": "{{categoryId}}",
+      "subcategory": "{{subcategoryId}}",
+      "stock": 10,
+      "status": true,
+      "featured": false,
+      "images": [
+        "https://example.com/product.jpg"
+      ]
+    }

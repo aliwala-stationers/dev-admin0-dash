@@ -1,0 +1,23 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/api/subcategories"
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "Sample Subcategory",
+      "slug": "sample-subcategory",
+      "description": "Sample subcategory description",
+      "status": true,
+      "image": "https://example.com/subcategory.jpg",
+      "category": "{{categoryId}}"
+    }

@@ -1,0 +1,23 @@
+$kind: http-request
+method: PUT
+url: "{{baseUrl}}/api/subcategories/{{subcategoryId}}"
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "Updated Subcategory",
+      "slug": "updated-subcategory",
+      "description": "Updated description",
+      "status": true,
+      "image": "https://example.com/subcategory.jpg",
+      "category": "{{categoryId}}"
+    }

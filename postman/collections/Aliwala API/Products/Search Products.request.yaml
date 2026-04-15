@@ -1,0 +1,9 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/api/products/search?q={{searchTerm}}&category={{categoryId}}&brand={{brandId}}&minPrice=0&maxPrice=1000&inStock=false&featured=false&page=1&limit=10"
+order: 6000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"

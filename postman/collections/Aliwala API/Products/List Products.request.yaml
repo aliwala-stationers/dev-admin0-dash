@@ -1,0 +1,9 @@
+$kind: http-request
+method: GET
+url: "{{baseUrl}}/api/products?page=1&limit=10&search={{searchTerm}}&category={{categoryId}}&subcategory={{subcategoryId}}&brand={{brandId}}&status=all&featured=all&sortBy=createdAt&sortOrder=desc"
+order: 1000
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"

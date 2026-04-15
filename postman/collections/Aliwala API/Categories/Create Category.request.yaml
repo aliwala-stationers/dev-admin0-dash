@@ -1,0 +1,22 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/api/categories"
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "Sample Category",
+      "slug": "sample-category",
+      "description": "Sample category description",
+      "status": true,
+      "image": "https://example.com/category.jpg"
+    }

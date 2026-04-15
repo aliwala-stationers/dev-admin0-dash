@@ -1,0 +1,30 @@
+$kind: http-request
+method: PUT
+url: "{{baseUrl}}/api/products/{{productId}}"
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "Updated Product",
+      "slug": "updated-product",
+      "description": "Updated description",
+      "price": 109.99,
+      "brand": "{{brandId}}",
+      "category": "{{categoryId}}",
+      "subcategory": "{{subcategoryId}}",
+      "stock": 15,
+      "status": true,
+      "featured": true,
+      "images": [
+        "https://example.com/product.jpg"
+      ]
+    }

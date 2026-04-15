@@ -1,0 +1,32 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/api/customers"
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{authToken}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "Sample Customer",
+      "email": "customer@example.com",
+      "phone": "+15555550123",
+      "status": "active",
+      "addresses": [
+        {
+          "type": "shipping",
+          "street": "123 Main St",
+          "city": "Sample City",
+          "state": "State",
+          "zipCode": "12345",
+          "country": "Country",
+          "isDefault": true
+        }
+      ]
+    }

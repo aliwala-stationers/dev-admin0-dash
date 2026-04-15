@@ -1,0 +1,18 @@
+$kind: http-request
+method: POST
+url: "{{baseUrl}}/api/newsletter"
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+auth:
+  type: noauth
+body:
+  type: json
+  content: |-
+    {
+      "email": "subscriber@example.com",
+      "meta": {
+        "source": "landing-page"
+      }
+    }
