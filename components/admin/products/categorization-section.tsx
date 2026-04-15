@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./product-schema"
 import { useEffect } from "react"
+import { CategoryDrawer } from "./category-drawer"
 
 interface CategorizationSectionProps {
   form: UseFormReturn<ProductFormValues>
@@ -36,6 +37,13 @@ export function CategoryField({
   useValue?: boolean
   onCategoryChange?: (categoryId: string) => void
 }) {
+  const handleCategoryCreated = (categoryId: string) => {
+    if (categoryId) {
+      form.setValue("category", categoryId, { shouldValidate: true })
+      onCategoryChange?.(categoryId)
+    }
+  }
+
   return (
     <FormField
       control={form.control}
@@ -65,6 +73,10 @@ export function CategoryField({
                   {cat.name}
                 </SelectItem>
               ))}
+              <CategoryDrawer
+                onCategoryCreated={handleCategoryCreated}
+                asDropdownItem
+              />
             </SelectContent>
           </Select>
           <FormMessage />
