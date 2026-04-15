@@ -102,11 +102,11 @@ export function useProductImageUploader({
     if (mode === "add") {
       setVideoFile(file)
       const url = URL.createObjectURL(file)
-      form.setValue("videoUrl", "pending-upload", { shouldValidate: true })
+      form.setValue("videoUrl", url, { shouldValidate: true })
     } else {
       setNewVideoFile(file)
       const url = URL.createObjectURL(file)
-      form.setValue("videoUrl", "pending-upload", { shouldValidate: true })
+      form.setValue("videoUrl", url, { shouldValidate: true })
     }
   }
 

@@ -14,6 +14,32 @@ interface PricingSectionProps {
   form: UseFormReturn<ProductFormValues>
 }
 
+export function MrpSection({ form }: PricingSectionProps) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-muted-foreground">
+        MRP Information
+      </h3>
+      <FormField
+        control={form.control}
+        name="mrp"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>MRP (&#8377;)</FormLabel>
+            <FormControl>
+              <Input placeholder="0.00" {...field} />
+            </FormControl>
+            <p className="text-xs text-muted-foreground">
+              Maximum Retail Price for display purposes
+            </p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  )
+}
+
 export function CostPriceSection({ form }: PricingSectionProps) {
   return (
     <div className="space-y-3">
@@ -45,7 +71,7 @@ export function B2CPriceSection({ form }: PricingSectionProps) {
     <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
       <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-2">
         <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-        B2C Pricing (Retail)
+        Selling Information (B2C)
       </h3>
       <FormField
         control={form.control}
@@ -69,7 +95,7 @@ export function B2BPriceSection({ form }: PricingSectionProps) {
     <div className="space-y-3 p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
       <h3 className="text-sm font-semibold text-green-700 dark:text-green-400 flex items-center gap-2">
         <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-        B2B Pricing (Wholesale)
+        Selling Information (B2B)
       </h3>
       <div className="grid gap-4 sm:grid-cols-2 items-start">
         <FormField

@@ -13,6 +13,7 @@ export const productSchema = z.object({
   brand: z.string().min(1, "Please select a brand."),
   // Pricing
   costPrice: z.string().optional(),
+  mrp: z.string().optional(),
   b2cPrice: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid B2C price format."),
   b2bPrice: z.string().optional(),
   b2bMinQty: z.string().optional(),

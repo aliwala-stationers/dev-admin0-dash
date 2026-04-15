@@ -30,10 +30,10 @@ import {
   DescriptionField,
 } from "@/components/admin/products/general-info-section"
 import {
+  MrpSection,
   CostPriceSection,
   B2CPriceSection,
   B2BPriceSection,
-  SkuUpcSection,
 } from "@/components/admin/products/pricing-section"
 import { InventorySection } from "@/components/admin/products/inventory-section"
 import { TaxationSection } from "@/components/admin/products/taxation-section"
@@ -62,6 +62,7 @@ export default function AddProductPage() {
       description: "",
       sku: "",
       costPrice: "",
+      mrp: "",
       b2cPrice: "",
       b2bPrice: "",
       b2bMinQty: "1",
@@ -151,6 +152,7 @@ export default function AddProductPage() {
         tax: values.tax ? parseFloat(values.tax) : 0,
         price: parseFloat(values.b2cPrice), // Map b2cPrice to price for backward compatibility
         costPrice: values.costPrice ? parseFloat(values.costPrice) : 0,
+        mrp: values.mrp ? parseFloat(values.mrp) : 0,
         b2cPrice: parseFloat(values.b2cPrice),
         b2bPrice: values.b2bPrice ? parseFloat(values.b2bPrice) : 0,
         b2bMinQty: values.b2bMinQty ? parseInt(values.b2bMinQty, 10) : 1,
@@ -249,10 +251,10 @@ export default function AddProductPage() {
                 <CardTitle>Pricing</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                <MrpSection form={form} />
                 <CostPriceSection form={form} />
                 <B2CPriceSection form={form} />
                 <B2BPriceSection form={form} />
-                <SkuUpcSection form={form} />
               </CardContent>
             </Card>
 
@@ -315,38 +317,39 @@ export default function AddProductPage() {
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle>Product Images</CardTitle>
-                <span className="text-xs text-muted-foreground">
-                  {previews.length}/5
-                </span>
-              </CardHeader>
-              <CardContent>
-                <ImageUploadCard
-                  previews={previews}
-                  fileInputRef={fileInputRef}
-                  handleImageChange={handleImageChange}
-                  removeImage={removeImage}
-                />
-                {form.formState.errors.images && (
-                  <p className="text-xs text-red-500 mt-2">
-                    {form.formState.errors.images.message}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
               <CardHeader>
-                <CardTitle>Product Video</CardTitle>
+                <CardTitle>Product Images and Videos</CardTitle>
               </CardHeader>
-              <CardContent>
-                <VideoUploadCard
-                  videoPreview={videoPreview}
-                  videoInputRef={videoInputRef}
-                  handleVideoChange={handleVideoChange}
-                  removeVideo={removeVideo}
-                />
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-semibold mb-3">Images</h3>
+                  <div className="flex flex-row items-center justify-between mb-2">
+                    <span className="text-xs text-muted-foreground">
+                      {previews.length}/5
+                    </span>
+                  </div>
+                  <ImageUploadCard
+                    previews={previews}
+                    fileInputRef={fileInputRef}
+                    handleImageChange={handleImageChange}
+                    removeImage={removeImage}
+                  />
+                  {form.formState.errors.images && (
+                    <p className="text-xs text-red-500 mt-2">
+                      {form.formState.errors.images.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-semibold mb-3">Videos</h3>
+                  <VideoUploadCard
+                    videoPreview={videoPreview}
+                    videoInputRef={videoInputRef}
+                    handleVideoChange={handleVideoChange}
+                    removeVideo={removeVideo}
+                  />
+                </div>
               </CardContent>
             </Card>
           </div>

@@ -41,6 +41,10 @@
     - [Upload Process](#upload-process)
   - [Sequential Subcategory Filtering](#sequential-subcategory-filtering)
     - [Implementation](#implementation-1)
+  - [Drawer Pattern for Create Forms](#drawer-pattern-for-create-forms)
+    - [Implementation](#implementation-2)
+  - [Searchable Dropdown with Command](#searchable-dropdown-with-command)
+    - [Implementation](#implementation-3)
   - [Git Hooks](#git-hooks)
     - [Pre-commit Hook](#pre-commit-hook)
   - [Code Formatting Patterns](#code-formatting-patterns)
@@ -345,6 +349,157 @@
 - Subcategory selection auto-selects its parent category
 - Category change resets subcategory if it doesn't belong to new category
 - Implementation in `components/admin/products/categorization-section.tsx`
+
+### Drawer Pattern for Create Forms
+
+**Implementation**
+
+- Use Vaul Drawer component for inline creation of related items (categories, subcategories, brands)
+- Drawer components include full form with validation, image upload, and status toggle
+- Icon-only drawer trigger buttons placed next to select dropdowns using flex layout
+- Drawer receives callback prop to auto-select newly created item in parent form
+- Pre-fill parent field when drawer is triggered from context (e.g., category ID for subcategory drawer)
+- Consistent UI/UX with sections: Basic Info, Image Upload, Status
+- Use React Hook Form with Zod validation inside drawer
+- Toast notifications for success/error feedback
+
+**Pattern**
+
+```typescript
+// Drawer component with callback
+interface SubcategoryDrawerProps {
+  onSubcategoryCreated?: (subcategoryId: string) => void
+  selectedCategoryId?: string
+  categories: any[]
+}
+
+export function SubcategoryDrawer({
+  onSubcategoryCreated,
+  selectedCategoryId,
+  categories,
+}: SubcategoryDrawerProps) {
+  const createMutation = useCreateSubcategory()
+
+  const onSubmit = async (values: SubcategoryFormValues) => {
+    const result = await createMutation.mutateAsync(values)
+    if (result?._id) {
+      onSubcategoryCreated?.(result._id)
+      setOpen(false)
+      toast.success("Subcategory created successfully")
+    }
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={setOpen}>
+      <DrawerTrigger asChild>
+        <Button variant="outline" size="icon">
+          <Plus className="h-4 w-4" />
+        </Button>
+      </DrawerTrigger>
+      <DrawerContent>
+        {/* Form with validation */}
+      </DrawerContent>
+    </Drawer>
+  )
+}
+
+// Parent field integration
+const handleSubcategoryCreated = (subcategoryId: string) => {
+  if (subcategoryId) {
+    form.setValue("subcategory", subcategoryId, { shouldValidate: true })
+  }
+}
+
+<div className="flex gap-2">
+  <Select>
+    {/* Select dropdown */}
+  </Select>
+  <SubcategoryDrawer
+    onSubcategoryCreated={handleSubcategoryCreated}
+    selectedCategoryId={selectedCategoryId}
+    categories={categories}
+  />
+</div>
+```
+
+### Searchable Dropdown with Command
+
+**Implementation**
+
+- Use cmdk Command component for searchable dropdowns instead of native Select
+- Wrap Command in Popover for dropdown behavior
+- Real-time search filtering with CommandInput
+- Checkmark icon for selected item
+- "None" option for optional fields
+- Auto-close on selection
+- Consistent styling across all searchable selects (category, subcategory, brand)
+
+**Pattern**
+
+```typescript
+const [open, setOpen] = useState(false)
+const [search, setSearch] = useState("")
+
+const filteredItems = items.filter((item) =>
+  item.name.toLowerCase().includes(search.toLowerCase())
+)
+
+const selectedItem = items.find(
+  (item) => (item._id || item.id) === form.watch("fieldName")
+)
+
+<Popover open={open} onOpenChange={setOpen}>
+  <PopoverTrigger asChild>
+    <FormControl>
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={open}
+        className="w-full justify-between"
+      >
+        {selectedItem ? selectedItem.name : "Select item"}
+        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+    </FormControl>
+  </PopoverTrigger>
+  <PopoverContent className="w-[200px] p-0">
+    <Command>
+      <CommandInput
+        placeholder="Search..."
+        value={search}
+        onValueChange={setSearch}
+      />
+      <CommandList>
+        <CommandEmpty>No item found.</CommandEmpty>
+        <CommandGroup>
+          {filteredItems.map((item) => (
+            <CommandItem
+              key={item._id || item.id}
+              value={item.name}
+              onSelect={() => {
+                form.setValue("fieldName", item._id || item.id, {
+                  shouldValidate: true,
+                })
+                setOpen(false)
+                setSearch("")
+              }}
+            >
+              <Check
+                className={`mr-2 h-4 w-4 ${
+                  (item._id || item.id) === field.value
+                    ? "opacity-100"
+                    : "opacity-0"
+                }`}
+              />
+              {item.name}
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  </PopoverContent>
+</Popover>
+```
 
 ### Git Hooks
 
@@ -897,6 +1052,12 @@ import {
 
 ### April 15, 2026
 
+- Added category, subcategory, and brand drawers for inline item creation
+- Implemented searchable dropdowns using cmdk Command component
+- Added drawer pattern for create forms with callback integration
+- Made category field required in subcategory drawer with validation
+- Added Command component wrapper for cmdk primitives
+- Fixed formatting and linting across drawer components
 - Added money formatting utilities to `lib/utils.ts`
 - Restructured ai-skills.md into Principles, Patterns, Code Examples, Quick Reference
 - Fixed pre-commit hook for empty JS/TS file lists
