@@ -9,7 +9,7 @@ export interface Subcategory {
   description: string
   status: boolean
   image?: string
-  category?: string
+  category?: string | { _id: string; id?: string; name?: string }
   productCount?: number
   createdAt: string
   updatedAt: string

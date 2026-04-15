@@ -142,11 +142,18 @@ export default function EditProductPage({
         stock: (product.stock ?? 0).toString(),
         status: product.status,
         category:
-          typeof product.category === "object"
-            ? product.category._id
+          product.category && typeof product.category === "object"
+            ? (product.category as any)._id || (product.category as any).id
             : product.category,
+        subcategory:
+          product.subcategory && typeof product.subcategory === "object"
+            ? (product.subcategory as any)._id ||
+              (product.subcategory as any).id
+            : product.subcategory || "",
         brand:
-          typeof product.brand === "object" ? product.brand._id : product.brand,
+          product.brand && typeof product.brand === "object"
+            ? (product.brand as any)._id || (product.brand as any).id
+            : product.brand,
         images: product.images,
         videoUrl: product.videoUrl || null,
       })
@@ -218,7 +225,7 @@ export default function EditProductPage({
               toast.error((result as any).error)
             } else {
               toast.success("Product updated successfully")
-              router.push("/admin/products")
+              router.push(`/admin/products/${id}`)
             }
           },
           onError: () => {
