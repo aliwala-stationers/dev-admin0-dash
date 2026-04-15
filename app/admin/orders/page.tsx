@@ -35,10 +35,19 @@ import {
   Clock,
   CheckCircle2,
   IndianRupee,
+  Package,
 } from "lucide-react"
 import Link from "next/link"
 import { useData } from "@/lib/data-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -431,11 +440,18 @@ export default function OrdersPage() {
           <TableBody>
             {table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No orders found.
+                <TableCell colSpan={columns.length}>
+                  <Empty>
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Package className="h-6 w-6" />
+                      </EmptyMedia>
+                      <EmptyTitle>No orders found</EmptyTitle>
+                      <EmptyDescription>
+                        Get started by creating your first order.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 </TableCell>
               </TableRow>
             ) : (

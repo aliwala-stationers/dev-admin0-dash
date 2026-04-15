@@ -29,9 +29,18 @@ import {
   UserCheck,
   IndianRupee,
   TrendingUp,
+  User,
 } from "lucide-react"
 import Link from "next/link"
 import { useData } from "@/lib/data-context"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 
 export default function CustomersPage() {
   const { customers } = useData()
@@ -159,72 +168,90 @@ export default function CustomersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCustomers.map((customer) => (
-              <TableRow key={customer.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Link
-                      href={`/admin/customers/${customer.id}`}
-                      className="text-accent-blue hover:underline flex items-center gap-3"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-accent-blue/10 text-accent-blue text-xs">
-                          {customer.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{customer.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {customer.email}
-                        </p>
-                      </div>
-                    </Link>
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {customer.phone}
-                </TableCell>
-                <TableCell>{customer.orders}</TableCell>
-                <TableCell>&#8377;{customer.totalSpent.toFixed(2)}</TableCell>
-                <TableCell>{customer.joinedDate}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      customer.status === "active" ? "default" : "secondary"
-                    }
-                  >
-                    {customer.status === "active" ? "Active" : "Inactive"}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/customers/${customer.id}`}>
-                          View Profile
-                        </Link>
-                      </DropdownMenuItem>
-                      {/* <DropdownMenuItem>View Orders</DropdownMenuItem> */}
-                      {/* <DropdownMenuItem>Send Email</DropdownMenuItem> */}
-                      {/* <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
-                        Deactivate
-                      </DropdownMenuItem> */}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredCustomers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7}>
+                  <Empty>
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <User className="h-6 w-6" />
+                      </EmptyMedia>
+                      <EmptyTitle>No customers found</EmptyTitle>
+                      <EmptyDescription>
+                        Get started by adding your first customer.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredCustomers.map((customer) => (
+                <TableRow key={customer.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/customers/${customer.id}`}
+                        className="text-accent-blue hover:underline flex items-center gap-3"
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-accent-blue/10 text-accent-blue text-xs">
+                            {customer.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{customer.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {customer.email}
+                          </p>
+                        </div>
+                      </Link>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {customer.phone}
+                  </TableCell>
+                  <TableCell>{customer.orders}</TableCell>
+                  <TableCell>&#8377;{customer.totalSpent.toFixed(2)}</TableCell>
+                  <TableCell>{customer.joinedDate}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        customer.status === "active" ? "default" : "secondary"
+                      }
+                    >
+                      {customer.status === "active" ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/customers/${customer.id}`}>
+                            View Profile
+                          </Link>
+                        </DropdownMenuItem>
+                        {/* <DropdownMenuItem>View Orders</DropdownMenuItem> */}
+                        {/* <DropdownMenuItem>Send Email</DropdownMenuItem> */}
+                        {/* <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive">
+                          Deactivate
+                        </DropdownMenuItem> */}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

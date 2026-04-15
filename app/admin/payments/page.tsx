@@ -37,11 +37,20 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  CreditCard,
 } from "lucide-react"
 import Link from "next/link"
 import { useData } from "@/lib/data-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useMemo } from "react"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 
 const statusVariants = {
   completed: "default",
@@ -215,60 +224,78 @@ export default function PaymentsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPayments.map((payment) => (
-              <TableRow key={payment.id}>
-                <TableCell className="font-medium">{payment.id}</TableCell>
-                <TableCell>{payment.orderId}</TableCell>
-                <TableCell>{payment.customer}</TableCell>
-                <TableCell>{payment.date}</TableCell>
-                <TableCell className="font-medium">
-                  &#8377;{payment.amount.toFixed(2)}
-                </TableCell>
-                <TableCell>
-                  {methodLabels[payment.method as keyof typeof methodLabels]}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      statusVariants[
-                        payment.status as keyof typeof statusVariants
-                      ]
-                    }
-                  >
-                    {payment.status.charAt(0).toUpperCase() +
-                      payment.status.slice(1)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/payments/${payment.id}`}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/orders/${payment.orderId}`}>
-                          View Order
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>Download Receipt</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
-                        Issue Refund
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {filteredPayments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8}>
+                  <Empty>
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <CreditCard className="h-6 w-6" />
+                      </EmptyMedia>
+                      <EmptyTitle>No payments found</EmptyTitle>
+                      <EmptyDescription>
+                        Get started by processing your first payment.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredPayments.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell className="font-medium">{payment.id}</TableCell>
+                  <TableCell>{payment.orderId}</TableCell>
+                  <TableCell>{payment.customer}</TableCell>
+                  <TableCell>{payment.date}</TableCell>
+                  <TableCell className="font-medium">
+                    &#8377;{payment.amount.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    {methodLabels[payment.method as keyof typeof methodLabels]}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        statusVariants[
+                          payment.status as keyof typeof statusVariants
+                        ]
+                      }
+                    >
+                      {payment.status.charAt(0).toUpperCase() +
+                        payment.status.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/payments/${payment.id}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/admin/orders/${payment.orderId}`}>
+                            View Order
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>Download Receipt</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive">
+                          Issue Refund
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
