@@ -6,6 +6,7 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminHeader } from "@/components/admin-header"
 import { useAuth } from "@/lib/auth-context"
+import { useUI } from "@/lib/ui-context"
 
 export default function AdminLayout({
   children,
@@ -15,6 +16,7 @@ export default function AdminLayout({
   const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const { sidebarCollapsed, setSidebarCollapsed } = useUI()
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -37,7 +39,11 @@ export default function AdminLayout({
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider
+      defaultOpen={!sidebarCollapsed}
+      open={!sidebarCollapsed}
+      onOpenChange={(open) => setSidebarCollapsed(!open)}
+    >
       <div className="flex min-h-screen w-full">
         <AdminSidebar />
         <div className="flex flex-1 flex-col">

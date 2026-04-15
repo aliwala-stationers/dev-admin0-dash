@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useTheme } from "next-themes"
+import { useUI } from "@/lib/ui-context"
 import {
   Card,
   CardContent,
@@ -29,39 +30,26 @@ import {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
-  const [denseMode, setDenseMode] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const { denseMode, setDenseMode, sidebarCollapsed, setSidebarCollapsed } =
+    useUI()
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [pushNotifications, setPushNotifications] = useState(true)
   const [dailySummary, setDailySummary] = useState(false)
 
-  // Load settings from localStorage on mount
+  // Load notification settings from localStorage on mount
   useEffect(() => {
-    const savedDenseMode = localStorage.getItem("denseMode") === "true"
-    const savedSidebarCollapsed =
-      localStorage.getItem("sidebarCollapsed") === "true"
     const savedEmailNotifications =
       localStorage.getItem("emailNotifications") !== "false"
     const savedPushNotifications =
       localStorage.getItem("pushNotifications") !== "false"
     const savedDailySummary = localStorage.getItem("dailySummary") === "true"
 
-    setDenseMode(savedDenseMode)
-    setSidebarCollapsed(savedSidebarCollapsed)
     setEmailNotifications(savedEmailNotifications)
     setPushNotifications(savedPushNotifications)
     setDailySummary(savedDailySummary)
   }, [])
 
-  // Save settings to localStorage when changed
-  useEffect(() => {
-    localStorage.setItem("denseMode", denseMode.toString())
-  }, [denseMode])
-
-  useEffect(() => {
-    localStorage.setItem("sidebarCollapsed", sidebarCollapsed.toString())
-  }, [sidebarCollapsed])
-
+  // Save notification settings to localStorage when changed
   useEffect(() => {
     localStorage.setItem("emailNotifications", emailNotifications.toString())
   }, [emailNotifications])

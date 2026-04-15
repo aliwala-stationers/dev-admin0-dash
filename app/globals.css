@@ -210,6 +210,85 @@
       border-top: 2px solid black !important;
     }
   }
+
+  /* Dense mode styles - reduce spacing throughout the app */
+  .dense-mode {
+    /* Reduce padding on containers */
+    .p-6 {
+      padding: 1rem !important;
+    }
+
+    .p-4 {
+      padding: 0.75rem !important;
+    }
+
+    .p-8 {
+      padding: 1.25rem !important;
+    }
+
+    /* Reduce gap in flex/grid layouts */
+    .gap-6 {
+      gap: 0.75rem !important;
+    }
+
+    .gap-4 {
+      gap: 0.5rem !important;
+    }
+
+    .gap-8 {
+      gap: 1rem !important;
+    }
+
+    /* Reduce space-y in vertical layouts */
+    .space-y-6 > * + * {
+      margin-top: 0.75rem !important;
+    }
+
+    .space-y-4 > * + * {
+      margin-top: 0.5rem !important;
+    }
+
+    .space-y-8 > * + * {
+      margin-top: 1rem !important;
+    }
+
+    /* Reduce space-x in horizontal layouts */
+    .space-x-4 > * + * {
+      margin-left: 0.5rem !important;
+    }
+
+    .space-x-6 > * + * {
+      margin-left: 0.75rem !important;
+    }
+
+    /* Reduce table cell padding */
+    td,
+    th {
+      padding: 0.5rem !important;
+    }
+
+    /* Reduce card padding */
+    [data-slot="card-content"] {
+      padding: 1rem !important;
+    }
+
+    /* Reduce button padding (exclude switch component) */
+    button:not([role="switch"]) {
+      padding: 0.375rem 0.75rem !important;
+    }
+
+    .px-8 {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    /* Reduce input height */
+    input,
+    select,
+    textarea {
+      height: 2.25rem !important;
+    }
+  }
 }
 
 .print-only {

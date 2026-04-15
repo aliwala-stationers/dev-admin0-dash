@@ -62,11 +62,11 @@ export function AdminSidebar() {
   const { logout } = useAuth()
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent-blue">
-            <Package className="h-5 w-5 text-white" />
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border h-16">
+        <div className="flex items-center gap-3 px-6 group-data-[collapsible=icon]:hidden">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-blue shadow-lg">
+            <Package className="h-6 w-6 text-white" />
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold">Admin Panel</span>
@@ -118,19 +118,19 @@ export function AdminSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-4 gap-2">
         <Link
           href="/changelog"
-          className="flex w-full items-end gap-2 px-2 py-1.5 text-sm italic font-light text-accent-blue hover:text-foreground transition-colors"
+          className="flex w-full items-end gap-2 px-2 py-1.5 text-sm italic font-light text-accent-blue hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden"
         >
           {/* <History className="h-4 w-4 opacity-70" /> */}
           <span>View Changelog</span> <ArrowRight className="h-4 w-4" />
         </Link>
         <Button
           variant="outline"
-          className="w-full justify-start"
+          className="w-full justify-start group-data-[collapsible=icon]:justify-center"
           // 3. FIX: Wrap execution to prevent passing the Event object to the API
           onClick={() => logout()}
         >
-          <LogOut className="mr-2 h-4 w-4" />
-          Logout
+          <LogOut className="mr-2 h-4 w-4 group-data-[collapsible=icon]:mr-0" />
+          <span className="group-data-[collapsible=icon]:hidden">Logout</span>
         </Button>
       </SidebarFooter>
     </Sidebar>
