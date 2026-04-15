@@ -152,6 +152,11 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     // Single point of stream consumption
     parsedBody = await req.json()
 
+    // Handle empty subcategory - convert empty string to null
+    if (parsedBody.subcategory === "" || parsedBody.subcategory === null) {
+      parsedBody.subcategory = null
+    }
+
     /**
      * 🔍 Conflict check
      */

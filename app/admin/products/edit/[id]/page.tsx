@@ -213,6 +213,7 @@ export default function EditProductPage({
         { id, data: payload },
         {
           onSuccess: (result) => {
+            setIsUploading(false)
             if (result && (result as any).error) {
               toast.error((result as any).error)
             } else {
@@ -221,6 +222,7 @@ export default function EditProductPage({
             }
           },
           onError: () => {
+            setIsUploading(false)
             toast.error("Failed to update product")
           },
         },
