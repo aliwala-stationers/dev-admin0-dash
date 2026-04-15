@@ -12,7 +12,6 @@ import {
   Tag,
   MessageSquare,
   Mail,
-  History,
   ArrowRight,
   Bell,
   User,

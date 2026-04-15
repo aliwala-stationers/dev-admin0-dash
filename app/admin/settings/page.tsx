@@ -32,22 +32,24 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
   const { denseMode, setDenseMode, sidebarCollapsed, setSidebarCollapsed } =
     useUI()
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [pushNotifications, setPushNotifications] = useState(true)
-  const [dailySummary, setDailySummary] = useState(false)
-
-  // Load notification settings from localStorage on mount
-  useEffect(() => {
-    const savedEmailNotifications =
-      localStorage.getItem("emailNotifications") !== "false"
-    const savedPushNotifications =
-      localStorage.getItem("pushNotifications") !== "false"
-    const savedDailySummary = localStorage.getItem("dailySummary") === "true"
-
-    setEmailNotifications(savedEmailNotifications)
-    setPushNotifications(savedPushNotifications)
-    setDailySummary(savedDailySummary)
-  }, [])
+  const [emailNotifications, setEmailNotifications] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("emailNotifications") !== "false"
+    }
+    return true
+  })
+  const [pushNotifications, setPushNotifications] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("pushNotifications") !== "false"
+    }
+    return true
+  })
+  const [dailySummary, setDailySummary] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("dailySummary") === "true"
+    }
+    return false
+  })
 
   // Save notification settings to localStorage when changed
   useEffect(() => {

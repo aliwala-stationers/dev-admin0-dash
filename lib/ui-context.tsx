@@ -20,18 +20,18 @@ interface UIPreferences {
 const UIContext = createContext<UIPreferences | undefined>(undefined)
 
 export function UIProvider({ children }: { children: ReactNode }) {
-  const [denseMode, setDenseMode] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-
-  // Load preferences from localStorage on mount
-  useEffect(() => {
-    const savedDenseMode = localStorage.getItem("denseMode") === "true"
-    const savedSidebarCollapsed =
-      localStorage.getItem("sidebarCollapsed") === "true"
-
-    setDenseMode(savedDenseMode)
-    setSidebarCollapsed(savedSidebarCollapsed)
-  }, [])
+  const [denseMode, setDenseMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("denseMode") === "true"
+    }
+    return false
+  })
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("sidebarCollapsed") === "true"
+    }
+    return false
+  })
 
   // Save preferences to localStorage when changed
   useEffect(() => {
