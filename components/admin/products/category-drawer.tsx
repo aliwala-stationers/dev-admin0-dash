@@ -4,7 +4,16 @@ import { useState, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, X, Image as ImageIcon, Loader2 } from "lucide-react"
+import {
+  Plus,
+  X,
+  Image as ImageIcon,
+  Loader2,
+  Hash,
+  FileText,
+  ToggleLeft,
+  Upload,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -48,15 +57,9 @@ type CategoryFormValues = z.infer<typeof categorySchema>
 
 interface CategoryDrawerProps {
   onCategoryCreated?: (categoryId: string) => void
-  asDropdownItem?: boolean
-  onDrawerOpen?: () => void
 }
 
-export function CategoryDrawer({
-  onCategoryCreated,
-  asDropdownItem = false,
-  onDrawerOpen,
-}: CategoryDrawerProps) {
+export function CategoryDrawer({ onCategoryCreated }: CategoryDrawerProps) {
   const [open, setOpen] = useState(false)
   const createMutation = useCreateCategory()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -121,17 +124,6 @@ export function CategoryDrawer({
     }, 0)
   }
 
-  const handleDrawerOpen = () => {
-    console.log("CategoryDrawer: handleDrawerOpen called")
-    onDrawerOpen?.()
-    console.log("CategoryDrawer: Select should be closed now")
-    // Small delay to allow select to close before opening drawer
-    setTimeout(() => {
-      setOpen(true)
-      console.log("CategoryDrawer: Drawer open state set to true after delay")
-    }, 50)
-  }
-
   async function onSubmit(values: CategoryFormValues) {
     setIsUploading(true)
     try {
@@ -187,402 +179,253 @@ export function CategoryDrawer({
   }
 
   return (
-    <>
-      {asDropdownItem ? (
-        <div
-          className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-          onClick={() => {
-            console.log(
-              "CategoryDrawer: Dropdown item clicked, calling handleDrawerOpen",
-            )
-            handleDrawerOpen()
-          }}
+    <Drawer open={open} onOpenChange={setOpen} direction="right">
+      <DrawerTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 shrink-0"
+          title="Create new category"
         >
-          <Plus className="mr-2 h-4 w-4" />
-          Create new category
-        </div>
-      ) : (
-        <Drawer
-          open={open}
-          onOpenChange={(newOpen) => {
-            console.log("CategoryDrawer: onOpenChange called with", newOpen)
-            setOpen(newOpen)
-          }}
-          direction="right"
-          shouldScaleBackground={false}
-        >
-          <DrawerTrigger asChild>
+          <Plus className="h-4 w-4" />
+        </Button>
+      </DrawerTrigger>
+      <DrawerContent>
+        <div className="max-w-lg mx-auto h-[calc(100vh-4rem)] flex flex-col">
+          <DrawerHeader className="pb-4">
+            <DrawerTitle className="text-2xl font-bold">
+              Create New Category
+            </DrawerTitle>
+            <DrawerDescription className="text-base">
+              Add a new category to organize your products
+            </DrawerDescription>
+          </DrawerHeader>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="flex-1 overflow-y-auto px-6 pb-6 space-y-6"
+            >
+              {/* Basic Information Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Hash className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    Basic Information
+                  </h3>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Category Name
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g. Electronics"
+                          className="h-10"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e)
+                            onNameChange(e)
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Slug
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="electronics"
+                          className="h-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Description
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          className="min-h-[100px] resize-none"
+                          placeholder="Short description about the category..."
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Image Upload Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    Category Image
+                  </h3>
+                </div>
+
+                <Card className="border-dashed">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col items-center justify-center gap-4">
+                      <div className="relative group">
+                        <div
+                          className={`relative h-40 w-40 rounded-xl border-2 transition-all ${
+                            imagePreview
+                              ? "border-solid border-primary/20 bg-primary/5"
+                              : "border-dashed border-muted-foreground/30 bg-muted/30 hover:border-primary/50 hover:bg-primary/5"
+                          } flex items-center justify-center overflow-hidden`}
+                        >
+                          {imagePreview ? (
+                            <>
+                              <img
+                                src={imagePreview}
+                                alt="Category Preview"
+                                className="h-full w-full object-contain p-3"
+                              />
+                              <button
+                                type="button"
+                                onClick={removeImage}
+                                className="absolute top-2 right-2 p-2 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <div
+                              className="flex flex-col items-center cursor-pointer p-6"
+                              onClick={handleImageUploadClick}
+                            >
+                              <div className="p-3 rounded-full bg-primary/10 mb-3 group-hover:bg-primary/20 transition-colors">
+                                <ImageIcon className="h-6 w-6 text-primary" />
+                              </div>
+                              <span className="text-sm text-muted-foreground font-medium text-center">
+                                Click to upload
+                              </span>
+                              <span className="text-xs text-muted-foreground/60 mt-1">
+                                PNG, JPG up to 5MB
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {!imagePreview && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleImageUploadClick}
+                          className="w-full"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Select Image
+                        </Button>
+                      )}
+
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Status Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    Status
+                  </h3>
+                </div>
+
+                <Card className="border-l-4 border-l-primary">
+                  <CardContent className="p-4">
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base font-medium cursor-pointer">
+                              Active Status
+                            </FormLabel>
+                            <p className="text-xs text-muted-foreground">
+                              Enable this category to be visible in your store
+                            </p>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              className="scale-110"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </form>
+          </Form>
+          <DrawerFooter className="px-6 pb-6 pt-4 gap-3 border-t">
             <Button
               type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isUploading || createMutation.isPending}
+              className="flex-1"
             >
-              <Plus className="h-4 w-4" />
+              Cancel
             </Button>
-          </DrawerTrigger>
-          <DrawerContent>
-            <div className="max-w-md mx-auto h-[calc(100vh-4rem)] flex flex-col">
-              <DrawerHeader>
-                <DrawerTitle>Create New Category</DrawerTitle>
-                <DrawerDescription>
-                  Add a new category to organize your products
-                </DrawerDescription>
-              </DrawerHeader>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="flex-1 overflow-y-auto p-4 space-y-4 border-t border-b shadow-inner"
-                >
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g. Electronics"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e)
-                              onNameChange(e)
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Slug</FormLabel>
-                        <FormControl>
-                          <Input placeholder="electronics" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            className="min-h-[80px]"
-                            placeholder="Short description about the category..."
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Category Image</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-col items-center justify-center gap-4">
-                        <div className="relative h-32 w-32 rounded-lg border-2 border-dashed border-muted flex items-center justify-center bg-muted/30 overflow-hidden group hover:bg-muted/50 transition-colors">
-                          {imagePreview ? (
-                            <>
-                              <img
-                                src={imagePreview}
-                                alt="Category Preview"
-                                className="h-full w-full object-contain p-2"
-                              />
-                              <button
-                                type="button"
-                                onClick={removeImage}
-                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </>
-                          ) : (
-                            <div
-                              className="flex flex-col items-center cursor-pointer"
-                              onClick={handleImageUploadClick}
-                            >
-                              <ImageIcon className="h-6 w-6 text-muted-foreground mb-2" />
-                              <span className="text-xs text-muted-foreground font-medium">
-                                Click to upload
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {!imagePreview && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleImageUploadClick}
-                          >
-                            <Plus className="mr-2 h-3 w-3" />
-                            Select Image
-                          </Button>
-                        )}
-
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Status</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <FormField
-                        control={form.control}
-                        name="status"
-                        render={({ field }) => (
-                          <FormItem className="flex items-center justify-between border rounded-lg p-3">
-                            <FormLabel className="m-0 text-sm font-medium">
-                              Active
-                            </FormLabel>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </CardContent>
-                  </Card>
-                </form>
-              </Form>
-              <DrawerFooter className="flex-col sm:flex-row gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  disabled={isUploading || createMutation.isPending}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isUploading || createMutation.isPending}
-                  onClick={form.handleSubmit(onSubmit)}
-                >
-                  {isUploading || createMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Category"
-                  )}
-                </Button>
-              </DrawerFooter>
-            </div>
-          </DrawerContent>
-        </Drawer>
-      )}
-      {asDropdownItem && (
-        <Drawer
-          open={open}
-          onOpenChange={(newOpen) => {
-            console.log("CategoryDrawer: onOpenChange called with", newOpen)
-            setOpen(newOpen)
-          }}
-          direction="right"
-          shouldScaleBackground={false}
-        >
-          <DrawerContent>
-            <div className="max-w-md mx-auto h-[calc(100vh-4rem)] flex flex-col">
-              <DrawerHeader>
-                <DrawerTitle>Create New Category</DrawerTitle>
-                <DrawerDescription>
-                  Add a new category to organize your products
-                </DrawerDescription>
-              </DrawerHeader>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="flex-1 overflow-y-auto p-4 space-y-4 border-t border-b shadow-inner"
-                >
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Category Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="e.g. Electronics"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e)
-                              onNameChange(e)
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Slug</FormLabel>
-                        <FormControl>
-                          <Input placeholder="electronics" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            className="min-h-[80px]"
-                            placeholder="Short description about the category..."
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Category Image</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-col items-center justify-center gap-4">
-                        <div className="relative h-32 w-32 rounded-lg border-2 border-dashed border-muted flex items-center justify-center bg-muted/30 overflow-hidden group hover:bg-muted/50 transition-colors">
-                          {imagePreview ? (
-                            <>
-                              <img
-                                src={imagePreview}
-                                alt="Category Preview"
-                                className="h-full w-full object-contain p-2"
-                              />
-                              <button
-                                type="button"
-                                onClick={removeImage}
-                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </>
-                          ) : (
-                            <div
-                              className="flex flex-col items-center cursor-pointer"
-                              onClick={handleImageUploadClick}
-                            >
-                              <ImageIcon className="h-6 w-6 text-muted-foreground mb-2" />
-                              <span className="text-xs text-muted-foreground font-medium">
-                                Click to upload
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {!imagePreview && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleImageUploadClick}
-                          >
-                            <Plus className="mr-2 h-3 w-3" />
-                            Select Image
-                          </Button>
-                        )}
-
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleImageChange}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Status</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <FormField
-                        control={form.control}
-                        name="status"
-                        render={({ field }) => (
-                          <FormItem className="flex items-center justify-between border rounded-lg p-3">
-                            <FormLabel className="m-0 text-sm font-medium">
-                              Active
-                            </FormLabel>
-                            <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </CardContent>
-                  </Card>
-                </form>
-              </Form>
-              <DrawerFooter className="flex-col sm:flex-row gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  disabled={isUploading || createMutation.isPending}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isUploading || createMutation.isPending}
-                  onClick={form.handleSubmit(onSubmit)}
-                >
-                  {isUploading || createMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Category"
-                  )}
-                </Button>
-              </DrawerFooter>
-            </div>
-          </DrawerContent>
-        </Drawer>
-      )}
-    </>
+            <Button
+              type="submit"
+              disabled={isUploading || createMutation.isPending}
+              onClick={form.handleSubmit(onSubmit)}
+              className="flex-1"
+            >
+              {isUploading || createMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                "Create Category"
+              )}
+            </Button>
+          </DrawerFooter>
+        </div>
+      </DrawerContent>
+    </Drawer>
   )
 }

@@ -12,11 +12,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./product-schema"
-import { useState } from "react"
 import { CategoryDrawer } from "./category-drawer"
+import {
+  Building2,
+  Tag,
+  Layers,
+  ShieldCheck,
+  Check,
+  Search,
+} from "lucide-react"
+import { useState } from "react"
 
 interface CategorizationSectionProps {
   form: UseFormReturn<ProductFormValues>
@@ -37,7 +59,8 @@ export function CategoryField({
   useValue?: boolean
   onCategoryChange?: (categoryId: string) => void
 }) {
-  const [selectOpen, setSelectOpen] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
 
   const handleCategoryCreated = (categoryId: string) => {
     if (categoryId) {
@@ -46,48 +69,81 @@ export function CategoryField({
     }
   }
 
-  const handleDrawerOpen = () => {
-    setSelectOpen(false)
-  }
+  const selectedCategory = categories.find(
+    (cat) => (cat._id || cat.id) === form.watch("category"),
+  )
+
+  const filteredCategories = categories.filter((cat) =>
+    cat.name.toLowerCase().includes(search.toLowerCase()),
+  )
 
   return (
     <FormField
       control={form.control}
       name="category"
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>Category</FormLabel>
-          <Select
-            open={selectOpen}
-            onOpenChange={setSelectOpen}
-            onValueChange={(value) => {
-              field.onChange(value)
-              onCategoryChange?.(value)
-            }}
-            value={useValue ? field.value : undefined}
-            defaultValue={useValue ? undefined : field.value}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {categories.map((cat) => (
-                <SelectItem
-                  key={cat._id || cat.id}
-                  value={cat._id || cat.id || ""}
-                >
-                  {cat.name}
-                </SelectItem>
-              ))}
-              <CategoryDrawer
-                onCategoryCreated={handleCategoryCreated}
-                asDropdownItem
-                onDrawerOpen={handleDrawerOpen}
-              />
-            </SelectContent>
-          </Select>
+        <FormItem className="space-y-2">
+          <FormLabel className="flex items-center gap-2 text-sm font-medium">
+            <Tag className="h-4 w-4 text-muted-foreground" />
+            Category
+          </FormLabel>
+          <div className="flex gap-2">
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <FormControl>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="h-10 flex-1 justify-between"
+                  >
+                    {selectedCategory
+                      ? selectedCategory.name
+                      : "Select category"}
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </FormControl>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0">
+                <Command>
+                  <CommandInput
+                    placeholder="Search category..."
+                    value={search}
+                    onValueChange={setSearch}
+                  />
+                  <CommandList>
+                    <CommandEmpty>No category found.</CommandEmpty>
+                    <CommandGroup>
+                      {filteredCategories.map((cat) => (
+                        <CommandItem
+                          key={cat._id || cat.id}
+                          value={cat.name}
+                          onSelect={() => {
+                            form.setValue("category", cat._id || cat.id, {
+                              shouldValidate: true,
+                            })
+                            onCategoryChange?.(cat._id || cat.id)
+                            setOpen(false)
+                            setSearch("")
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              (cat._id || cat.id) === field.value
+                                ? "opacity-100"
+                                : "opacity-0"
+                            }`}
+                          />
+                          {cat.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <CategoryDrawer onCategoryCreated={handleCategoryCreated} />
+          </div>
           <FormMessage />
         </FormItem>
       )}
@@ -121,8 +177,14 @@ export function SubcategoryField({
       control={form.control}
       name="subcategory"
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>Subcategory (Optional)</FormLabel>
+        <FormItem className="space-y-2">
+          <FormLabel className="flex items-center gap-2 text-sm font-medium">
+            <Layers className="h-4 w-4 text-muted-foreground" />
+            Subcategory{" "}
+            <span className="text-muted-foreground font-normal">
+              (Optional)
+            </span>
+          </FormLabel>
           <Select
             onValueChange={(value) => {
               field.onChange(value)
@@ -148,7 +210,7 @@ export function SubcategoryField({
             defaultValue={useValue ? undefined : field.value}
           >
             <FormControl>
-              <SelectTrigger>
+              <SelectTrigger className="h-10">
                 <SelectValue placeholder="Select subcategory" />
               </SelectTrigger>
             </FormControl>
@@ -185,16 +247,19 @@ export function BrandField({
       control={form.control}
       name="brand"
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>Brand</FormLabel>
+        <FormItem className="space-y-2">
+          <FormLabel className="flex items-center gap-2 text-sm font-medium">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            Brand
+          </FormLabel>
           <Select
             onValueChange={field.onChange}
             value={useValue ? field.value : undefined}
             defaultValue={useValue ? undefined : field.value}
           >
             <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Select" />
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Select brand" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
@@ -225,10 +290,22 @@ export function StatusField({
       control={form.control}
       name="status"
       render={({ field }) => (
-        <FormItem className="flex items-center justify-between border rounded-lg p-3">
-          <FormLabel className="m-0 text-sm">Active Status</FormLabel>
+        <FormItem className="flex items-center justify-between border rounded-lg p-4 bg-muted/30">
+          <div className="space-y-0.5">
+            <FormLabel className="flex items-center gap-2 text-sm font-medium m-0 cursor-pointer">
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+              Active Status
+            </FormLabel>
+            <p className="text-xs text-muted-foreground">
+              Enable this product to be visible in your store
+            </p>
+          </div>
           <FormControl>
-            <Switch checked={field.value} onCheckedChange={field.onChange} />
+            <Switch
+              checked={field.value}
+              onCheckedChange={field.onChange}
+              className="scale-110"
+            />
           </FormControl>
         </FormItem>
       )}

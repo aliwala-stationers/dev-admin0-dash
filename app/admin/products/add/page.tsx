@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { ChevronLeft, Save, Loader2 } from "lucide-react"
+import { ChevronLeft, Save, Loader2, Building2 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { useState, useEffect } from "react"
@@ -290,9 +290,12 @@ export default function AddProductPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Organization</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-muted-foreground" />
+                  Organization
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <CategorizationSection
                   form={form}
                   categories={categories}
