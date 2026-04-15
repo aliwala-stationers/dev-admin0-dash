@@ -23,6 +23,11 @@ function serializeProduct(product: any) {
     description: product.description,
     price: product.b2cPrice || product.price, // Use b2cPrice as price for backward compatibility
     salePrice: product.salePrice,
+    costPrice: product.costPrice,
+    mrp: product.mrp,
+    b2cPrice: product.b2cPrice,
+    b2bPrice: product.b2bPrice,
+    b2bMinQty: product.b2bMinQty,
     hsn: product.hsn,
     tax: product.tax,
     upc: product.upc,

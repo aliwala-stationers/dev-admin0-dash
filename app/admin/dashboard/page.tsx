@@ -32,6 +32,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { CURRENCY_SYMBOL } from "@/lib/utils"
 
 // IMPORT REAL DATA HOOKS
 import { useProducts } from "@/hooks/api/useProducts"
@@ -381,7 +382,7 @@ export default function DashboardPage() {
                     Avg. Price
                   </p>
                   <p className="text-xl font-bold">
-                    &#8377;
+                    {CURRENCY_SYMBOL}
                     {productsArray.length > 0
                       ? (
                           inventoryData.totalValue / productsArray.length
@@ -535,7 +536,8 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold">
-                      &#8377;{order.total.toLocaleString("en-IN")}
+                      {CURRENCY_SYMBOL}
+                      {order.total.toLocaleString("en-IN")}
                     </p>
                     <Badge
                       variant="secondary"
@@ -603,7 +605,8 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <p className="text-xs font-black text-accent-blue">
-                      &#8377;{product.price.toLocaleString("en-IN")}
+                      {CURRENCY_SYMBOL}
+                      {product.price.toLocaleString("en-IN")}
                     </p>
                   </div>
                 </div>
@@ -650,7 +653,10 @@ export default function DashboardPage() {
                     <CreditCard className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold">&#8377;{payment.amount}</p>
+                    <p className="text-xs font-bold">
+                      {CURRENCY_SYMBOL}
+                      {payment.amount}
+                    </p>
                     <p className="text-[8px] text-muted-foreground uppercase font-black">
                       {payment.method}
                     </p>

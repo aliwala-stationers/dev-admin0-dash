@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./product-schema"
+import { CURRENCY_SYMBOL } from "@/lib/utils"
 
 interface PricingSectionProps {
   form: UseFormReturn<ProductFormValues>
@@ -25,7 +26,7 @@ export function MrpSection({ form }: PricingSectionProps) {
         name="mrp"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>MRP (&#8377;)</FormLabel>
+            <FormLabel>MRP ({CURRENCY_SYMBOL})</FormLabel>
             <FormControl>
               <Input placeholder="0.00" {...field} />
             </FormControl>
@@ -51,7 +52,7 @@ export function CostPriceSection({ form }: PricingSectionProps) {
         name="costPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Cost Price (&#8377;)</FormLabel>
+            <FormLabel>Cost Price ({CURRENCY_SYMBOL})</FormLabel>
             <FormControl>
               <Input placeholder="0.00" {...field} />
             </FormControl>
@@ -78,7 +79,7 @@ export function B2CPriceSection({ form }: PricingSectionProps) {
         name="b2cPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Retail Price (&#8377;)</FormLabel>
+            <FormLabel>Retail Price ({CURRENCY_SYMBOL})</FormLabel>
             <FormControl>
               <Input placeholder="0.00" {...field} className="font-semibold" />
             </FormControl>
@@ -103,7 +104,7 @@ export function B2BPriceSection({ form }: PricingSectionProps) {
           name="b2bPrice"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Wholesale Price (&#8377;)</FormLabel>
+              <FormLabel>Wholesale Price ({CURRENCY_SYMBOL})</FormLabel>
               <FormControl>
                 <Input placeholder="0.00" {...field} />
               </FormControl>

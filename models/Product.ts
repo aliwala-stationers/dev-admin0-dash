@@ -51,6 +51,7 @@ const ProductSchema = new Schema(
     // --- PRICING ---
     price: { type: Number, required: true, min: 0 }, // Main price (backward compatibility)
     costPrice: { type: Number, min: 0 }, // Cost price for profit calculations
+    mrp: { type: Number, min: 0 }, // Maximum Retail Price
     b2cPrice: { type: Number, min: 0 }, // B2C (retail) price
     b2bPrice: { type: Number, min: 0 }, // B2B (wholesale) price
     b2bMinQty: { type: Number, min: 1, default: 1 }, // Minimum quantity for B2B pricing

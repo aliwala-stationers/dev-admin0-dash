@@ -211,6 +211,11 @@ export default function ViewProductPage({
                   <span className="font-bold text-2xl text-accent-blue">
                     {formatCurrency(product.price)}
                   </span>
+                  {product.mrp && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      MRP: {formatCurrency(product.mrp)}
+                    </div>
+                  )}
                   <div className="flex flex-col text-[10px] text-muted-foreground uppercase font-bold mt-1">
                     {product.hsn && <span>HSN: {product.hsn}</span>}
                     {product.tax !== undefined && (

@@ -39,6 +39,11 @@ export interface Product {
 
   price: number
   salePrice?: number
+  costPrice?: number
+  mrp?: number
+  b2cPrice?: number
+  b2bPrice?: number
+  b2bMinQty?: number
   hsn?: string
   tax?: number
   upc?: string

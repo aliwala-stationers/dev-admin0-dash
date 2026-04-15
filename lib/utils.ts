@@ -3,9 +3,31 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+/**
+ * Merge Tailwind + conditional classes
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
+/**
+ * India-specific currency config (single source of truth)
+ */
+const LOCALE = "en-IN"
+const CURRENCY = "INR"
+
+/**
+ * Derived currency symbol (no hardcoding ₹)
+ */
+export const CURRENCY_SYMBOL = new Intl.NumberFormat(LOCALE, {
+  style: "currency",
+  currency: CURRENCY,
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+})
+  .format(0)
+  .replace(/[0-9.,]/g, "")
+  .trim()
 
 type CurrencyOptions = {
   showDecimals?: boolean
@@ -15,274 +37,159 @@ type CurrencyOptions = {
 type NumericValue = number | string
 
 /**
- * Money formatter utilities for consistent currency formatting across the app
- * Uses Indian Rupee (INR) with en-IN locale
- * All calculations use integer math (cents) to avoid floating point precision issues
+ * Memoized formatters (avoid re-instantiation)
  */
-
-const CURRENCY_FORMATTER = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
-
-const CURRENCY_FORMATTER_NO_DECIMALS = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 0,
-})
-
-const NUMBER_FORMATTER = new Intl.NumberFormat("en-IN")
-
-const COMPACT_CURRENCY_FORMATTER = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  notation: "compact",
-  compactDisplay: "short",
-})
+const FORMATTERS = {
+  currency: new Intl.NumberFormat(LOCALE, {
+    style: "currency",
+    currency: CURRENCY,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }),
+  currencyNoDec: new Intl.NumberFormat(LOCALE, {
+    style: "currency",
+    currency: CURRENCY,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }),
+  compact: new Intl.NumberFormat(LOCALE, {
+    style: "currency",
+    currency: CURRENCY,
+    notation: "compact",
+    compactDisplay: "short",
+  }),
+  number: new Intl.NumberFormat(LOCALE),
+}
 
 /**
- * Safely parse a value to number
- * @param value - Value to parse (number or string)
- * @param defaultValue - Default value if parsing fails
- * @returns Parsed number or default
+ * Safe number parser
  */
-function toNumber(value: NumericValue, defaultValue: number = 0): number {
+function toNumber(value: NumericValue, defaultValue = 0): number {
   if (typeof value === "number") return value
   const parsed = parseFloat(value)
   return isNaN(parsed) ? defaultValue : parsed
 }
 
 /**
- * Convert rupees to cents (integer) to avoid floating point issues
- * @param amount - Amount in rupees
- * @returns Amount in cents (integer)
+ * Integer math helpers (avoid floating point issues)
  */
 function toCents(amount: number): number {
   return Math.round(amount * 100)
 }
 
-/**
- * Convert cents to rupees
- * @param cents - Amount in cents
- * @returns Amount in rupees
- */
 function fromCents(cents: number): number {
   return cents / 100
 }
 
 /**
- * Format a number as Indian Rupee currency
- * @param amount - The amount to format (number or string)
- * @param options - Formatting options
- * @param options.showDecimals - If false, removes decimal places (default: true)
- * @param options.compact - If true, uses compact notation (e.g., "₹1.2K")
- * @returns Formatted currency string (e.g., "₹1,234.56")
- * @example
- * ```ts
- * formatCurrency(1234.56) // "₹1,234.56"
- * formatCurrency(1234, { showDecimals: false }) // "₹1,234"
- * formatCurrency(1500000, { compact: true }) // "₹1.5M"
- * ```
+ * Format currency (₹)
  */
 export function formatCurrency(
   amount: NumericValue,
   options: CurrencyOptions = {},
 ): string {
-  const num = toNumber(amount, 0)
+  const num = toNumber(amount)
 
-  if (options.compact) {
-    return COMPACT_CURRENCY_FORMATTER.format(num)
-  }
+  if (options.compact) return FORMATTERS.compact.format(num)
 
   return options.showDecimals === false
-    ? CURRENCY_FORMATTER_NO_DECIMALS.format(num)
-    : CURRENCY_FORMATTER.format(num)
+    ? FORMATTERS.currencyNoDec.format(num)
+    : FORMATTERS.currency.format(num)
 }
 
 /**
- * Format a number as currency with explicit sign (+/-)
- * Useful for showing differences, profits, losses
- * @param amount - The amount to format
- * @param options - Formatting options
- * @param options.showDecimals - If false, removes decimal places (default: true)
- * @param options.compact - If true, uses compact notation
- * @returns Formatted currency string with sign (e.g., "+₹1,234.56" or "-₹1,234.56")
- * @example
- * ```ts
- * formatCurrencyWithSign(100) // "+₹100.00"
- * formatCurrencyWithSign(-50) // "-₹50.00"
- * formatCurrencyWithSign(1000, { compact: true }) // "+₹1K"
- * ```
+ * Format currency with sign (+ / -)
  */
 export function formatCurrencyWithSign(
   amount: NumericValue,
   options: CurrencyOptions = {},
 ): string {
-  const num = toNumber(amount, 0)
-  const sign = num >= 0 ? "+" : "-"
+  const num = toNumber(amount)
+
+  if (num === 0) return formatCurrency(0, options)
+
   const formatted = formatCurrency(Math.abs(num), options)
-  return `${sign}${formatted}`
+  return num > 0 ? `+${formatted}` : `-${formatted}`
 }
 
 /**
- * Format a number using Indian locale (no currency symbol)
- * @param amount - The amount to format
- * @returns Formatted number string (e.g., "1,234.56")
- * @example
- * ```ts
- * formatNumber(1234.56) // "1,234.56"
- * formatNumber("10000") // "10,000"
- * ```
+ * Format plain number (no ₹)
  */
 export function formatNumber(amount: NumericValue): string {
-  const num = toNumber(amount, 0)
-  return NUMBER_FORMATTER.format(num)
+  return FORMATTERS.number.format(toNumber(amount))
 }
 
 /**
- * Format a value as percentage
- * @param value - The percentage value (0-100 or 0-1)
- * @param asDecimal - If true, treats input as decimal (0.18 = 18%)
- * @returns Formatted percentage string (e.g., "18.00%")
- * @example
- * ```ts
- * formatPercentage(18) // "18.00%"
- * formatPercentage(0.18, true) // "18.00%"
- * ```
+ * Format percentage
  */
 export function formatPercentage(
   value: NumericValue,
-  asDecimal: boolean = false,
+  asDecimal = false,
 ): string {
-  const num = toNumber(value, 0)
+  const num = toNumber(value)
   const percentage = asDecimal ? num * 100 : num
   return `${percentage.toFixed(2)}%`
 }
 
 /**
- * Format the difference between two values with sign
- * Uses integer math to avoid floating point precision issues
- * Commonly used for price comparisons, profit/loss calculations
- * @param value1 - First value
- * @param value2 - Second value
- * @param options - Formatting options
- * @returns Formatted difference string (e.g., "+₹100.00" or "-₹50.00")
- * @example
- * ```ts
- * formatDifference(100, 50) // "+₹50.00"
- * formatDifference(50, 100) // "-₹50.00"
- * formatDifference(1000, 800, { showDecimals: false }) // "+₹200"
- * ```
+ * Difference between two values (₹ with sign)
  */
 export function formatDifference(
   value1: NumericValue,
   value2: NumericValue,
   options: CurrencyOptions = {},
 ): string {
-  const num1 = toNumber(value1, 0)
-  const num2 = toNumber(value2, 0)
-
-  const diffCents = toCents(num1) - toCents(num2)
-  const diff = fromCents(diffCents)
-
-  return formatCurrencyWithSign(diff, options)
+  const diffCents = toCents(toNumber(value1)) - toCents(toNumber(value2))
+  return formatCurrencyWithSign(fromCents(diffCents), options)
 }
 
 /**
- * Format discount percentage
- * Uses integer math to avoid floating point precision issues
- * Returns 0% if discounted price is higher than original (price increase)
- * @param originalPrice - Original price
- * @param discountedPrice - Discounted price
- * @returns Formatted discount percentage (e.g., "20.0%")
- * @example
- * ```ts
- * formatDiscount(100, 80) // "20.0%"
- * formatDiscount(100, 120) // "0%" (no negative discount)
- * formatDiscount(0, 50) // "0%" (handles zero original)
- * ```
+ * Discount %
  */
 export function formatDiscount(
   originalPrice: NumericValue,
   discountedPrice: NumericValue,
 ): string {
-  const original = toNumber(originalPrice, 0)
-  const discounted = toNumber(discountedPrice, 0)
+  const original = toNumber(originalPrice)
+  const discounted = toNumber(discountedPrice)
 
-  if (original === 0) return "0%"
+  if (original <= 0) return "0%"
 
-  const originalCents = toCents(original)
-  const discountedCents = toCents(discounted)
+  const discount = (toCents(original) - toCents(discounted)) / toCents(original)
 
-  const discountCents = originalCents - discountedCents
-  const discount = Math.max(0, (discountCents / originalCents) * 100)
-
-  return `${discount.toFixed(1)}%`
+  return `${Math.max(0, discount * 100).toFixed(1)}%`
 }
 
 /**
- * Format profit margin percentage
- * Uses integer math to avoid floating point precision issues
- * Margin = ((Selling Price - Cost Price) / Cost Price) * 100
- * @param costPrice - Cost price of the product
- * @param sellingPrice - Selling price of the product
- * @returns Formatted margin percentage (e.g., "25.00%")
- * @example
- * ```ts
- * formatProfitMargin(100, 125) // "25.00%"
- * formatProfitMargin(100, 80) // "-20.00%" (loss)
- * formatProfitMargin(0, 50) // "0%" (handles zero cost)
- * ```
+ * Profit Margin %
+ * Margin = Profit / Selling Price
  */
 export function formatProfitMargin(
   costPrice: NumericValue,
   sellingPrice: NumericValue,
 ): string {
-  const cost = toNumber(costPrice, 0)
-  const selling = toNumber(sellingPrice, 0)
+  const cost = toNumber(costPrice)
+  const selling = toNumber(sellingPrice)
 
-  if (cost === 0) return "0%"
+  if (selling === 0) return "0%"
 
-  const costCents = toCents(cost)
-  const sellingCents = toCents(selling)
-
-  const profitCents = sellingCents - costCents
-  const margin = (profitCents / costCents) * 100
-
-  return `${margin.toFixed(2)}%`
+  const profit = toCents(selling) - toCents(cost)
+  return `${((profit / toCents(selling)) * 100).toFixed(2)}%`
 }
 
 /**
- * Format markup percentage
- * Uses integer math to avoid floating point precision issues
- * Markup = ((Selling Price - Cost Price) / Cost Price) * 100
- * @param costPrice - Cost price of the product
- * @param sellingPrice - Selling price of the product
- * @returns Formatted markup percentage (e.g., "25.00%")
- * @example
- * ```ts
- * formatMarkup(100, 125) // "25.00%"
- * formatMarkup(100, 80) // "-20.00%" (negative markup)
- * formatMarkup(0, 50) // "0%" (handles zero cost)
- * ```
+ * Markup %
+ * Markup = Profit / Cost Price
  */
 export function formatMarkup(
   costPrice: NumericValue,
   sellingPrice: NumericValue,
 ): string {
-  const cost = toNumber(costPrice, 0)
-  const selling = toNumber(sellingPrice, 0)
+  const cost = toNumber(costPrice)
+  const selling = toNumber(sellingPrice)
 
   if (cost === 0) return "0%"
 
-  const costCents = toCents(cost)
-  const sellingCents = toCents(selling)
-
-  const profitCents = sellingCents - costCents
-  const markup = (profitCents / costCents) * 100
-
-  return `${markup.toFixed(2)}%`
+  const profit = toCents(selling) - toCents(cost)
+  return `${((profit / toCents(cost)) * 100).toFixed(2)}%`
 }
