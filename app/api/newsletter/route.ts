@@ -13,6 +13,7 @@ function serializeSubscriber(doc: any) {
   return {
     id: doc._id.toString(),
     email: doc.email,
+    isActive: doc.isActive,
     createdAt: doc.createdAt,
   }
 }

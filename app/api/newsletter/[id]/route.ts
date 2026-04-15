@@ -25,6 +25,7 @@ function serializeSubscriber(doc: any) {
   return {
     id: doc._id.toString(),
     email: doc.email,
+    isActive: doc.isActive,
     createdAt: doc.createdAt,
   }
 }
@@ -112,6 +113,10 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       }
 
       updateData.email = email
+    }
+
+    if (typeof body.isActive === "boolean") {
+      updateData.isActive = body.isActive
     }
 
     const updated = await Newsletter.findByIdAndUpdate(id, updateData, {
