@@ -24,6 +24,7 @@ export const useCategories = () => {
       const json = await res.json()
       return json.data || []
     },
+    retry: false,
   })
 }
 

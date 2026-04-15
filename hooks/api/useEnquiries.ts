@@ -22,6 +22,7 @@ export const useEnquiries = () => {
       const json = await res.json()
       return json.data || []
     },
+    retry: false,
   })
 }
 

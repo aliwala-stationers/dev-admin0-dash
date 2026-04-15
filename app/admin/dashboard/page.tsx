@@ -78,6 +78,99 @@ const DashboardSkeleton = () => (
           </CardContent>
         </Card>
       ))}
+
+      {/* Recent Orders skeleton */}
+      <Card className="lg:col-span-2 lg:row-span-3 border-border/50 flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-3 w-24 mt-2" />
+          </div>
+          <Skeleton className="h-8 w-20" />
+        </CardHeader>
+        <CardContent className="flex-1">
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+                <div className="text-right space-y-2">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+        <div className="p-4 border-t">
+          <Skeleton className="h-3 w-32 mx-auto" />
+        </div>
+      </Card>
+
+      {/* New Arrivals skeleton */}
+      <Card className="lg:col-span-2 lg:row-span-2 border-border/50">
+        <CardHeader className="pb-4">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-3 w-24 mt-2" />
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex gap-3 p-2 rounded-xl border">
+                <Skeleton className="h-14 w-14 rounded-lg" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Activity skeleton */}
+      <Card className="lg:col-span-2 lg:row-span-1 border-border/50 bg-secondary/20">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Skeleton className="h-3 w-32" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Skeleton className="h-8 w-8 rounded" />
+                <div className="space-y-1">
+                  <Skeleton className="h-3 w-12" />
+                  <Skeleton className="h-2 w-10" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Mini stats skeletons */}
+      {[1, 2, 3, 4].map((i) => (
+        <Card key={i} className="border-border/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-8 w-8 rounded-lg" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-3 w-32 mt-2" />
+          </CardContent>
+        </Card>
+      ))}
     </div>
   </div>
 )
@@ -146,6 +239,8 @@ export default function DashboardPage() {
     return { recentOrders, recentPayments, activeNewsletter }
   }, [orders, payments, newsletterArray])
 
+  // Show skeleton if any API is still loading initially
+  // This ensures smooth UX during data fetch
   if (pLoading || cLoading || bLoading || sLoading || eLoading || nLoading) {
     return <DashboardSkeleton />
   }
@@ -566,40 +661,89 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* MINI STATS (Bento: 1x1 each) */}
-        <Card className="border-border/50 hover:border-accent-blue/50 transition-colors cursor-default group">
+        {/* CATEGORIES & SUBCATEGORIES GROUP (Bento: 2x1) */}
+        <Card className="lg:col-span-2 border-border/50 hover:border-accent-blue/50 transition-colors cursor-default group">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Categories
+              Categories & Subcategories
             </p>
             <div className="p-2 rounded-lg bg-accent-blue/10 group-hover:bg-accent-blue group-hover:text-white transition-colors">
               <Layers className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{categoriesArray.length}</div>
-            <p className="text-[10px] mt-1 text-muted-foreground font-medium uppercase tracking-tighter">
-              Main tax groups
-            </p>
+            <div className="flex items-center gap-8">
+              <div>
+                <div className="text-3xl font-bold">
+                  {categoriesArray.length}
+                </div>
+                <p className="text-[10px] mt-1 text-muted-foreground font-medium uppercase tracking-tighter">
+                  Categories
+                </p>
+              </div>
+              <div className="h-10 w-px bg-border" />
+              <div>
+                <div className="text-3xl font-bold">
+                  {subcategoriesArray.length}
+                </div>
+                <p className="text-[10px] mt-1 text-muted-foreground font-medium uppercase tracking-tighter">
+                  Subcategories
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/50 hover:border-accent-blue/50 transition-colors cursor-default group">
+        {/* ENQUIRIES & NEWSLETTER GROUP (Bento: 2x1) */}
+        <Card className="lg:col-span-2 border-border/50 hover:border-accent-blue/50 transition-colors cursor-default group">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Enquiries
+              Enquiries & Newsletter
             </p>
             <div className="p-2 rounded-lg bg-accent-blue/10 group-hover:bg-accent-blue group-hover:text-white transition-colors">
               <MessageSquare className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{enquiriesArray.length}</div>
-            <p className="text-[10px] mt-1 text-muted-foreground font-medium uppercase tracking-tighter">
-              Support tickets
-            </p>
+            <div className="flex items-center gap-8">
+              <div>
+                <div className="text-3xl font-bold">
+                  {enquiriesArray.length}
+                </div>
+                <p className="text-[10px] mt-1 text-muted-foreground font-medium uppercase tracking-tighter">
+                  Enquiries
+                </p>
+              </div>
+              <div className="h-10 w-px bg-border" />
+              <div>
+                <div className="text-3xl font-bold">
+                  {newsletterArray.length}
+                </div>
+                <p className="text-[10px] mt-1 text-muted-foreground font-medium uppercase tracking-tighter">
+                  Subscribers
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
+
+        {/* Payments card commented out for now */}
+        {/* <Card className="border-border/50 hover:border-accent-blue/50 transition-colors cursor-default group">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Payments
+            </p>
+            <div className="p-2 rounded-lg bg-accent-blue/10 group-hover:bg-accent-blue group-hover:text-white transition-colors">
+              <CreditCard className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{payments.length}</div>
+            <p className="text-[10px] mt-1 text-muted-foreground font-medium uppercase tracking-tighter">
+              Transactions processed
+            </p>
+          </CardContent>
+        </Card> */}
       </div>
     </div>
   )

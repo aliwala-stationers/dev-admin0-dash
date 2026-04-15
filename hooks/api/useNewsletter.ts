@@ -22,6 +22,7 @@ export const useNewsletter = () => {
       const json = await res.json()
       return json.data || []
     },
+    retry: false,
   })
 }
 

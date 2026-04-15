@@ -89,6 +89,7 @@ export const useProducts = (params: ProductsParams = {}) => {
         pagination: json.pagination || { total: 0, page, limit, pages: 0 },
       }
     },
+    retry: false,
   })
 }
 
