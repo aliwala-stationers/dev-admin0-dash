@@ -93,7 +93,11 @@ export default function EditSubcategoryPage({
         description: subcategory.description,
         status: subcategory.status,
         image: subcategory.image || "",
-        category: subcategory.category || "",
+        category:
+          subcategory.category && typeof subcategory.category === "object"
+            ? (subcategory.category as any)._id ||
+              (subcategory.category as any).id
+            : subcategory.category || "",
       })
       setImagePreview(subcategory.image || null)
     }

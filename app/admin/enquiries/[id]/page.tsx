@@ -86,16 +86,23 @@ export default function EnquiryDetailsPage({
   }
 
   const handleDelete = async () => {
+    if (!enquiry._id) return
     await deleteMutation.mutateAsync(enquiry._id)
     router.push("/admin/enquiries")
   }
 
-  const markAsRead = () =>
+  const markAsRead = () => {
+    if (!enquiry._id) return
     updateMutation.mutate({ id: enquiry._id, data: { status: "read" } })
-  const markContacted = () =>
+  }
+  const markContacted = () => {
+    if (!enquiry._id) return
     updateMutation.mutate({ id: enquiry._id, data: { status: "contacted" } })
-  const markAsUnread = () =>
+  }
+  const markAsUnread = () => {
+    if (!enquiry._id) return
     updateMutation.mutate({ id: enquiry._id, data: { status: "new" } })
+  }
 
   return (
     <div className="flex flex-col h-full bg-card">
