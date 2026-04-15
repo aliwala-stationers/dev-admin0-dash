@@ -83,6 +83,7 @@
   - [CSS/Tailwind Notes](#csstailwind-notes)
   - [Recent UI Improvements](#recent-ui-improvements)
   - [Money Formatting Utilities](#money-formatting-utilities)
+- [Failure Stories](#failure-stories)
 - [Recent Changes](#recent-changes)
 
 ## Quick Reference
@@ -1104,7 +1105,7 @@ type NumericValue = number | string
 
 ### Usage Examples
 
-```typescript
+````typescript
 import {
   formatCurrency,
   formatCurrencyWithSign,
@@ -1139,7 +1140,414 @@ import {
 - Safe parsing with default values prevents crashes
 - TSDoc documentation provides IDE autocomplete
 
+## Failure Stories
+
+### Cache Key Computed Before Validation
+
+**Context**: Analytics API implemented caching to provide fallback on timeout. Cache key was generated before parsing query params.
+
+**Failure**: Cache key used default value (10) instead of actual parsed value from query param. Request with `?lowStockThreshold=20` would cache under wrong key, causing data corruption when different params were used.
+
+**Root Cause**: Cache key generation happened before validation/parsing, using the default value.
+
+**Fix**: Move cache key generation after validation to use actual parsed value.
+
+```typescript
+// ❌ Wrong: Cache key before validation
+let lowStockThreshold = 10
+const cacheKey = JSON.stringify({ lowStockThreshold })
+const rawThreshold = searchParams.get("lowStockThreshold")
+if (rawThreshold !== null) {
+  lowStockThreshold = Number(rawThreshold) // Cache key still has 10
+}
+
+// ✅ Correct: Cache key after validation
+let lowStockThreshold = 10
+const rawThreshold = searchParams.get("lowStockThreshold")
+if (rawThreshold !== null) {
+  lowStockThreshold = Number(rawThreshold)
+}
+const cacheKey = JSON.stringify({ lowStockThreshold }) // Uses actual value
+````
+
+### Unbounded Cache Growth
+
+**Context**: In-memory cache map stored analytics results keyed by params.
+
+**Failure**: Cache could grow unbounded with many different param combinations, causing memory issues over time.
+
+**Root Cause**: No safeguard against cache size growth.
+
+**Fix**: Add crude but effective safeguard - clear cache when size exceeds threshold.
+
+```typescript
+if (isValidAnalytics) {
+  // Prevent unbounded cache growth
+  if (Object.keys(cacheMap).length > 50) {
+    cacheMap = {}
+  }
+  cacheMap[cacheKey] = { data: analytics, timestamp: Date.now() }
+}
+```
+
+### Cache Poisoning Risk
+
+**Context**: Cache stored analytics results without validation.
+
+**Failure**: If aggregation returned partial or incorrect data (bug, migration issue), it would be cached blindly and served to users.
+
+**Root Cause**: No validation of data shape or values before caching.
+
+**Fix**: Validate shape and reject obviously bad states before caching.
+
+```typescript
+const isValidAnalytics =
+  typeof analytics.totalProducts === "number" &&
+  analytics.totalProducts >= 0 &&
+  typeof analytics.totalInventoryValue === "number" &&
+  analytics.totalInventoryValue >= 0 &&
+  typeof analytics.lowStockCount === "number" &&
+  typeof analytics.outOfStockCount === "number"
+
+if (isValidAnalytics) {
+  cacheMap[cacheKey] = { data: analytics, timestamp: Date.now() }
+} else {
+  console.warn("analytics_validation_failed: invalid shape, not caching")
+}
+```
+
+### Validation Outside Try/Catch
+
+**Context**: Analytics API validated query params before main logic.
+
+**Failure**: Validation happened outside try/catch block. If validation threw error, it bypassed structured error handling, returned generic 500, and wasn't logged.
+
+**Root Cause**: Validation placed outside try/catch for convenience.
+
+**Fix**: Move all validation inside try/catch to ensure errors go through structured handling.
+
+```typescript
+// ❌ Wrong: Validation outside try/catch
+export async function GET(req: NextRequest) {
+  const rawThreshold = searchParams.get("lowStockThreshold")
+  if (rawThreshold !== null) {
+    const parsed = Number(rawThreshold)
+    if (Number.isNaN(parsed)) {
+      throw ANALYTICS_ERRORS.INVALID_THRESHOLD() // Bypasses error handling
+    }
+  }
+  try {
+    // ... main logic
+  } catch (error) {
+    // ... structured handling
+  }
+}
+
+// ✅ Correct: Validation inside try/catch
+export async function GET(req: NextRequest) {
+  try {
+    const rawThreshold = searchParams.get("lowStockThreshold")
+    if (rawThreshold !== null) {
+      const parsed = Number(rawThreshold)
+      if (Number.isNaN(parsed)) {
+        throw ANALYTICS_ERRORS.INVALID_THRESHOLD() // Goes through error handling
+      }
+    }
+    // ... main logic
+  } catch (error) {
+    // ... structured handling
+  }
+}
+```
+
+### ObjectId Casting Without Validation
+
+**Context**: Analytics API cast string storeId to ObjectId for multi-tenant support.
+
+**Failure**: If storeId was invalid (e.g., "abc"), `new mongoose.Types.ObjectId(storeId)` would throw and crash the request.
+
+**Root Cause**: No validation before ObjectId casting.
+
+**Fix**: Validate with `mongoose.Types.ObjectId.isValid()` before casting.
+
+```typescript
+// ❌ Wrong: No validation
+if (storeId) {
+  matchStage.store = new mongoose.Types.ObjectId(storeId) // Throws on invalid ID
+}
+
+// ✅ Correct: Validate before casting
+if (storeId) {
+  if (!mongoose.Types.ObjectId.isValid(storeId)) {
+    throw new Error("INVALID_STORE_ID")
+  }
+  matchStage.store = new mongoose.Types.ObjectId(storeId)
+}
+```
+
+### Mongoose Index Definitions in Wrong Place
+
+**Context**: Product model needed indexes for analytics queries.
+
+**Failure**: Used `indexes: []` array inside schema options, which is invalid Mongoose syntax. Indexes were never created.
+
+**Root Cause**: Misunderstanding of Mongoose index definition syntax.
+
+**Fix**: Move index definitions to `Schema.index()` calls after schema definition.
+
+```typescript
+// ❌ Wrong: Invalid syntax
+const ProductSchema = new Schema(
+  {
+    // ... fields
+  },
+  {
+    indexes: [{ stock: 1, status: 1 }], // Invalid, doesn't create indexes
+  },
+)
+
+// ✅ Correct: Schema.index() calls
+const ProductSchema = new Schema({
+  // ... fields
+})
+ProductSchema.index({ stock: 1, status: 1 }) // Creates index correctly
+```
+
+### Aggregation Efficiency - Multiple Scans
+
+**Context**: Analytics endpoint used `$facet` to compute multiple metrics.
+
+**Failure**: `$facet` caused multiple collection scans, inefficient at scale (10k → 1M products).
+
+**Root Cause**: Used `$facet` for convenience without considering performance impact.
+
+**Fix**: Use single-pass `$group` with `$cond` instead of `$facet`.
+
+```typescript
+// ❌ Wrong: Multiple scans with $facet
+$facet: {
+  totals: [{ $group: { _id: null, totalProducts: { $sum: 1 } } }],
+  lowStock: [{ $match: { stock: { $gt: 0, $lte: threshold } } }, { $count: "count" } }],
+  outOfStock: [{ $match: { stock: { $lte: 0 } } }, { $count: "count" } }]
+}
+
+// ✅ Correct: Single scan with $group and $cond
+$group: {
+  _id: null,
+  totalProducts: { $sum: 1 },
+  lowStockCount: {
+    $sum: { $cond: [{ $and: [{ $gt: ["$stock", 0] }, { $lte: ["$stock", threshold] }] }, 1, 0] }
+  },
+  outOfStockCount: {
+    $sum: { $cond: [{ $lte: ["$stock", 0] }, 1, 0] }
+  }
+}
+```
+
+### Financial Accuracy - Floating Point Drift
+
+**Context**: Analytics calculated inventory value as `price * stock`.
+
+**Failure**: Floating point arithmetic causes precision errors (₹19.99 × 3 → 59.970000000000006). At scale, these errors accumulate.
+
+**Root Cause**: Used floating point numbers for currency calculations.
+
+**Fix**: Use integer-based money model (priceInPaise) for production accuracy. For backward compatibility, use `$ifNull` to prefer costPrice.
+
+```typescript
+// ❌ Wrong: Floating point drift
+totalInventoryValue: {
+  $sum: {
+    $multiply: ["$price", "$stock"]
+  } // 19.99 * 3 = 59.970000000000006
+}
+
+// ✅ Correct: Prefer costPrice, future: use priceInPaise
+totalInventoryValue: {
+  $sum: {
+    $multiply: [
+      { $ifNull: ["$costPrice", "$price"] }, // Prefer cost basis
+      "$stock",
+    ]
+  }
+}
+```
+
+### Input Validation - Unbounded Thresholds
+
+**Context**: Analytics API accepted `lowStockThreshold` query param.
+
+**Failure**: No validation on threshold value. Could accept negative numbers, extremely large numbers, or non-numeric values causing performance issues or crashes.
+
+**Root Cause**: Assumed reasonable input without validation.
+
+**Fix**: Clamp threshold to sane range and validate numeric.
+
+```typescript
+// ❌ Wrong: No validation
+const lowStockThreshold = Number(searchParams.get("lowStockThreshold")) || 10
+// Could be NaN, -1000, 99999999
+
+// ✅ Correct: Clamp and validate
+const rawThreshold = searchParams.get("lowStockThreshold")
+if (rawThreshold !== null) {
+  const parsed = Number(rawThreshold)
+  if (Number.isNaN(parsed)) {
+    throw ANALYTICS_ERRORS.INVALID_THRESHOLD()
+  }
+  lowStockThreshold = Math.max(0, Math.min(parsed, 10000))
+}
+```
+
+### Timeout Detection - Brittle Check
+
+**Context**: Analytics API used `maxTimeMS: 5000` to prevent runaway queries.
+
+**Failure**: Timeout detection only checked `(error as any).code === 50`. Different MongoDB drivers report timeouts differently (sometimes `error.code`, sometimes `error.message`).
+
+**Root Cause**: Assumed all drivers use same error code.
+
+**Fix**: Check both code and message for robustness.
+
+```typescript
+// ❌ Wrong: Brittle code check only
+if ((error as any).code === 50) {
+  // Handle timeout
+}
+
+// ✅ Correct: Check code and message
+const isTimeout =
+  error instanceof Error &&
+  ((error as any).code === 50 || error.message?.includes("maxTimeMS"))
+
+if (isTimeout) {
+  // Handle timeout
+}
+```
+
+### Response Shape Inconsistency
+
+**Context**: API returned different shapes for success vs error responses.
+
+**Failure**: Success: `{ success: true, data }`, Error: `{ error, code }`. Frontend had to branch logic inconsistently, harder to type safely.
+
+**Root Cause**: Didn't plan response shape consistency across all endpoints.
+
+**Fix**: Use unified shape: `{ success: boolean, data?: T, error?: { message, code } }`.
+
+```typescript
+// ❌ Wrong: Inconsistent shapes
+// Success
+{ success: true, data: analytics }
+// Error
+{ error: "Invalid storeId", code: "INVALID_STORE_ID" }
+
+// ✅ Correct: Unified shape
+// Success
+{ success: true, data: analytics }
+// Error
+{ success: false, error: { message: "Invalid storeId", code: "INVALID_STORE_ID" } }
+```
+
+### In-Memory Cache Limitations
+
+**Context**: Used simple in-memory cache for timeout fallback.
+
+**Failure**: In serverless environments (Vercel, AWS Lambda), memory is not shared across instances. Cache resets on cold starts. This is "best-effort resilience", not guaranteed cache.
+
+**Root Cause**: Assumed in-memory cache works like shared cache.
+
+**Fix**: Document limitations clearly. For distributed environments, use Redis or DB-backed metrics.
+
+```typescript
+// IMPORTANT: In-memory cache limitations:
+// - Not shared across serverless instances (Vercel, AWS Lambda, etc.)
+// - Resets on cold starts and instance restarts
+// - This is "best-effort resilience layer", not guaranteed cache
+// - For distributed environments, use Redis or DB-backed metrics
+let cacheMap: Record<string, { data: any; timestamp: number }> = {}
+```
+
+### Empty Aggregation Results
+
+**Context**: Analytics aggregation used `result[0]` to get data.
+
+**Failure**: If aggregation returned empty array, `result[0]` was undefined. Used optional chaining `data?.totalProducts` throughout, but cleaner to handle at source.
+
+**Root Cause**: Didn't handle empty results at source.
+
+**Fix**: Use nullish coalescing to provide empty object.
+
+```typescript
+// ❌ Wrong: Repeated optional chaining
+const data = result[0]
+return {
+  totalProducts: data?.totalProducts || 0,
+  totalInventoryValue: data?.totalInventoryValue || 0,
+  // ...
+}
+
+// ✅ Correct: Handle at source
+const data = result[0] ?? {}
+return {
+  totalProducts: data.totalProducts || 0,
+  totalInventoryValue: data.totalInventoryValue || 0,
+  // ...
+}
+```
+
+### Index Duplication - Partial vs Compound
+
+**Context**: Product model had both partial index and compound index for same fields.
+
+**Failure**: `{ stock: 1 }` with partial filter and `{ stock: 1, status: 1 }` compound index overlapped. Wasted index space, Mongo might not use optimal one consistently.
+
+**Root Cause**: Added compound index without considering partial index already covered the use case.
+
+**Fix**: Remove redundant compound index if partial index covers query pattern.
+
+```typescript
+// ❌ Wrong: Overlapping indexes
+ProductSchema.index({ stock: 1 }, { partialFilterExpression: { status: true } })
+ProductSchema.index({ stock: 1, status: 1 }) // Redundant
+
+// ✅ Correct: Single optimal index
+ProductSchema.index({ stock: 1 }, { partialFilterExpression: { status: true } })
+// Future: ProductSchema.index({ store: 1, stock: 1 }, { partialFilterExpression: { status: true } })
+```
+
 ## Recent Changes
+
+### April 16, 2026 - Product Analytics Implementation
+
+**Commit: feat(analytics-data): adds analytics data**
+
+Created production-grade analytics system with MongoDB aggregation:
+
+- Created `/api/products/analytics` endpoint with single-pass aggregation
+- Created `lib/analytics/productAnalytics.ts` service with `$group` + `$cond` (not `$facet`)
+- Created `hooks/api/useProductAnalytics.ts` React Query hook
+- Updated dashboard to use analytics hook instead of manual calculation
+- Added MongoDB indexes: partial `{ stock: 1 }` with `status: true` filter
+- Created `lib/analytics/errors.ts` with `AnalyticsError` class and `ANALYTICS_ERRORS` factory
+- Fixed ObjectId casting with validation before `new mongoose.Types.ObjectId()`
+- Fixed Mongoose index definitions (moved from schema options to `Schema.index()`)
+- Added input validation with threshold clamping (0-10000)
+- Added `maxTimeMS: 5000` timeout with cache fallback
+- Added keyed cache map to prevent data corruption
+- Added cache validation to prevent poisoning
+- Added cache growth safeguard (max 50 entries)
+- Unified response shapes for success/error consistency
+- Added latency tracking with `console.log("analytics_duration_ms")`
+- Added structured logging with `errorCode` and query string context
+
+**Key Fixes**:
+
+- Cache key computed after validation (was using default value)
+- Validation moved inside try/catch (was bypassing error handling)
+- Timeout detection with message check (was brittle code-only check)
+- Aggregation uses costPrice with fallback (was price only)
+- Empty results handled with `?? {}` (was repeated optional chaining)
 
 ### April 15, 2026
 
@@ -1160,4 +1568,7 @@ import {
 - Fixed React linting for components created during render
 - Updated skeleton loading patterns
 - Added error logging to API routes
+
+```
+
 ```
