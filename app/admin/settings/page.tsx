@@ -26,6 +26,7 @@ import {
   Monitor,
   Moon,
   Sun,
+  LayoutDashboard,
 } from "lucide-react"
 
 export default function SettingsPage() {
@@ -82,7 +83,7 @@ export default function SettingsPage() {
             <Palette className="h-4 w-4" />{" "}
             <span className="hidden sm:inline">General</span>
           </TabsTrigger>
-          <TabsTrigger
+          {/* <TabsTrigger
             value="notifications"
             className="flex items-center gap-2 py-2 px-4 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 shadow-sm"
           >
@@ -95,91 +96,128 @@ export default function SettingsPage() {
           >
             <Shield className="h-4 w-4" />{" "}
             <span className="hidden sm:inline">Security</span>
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="general" className="focus-visible:outline-none">
-          <Card className="border-border/50 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-xl">Display & Appearance</CardTitle>
-              <CardDescription>
-                Customise how the dashboard looks on your device.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Theme</Label>
-                <p className="text-sm text-muted-foreground">
+          <div className="space-y-6">
+            <Card className="border-border/50 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-xl">Theme</CardTitle>
+                <CardDescription>
                   Select your preferred theme for the dashboard.
-                </p>
-                <div className="flex gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button
                     onClick={() => setTheme("light")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                    className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${
                       theme === "light"
-                        ? "bg-white dark:bg-slate-700 shadow-sm"
-                        : "hover:bg-white/50 dark:hover:bg-slate-700/50"
+                        ? "border-accent-blue bg-accent-blue/5"
+                        : "border-border hover:border-border/80 hover:bg-muted/50"
                     }`}
                   >
-                    <Sun className="h-4 w-4" />
-                    <span>Light</span>
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-yellow-300 to-orange-400 flex items-center justify-center shadow-lg">
+                      <Sun className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-semibold">Light</p>
+                      <p className="text-xs text-muted-foreground">
+                        Clean & bright
+                      </p>
+                    </div>
                   </button>
                   <button
                     onClick={() => setTheme("dark")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                    className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${
                       theme === "dark"
-                        ? "bg-white dark:bg-slate-700 shadow-sm"
-                        : "hover:bg-white/50 dark:hover:bg-slate-700/50"
+                        ? "border-accent-blue bg-accent-blue/5"
+                        : "border-border hover:border-border/80 hover:bg-muted/50"
                     }`}
                   >
-                    <Moon className="h-4 w-4" />
-                    <span>Dark</span>
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shadow-lg">
+                      <Moon className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-semibold">Dark</p>
+                      <p className="text-xs text-muted-foreground">
+                        Easy on eyes
+                      </p>
+                    </div>
                   </button>
                   <button
                     onClick={() => setTheme("system")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                    className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${
                       theme === "system"
-                        ? "bg-white dark:bg-slate-700 shadow-sm"
-                        : "hover:bg-white/50 dark:hover:bg-slate-700/50"
+                        ? "border-accent-blue bg-accent-blue/5"
+                        : "border-border hover:border-border/80 hover:bg-muted/50"
                     }`}
                   >
-                    <Monitor className="h-4 w-4" />
-                    <span>System</span>
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                      <Monitor className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-semibold">System</p>
+                      <p className="text-xs text-muted-foreground">
+                        Follow system
+                      </p>
+                    </div>
                   </button>
                 </div>
-              </div>
-              <Separator className="bg-border/50" />
-              <div className="flex items-center justify-between group">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-semibold group-hover:text-accent-blue transition-colors cursor-pointer">
-                    Dense Mode
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Reduce spacing in tables and lists to see more data.
-                  </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-xl">Layout</CardTitle>
+                <CardDescription>
+                  Customise the layout and spacing of the dashboard.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between group">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                      <Palette className="h-5 w-5 text-slate-500" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-semibold group-hover:text-accent-blue transition-colors cursor-pointer">
+                        Dense Mode
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Reduce spacing in tables and lists to see more data.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch checked={denseMode} onCheckedChange={setDenseMode} />
                 </div>
-                <Switch checked={denseMode} onCheckedChange={setDenseMode} />
-              </div>
-              <Separator className="bg-border/50" />
-              <div className="flex items-center justify-between group">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-semibold group-hover:text-accent-blue transition-colors cursor-pointer">
-                    Sidebar Collapsed
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Start with the sidebar collapsed by default.
-                  </p>
+                <Separator className="bg-border/50" />
+                <div className="flex items-center justify-between group">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                      <LayoutDashboard className="h-5 w-5 text-slate-500" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <Label className="text-base font-semibold group-hover:text-accent-blue transition-colors cursor-pointer">
+                        Sidebar Collapsed
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Start with the sidebar collapsed by default.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={sidebarCollapsed}
+                    onCheckedChange={setSidebarCollapsed}
+                  />
                 </div>
-                <Switch
-                  checked={sidebarCollapsed}
-                  onCheckedChange={setSidebarCollapsed}
-                />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        <TabsContent
+        {/* <TabsContent
           value="notifications"
           className="focus-visible:outline-none"
         >
@@ -252,9 +290,9 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
 
-        <TabsContent value="security" className="focus-visible:outline-none">
+        {/* <TabsContent value="security" className="focus-visible:outline-none">
           <div className="grid gap-6">
             <Card className="border-border/50 shadow-sm">
               <CardHeader>
@@ -299,7 +337,7 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
     </div>
   )

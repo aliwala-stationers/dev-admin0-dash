@@ -621,11 +621,11 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* RECENT PAYMENTS (Bento: 2x1) */}
+        {/* RECENT ACTIVITY (Bento: 2x1) */}
         <Card className="lg:col-span-2 lg:row-span-1 border-border/50 bg-secondary/20">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Recent Activity
+              Recent Activity (Last 30 Days)
             </p>
             <div className="flex items-center gap-2">
               <Badge
@@ -644,25 +644,124 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-6 overflow-x-auto pb-2 scrollbar-hide">
-              {dashboardStats.recentPayments.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="flex items-center gap-2 shrink-0 bg-background border border-border/50 rounded-lg p-2 pr-4 shadow-sm"
-                >
-                  <div className="h-8 w-8 rounded bg-accent-blue/10 flex items-center justify-center text-accent-blue">
-                    <CreditCard className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold">
-                      {CURRENCY_SYMBOL}
-                      {payment.amount}
-                    </p>
-                    <p className="text-[8px] text-muted-foreground uppercase font-black">
-                      {payment.method}
-                    </p>
-                  </div>
-                </div>
-              ))}
+              {(() => {
+                const thirtyDaysAgo = new Date()
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+                const recentPayments = payments.filter(
+                  (payment) => new Date(payment.date) >= thirtyDaysAgo,
+                )
+                const recentEnquiries = enquiriesArray.filter(
+                  (enquiry) => new Date(enquiry.createdAt) >= thirtyDaysAgo,
+                )
+                const recentOrders = orders.filter(
+                  (order) => new Date(order.date) >= thirtyDaysAgo,
+                )
+
+                const allActivities = [
+                  ...recentPayments.map((p) => ({
+                    type: "payment" as const,
+                    id: p.id,
+                    amount: p.amount,
+                    method: p.method,
+                    date: p.date,
+                  })),
+                  ...recentEnquiries.map((e) => ({
+                    type: "enquiry" as const,
+                    id: e.id,
+                    name: e.name,
+                    date: e.createdAt,
+                  })),
+                  ...recentOrders.map((o) => ({
+                    type: "order" as const,
+                    id: o.id,
+                    total: o.total,
+                    date: o.date,
+                  })),
+                ]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.date).getTime() - new Date(a.date).getTime(),
+                  )
+                  .slice(0, 5)
+
+                if (allActivities.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center justify-center py-8 w-full text-muted-foreground">
+                      <Clock className="h-8 w-8 mb-2 opacity-20" />
+                      <p className="text-sm italic">
+                        No activity in the last 30 days
+                      </p>
+                    </div>
+                  )
+                }
+
+                return allActivities.map((activity) => {
+                  if (activity.type === "payment") {
+                    return (
+                      <div
+                        key={activity.id}
+                        className="flex items-center gap-2 shrink-0 bg-background border border-border/50 rounded-lg p-2 pr-4 shadow-sm"
+                      >
+                        <div className="h-8 w-8 rounded bg-accent-blue/10 flex items-center justify-center text-accent-blue">
+                          <CreditCard className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold">
+                            {CURRENCY_SYMBOL}
+                            {activity.amount}
+                          </p>
+                          <p className="text-[8px] text-muted-foreground uppercase font-black">
+                            {activity.method}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  }
+                  if (activity.type === "enquiry") {
+                    return (
+                      <div
+                        key={activity.id}
+                        className="flex items-center gap-2 shrink-0 bg-background border border-border/50 rounded-lg p-2 pr-4 shadow-sm"
+                      >
+                        <div className="h-8 w-8 rounded bg-purple-100 dark:bg-purple-900 flex items-center justify-center text-purple-600 dark:text-purple-300">
+                          <MessageSquare className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold truncate max-w-[100px]">
+                            {activity.name}
+                          </p>
+                          <p className="text-[8px] text-muted-foreground uppercase font-black">
+                            Enquiry
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  }
+                  if (activity.type === "order") {
+                    return (
+                      <div
+                        key={activity.id}
+                        className="flex items-center gap-2 shrink-0 bg-background border border-border/50 rounded-lg p-2 pr-4 shadow-sm"
+                      >
+                        <div className="h-8 w-8 rounded bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-600 dark:text-green-300">
+                          <ShoppingCart className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold">
+                            {CURRENCY_SYMBOL}
+                            {activity.total}
+                          </p>
+                          <p className="text-[8px] text-muted-foreground uppercase font-black">
+                            Order
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  }
+                  return null
+                })
+              })()}
             </div>
           </CardContent>
         </Card>
