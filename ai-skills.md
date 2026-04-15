@@ -2,37 +2,96 @@
 
 ## Table of Contents
 
-- [Project Overview](#project-overview)
-- [Architecture Overview](#architecture-overview)
-- [UI / Admin Area Conventions](#ui--admin-area-conventions)
-- [TanStack React Table Usage](#tanstack-react-table-usage)
-- [TanStack React Query Setup](#tanstack-react-query-setup)
-- [Existing Global Providers](#existing-global-providers)
-- [DataContext Notes](#datacontext-notes)
-- [API Routes](#api-routes)
-- [Suggested Patterns for API Fetching](#suggested-patterns-for-api-fetching)
-- [Install / Troubleshooting](#install--troubleshooting)
-- [Package Manager](#package-manager)
-- [Product Management System](#product-management-system)
-- [Error Logging System](#error-logging-system)
-- [API Route Patterns](#api-route-patterns)
-- [Dashboard Improvements](#dashboard-improvements)
-- [React Key Prop Best Practices](#react-key-prop-best-practices)
-- [Git Hooks](#git-hooks)
-- [Subcategory System](#subcategory-system)
-- [CSS/Tailwind Notes](#csstailwind-notes)
-- [Recent UI Improvements](#recent-ui-improvements)
-- [Sequential Subcategory Filtering](#sequential-subcategory-filtering)
-- [Product Image Uploader Hook](#product-image-uploader-hook)
-- [Form Validation Error Handling](#form-validation-error-handling)
-- [Pagination with Debounced Search](#pagination-with-debounced-search)
-- [Skeleton Loading Pattern](#skeleton-loading-pattern)
-- [Numeric Input Validation](#numeric-input-validation)
-- [Form Section Organization](#form-section-organization)
-- [Code Formatting Patterns](#code-formatting-patterns)
-- [Money Formatting Utilities](#money-formatting-utilities)
+- [Quick Reference](#quick-reference)
+  - [Common Commands](#common-commands)
+  - [Key Files](#key-files)
+  - [Common Patterns](#common-patterns)
+- [Principles (WHY)](#principles-why)
+  - [Component Architecture](#component-architecture)
+  - [Data Fetching](#data-fetching)
+  - [Error Handling](#error-handling)
+  - [Code Quality](#code-quality)
+  - [UX Principles](#ux-principles)
+  - [Styling Conventions](#styling-conventions)
+- [Patterns (HOW)](#patterns-how)
+  - [API Routes](#api-routes)
+    - [Standard Route Structure](#standard-route-structure)
+    - [Duplicate Checking](#duplicate-checking)
+    - [Pagination Pattern](#pagination-pattern)
+    - [Filtering Pattern](#filtering-pattern)
+  - [React Query](#react-query)
+    - [Provider Setup](#provider-setup)
+    - [Query Keys](#query-keys)
+    - [Custom Hooks](#custom-hooks)
+  - [Form Validation](#form-validation)
+    - [Numeric Validation](#numeric-validation)
+    - [Error Handling](#error-handling-1)
+  - [Pagination with Debounced Search](#pagination-with-debounced-search)
+    - [State Management](#state-management)
+    - [Debounce Effect](#debounce-effect)
+  - [Skeleton Loading](#skeleton-loading)
+    - [Implementation](#implementation)
+    - [Loading State Pattern](#loading-state-pattern)
+  - [Product Image Upload](#product-image-upload)
+    - [Shared Hook](#shared-hook)
+    - [Upload Process](#upload-process)
+  - [Sequential Subcategory Filtering](#sequential-subcategory-filtering)
+    - [Implementation](#implementation-1)
+  - [Git Hooks](#git-hooks)
+    - [Pre-commit Hook](#pre-commit-hook)
+  - [Code Formatting Patterns](#code-formatting-patterns)
+    - [Simplified Return Statements](#simplified-return-statements)
+    - [Comment Conventions](#comment-conventions)
+- [Code Examples](#code-examples)
+  - [API Route with Hoisting Pattern](#api-route-with-hoisting-pattern)
+  - [Form Validation Error Handling](#form-validation-error-handling)
+  - [Skeleton Component Pattern](#skeleton-component-pattern)
+  - [Pagination Reset with Refs](#pagination-reset-with-refs)
+  - [Debounce Effect](#debounce-effect-1)
+  - [Money Formatting Usage](#money-formatting-usage)
+  - [Comment Conventions](#comment-conventions-1)
+  - [Git Pre-commit Hook](#git-pre-commit-hook)
+- [Project Context](#project-context)
+  - [Project Overview](#project-overview)
+  - [Architecture Overview](#architecture-overview)
+  - [UI / Admin Area Conventions](#ui--admin-area-conventions)
+  - [TanStack React Table Usage](#tanstack-react-table-usage)
+  - [TanStack React Query Setup](#tanstack-react-query-setup)
+  - [Existing Global Providers](#existing-global-providers)
+  - [DataContext Notes](#datacontext-notes)
+  - [API Routes (Examples)](#api-routes-examples)
+  - [Suggested Patterns for API Fetching](#suggested-patterns-for-api-fetching)
+  - [Install / Troubleshooting](#install--troubleshooting)
+  - [Package Manager](#package-manager)
+  - [Product Management System](#product-management-system)
+  - [Product Image Uploader Hook](#product-image-uploader-hook)
+  - [Skeleton Loading Pattern](#skeleton-loading-pattern)
+  - [Numeric Input Validation](#numeric-input-validation)
+  - [Form Section Organization](#form-section-organization)
+  - [Error Logging System](#error-logging-system)
+  - [Dashboard Improvements](#dashboard-improvements)
+  - [React Key Prop Best Practices](#react-key-prop-best-practices)
+  - [Subcategory System](#subcategory-system)
+  - [CSS/Tailwind Notes](#csstailwind-notes)
+  - [Recent UI Improvements](#recent-ui-improvements)
+  - [Money Formatting Utilities](#money-formatting-utilities)
+- [Recent Changes](#recent-changes)
 
 ## Quick Reference
+
+### Common Commands
+
+- `pnpm install` - Install dependencies
+- `pnpm exec prettier --write` - Format files
+- `pnpm exec eslint --fix` - Fix linting issues
+
+### Key Files
+
+- `lib/utils.ts` - Currency formatting utilities
+- `lib/server/errorlogs.ts` - Server-side error logging
+- `app/providers.tsx` - React Query provider setup
+- `hooks/api/useProducts.ts` - Product data fetching with error handling
+- `.husky/pre-commit` - Git pre-commit hook (Prettier + ESLint)
 
 ### Common Patterns
 
@@ -44,242 +103,55 @@
 - **Image Upload**: Use `useProductImageUploader` hook with presigned URLs
 - **Error Logging**: Server-side via `logServerError()`, client-side via `logError()` in hooks
 
-### Key Files
+## Principles (WHY)
 
-- `lib/utils.ts` - Currency formatting utilities
-- `lib/server/errorlogs.ts` - Server-side error logging
-- `app/providers.tsx` - React Query provider setup
-- `hooks/api/useProducts.ts` - Product data fetching with error handling
-- `.husky/pre-commit` - Git pre-commit hook (Prettier + ESLint)
+### Component Architecture
 
-### Common Commands
+- **Shared Components**: Product add/edit forms use shared components under `components/admin/products/` for consistency
+- **Reusable Sections**: Each form section is a reusable component (general info, pricing, inventory, etc.)
+- **Skeleton Loading**: Better UX than spinners - shows placeholder content that mimics actual layout
+- **Form Section Organization**: Card-based sections with descriptive titles for better visual hierarchy
 
-- `pnpm install` - Install dependencies
-- `pnpm exec prettier --write` - Format files
-- `pnpm exec eslint --fix` - Fix linting issues
+### Data Fetching
 
-## Project overview
+- **React Query for Caching**: Prevents duplicate requests, provides stale-while-revalidate behavior
+- **Stable Query Keys**: Use consistent key patterns for cache invalidation
+- **Mutations for Updates**: Use mutations for create/update/delete operations, invalidate keys afterward
+- **Server-Side Pagination**: Reduces payload size, improves performance for large datasets
 
-- Next.js App Router project (`app/` directory)
-- React 19
-- Uses Mongoose (`mongoose`) for DB access
-- Has API routes under `app/api/**/route.ts`
+### Error Handling
 
-## Architecture Overview
+- **Centralized Logging**: All errors logged consistently via `logServerError()` for debugging
+- **Non-Blocking in Critical Paths**: Error logging is non-blocking in logout/auth-me routes
+- **User-Friendly Messages**: Client-side error categorization provides helpful toast messages
+- **Hoisting Pattern**: Hoist params/parsedBody outside try/catch to prevent stream read errors
 
-### Frontend
+### Code Quality
 
-- **Next.js App Router**
-  - File-based routing in `app/` directory
-  - Server and client components
-  - Layouts and loading states
-  - Route handlers for API endpoints
+- **Define Components Outside Render**: Prevents React from re-creating components on every render
+- **Single-Line Returns**: Use single-line returns for simple responses to reduce visual noise
+- **Explanatory Comments**: Add comments for non-obvious patterns (hoisting, refs, ESLint disables)
+- **Integer Math for Currency**: Use integer math (cents) to avoid floating point precision issues
 
-- **React Query (TanStack Query)**
-  - Data fetching and caching
-  - Provider setup in `app/providers.tsx`
-  - Custom hooks in `hooks/api/` for data fetching
-  - Devtools enabled in development
-  - Default options: 30s stale time, no window focus refetch, 1 retry
+### UX Principles
 
-- **shadcn/ui**
-  - UI component library built on Radix UI
-  - Components in `components/ui/`
-  - Tailwind CSS for styling
-  - Configured via `components.json`
+- **Debounced Search**: 300ms debounce reduces API calls while maintaining responsiveness
+- **Sequential Filtering**: Category/subcategory filtering shows only relevant options
+- **Auto-Reset Pagination**: Reset page to 1 when filters change to show relevant results
+- **Numeric Input Validation**: Use text inputs with regex validation instead of number type for better mobile UX
 
-### Backend
+### Styling Conventions
 
-- **API Routes (Next.js)**
-  - Route handlers in `app/api/**/route.ts`
-  - RESTful endpoints for CRUD operations
-  - Admin verification middleware
-  - Centralized error logging
-  - Consistent response patterns with pagination
+- **shadcn/ui Components**: Use pre-built components for consistency
+- **Tailwind CSS**: Utility-first CSS for rapid development
+- **Gradient Patterns**: Use consistent gradient patterns (`from-slate-50 to-slate-100`)
+- **Badge Styling**: Use `capitalize` instead of `uppercase` for better readability
 
-- **MongoDB (Mongoose)**
-  - ODM for MongoDB interactions
-  - Models in `models/` directory
-  - Schema validation
-  - Connection handling in `lib/db.ts`
-  - Population for related documents
+## Patterns (HOW)
 
-### Cross-cutting
+### API Routes
 
-- **Error Logging**
-  - Server-side: `lib/server/errorlogs.ts` with `logServerError()`
-  - Client-side: `logError()` helper in API hooks
-  - Categorized error types (validation, duplicate, server, network, unknown)
-  - Non-blocking in critical paths (logout, auth-me)
-
-- **Auth**
-  - Firebase Authentication for customer auth
-  - Admin verification via `lib/auth/verifyAdmin.ts`
-  - Auth context provider: `lib/auth-context.tsx`
-  - Protected API routes
-  - Session management
-
-- **Data Context**
-  - Global data provider: `lib/data-context.tsx`
-  - localStorage persistence with fallback to initial datasets
-  - Used for list data (orders, categories, brands)
-  - Composed with AuthProvider and React Query Provider in root layout
-
-## UI / Admin area conventions
-
-- Admin pages live under `app/admin/**` and are generally client components (`"use client"`).
-- UI primitives are shadcn-style wrappers under `components/ui/**` (Radix UI components + Tailwind classes).
-- Common admin list layout pattern:
-  - Top section: title + optional action button
-  - Controls row: search input (with `lucide-react` icon) + optional filters (`Select`)
-  - Content: `Table` inside `rounded-md border bg-card`
-- Example list pages:
-  - Orders: `app/admin/orders/page.tsx`
-  - Categories: `app/admin/categories/page.tsx`
-
-## TanStack React Table usage
-
-- Installed package:
-  - `@tanstack/react-table`
-- Orders list is implemented with TanStack Table state for:
-  - Sorting (`SortingState` + `getSortedRowModel`)
-  - Filtering:
-    - Global search (`globalFilter` + `globalFilterFn`)
-    - Status filter via column filters (`ColumnFiltersState`)
-- Rendering pattern:
-  - Headers: `table.getHeaderGroups()` + `flexRender`
-  - Rows: `table.getRowModel()` + `flexRender`
-
-## TanStack React Query setup
-
-- Installed packages:
-  - `@tanstack/react-query`
-  - `@tanstack/react-query-devtools`
-
-### Provider wiring
-
-- Query client provider is implemented in:
-  - `app/providers.tsx`
-- Root layout wraps the app with the provider:
-  - `app/layout.tsx` imports `Providers` from `./providers` and wraps existing providers
-
-### Devtools
-
-- React Query Devtools are enabled only in development:
-  - `process.env.NODE_ENV === "development"`
-
-### Default query options
-
-- Config lives in `app/providers.tsx` (QueryClient construction)
-- Current defaults:
-  - `staleTime: 30_000`
-  - `refetchOnWindowFocus: false`
-  - `retry: 1`
-
-## Existing global providers
-
-- Auth provider:
-  - `lib/auth-context.tsx`
-- Data provider:
-  - `lib/data-context.tsx`
-- Provider composition in `app/layout.tsx`:
-  - `Providers` (React Query)
-  - `AuthProvider`
-  - `DataProvider`
-
-## DataContext notes
-
-- Many admin pages use `useData()` from `lib/data-context.tsx` for list data (e.g. orders, categories).
-- Data is initialized from `localStorage` and falls back to `initial*` datasets when not present.
-- When wiring tables, prefer using TanStack Table filtering/sorting state instead of pre-filtering arrays in render.
-
-## API routes (examples)
-
-- Products API:
-  - `app/api/products/route.ts`
-  - `app/api/products/[id]/route.ts`
-  - `app/api/products/search/route.ts`
-
-## Suggested patterns for API fetching
-
-- Put client-side fetch functions in a small API layer (e.g. `lib/api/*.ts`) and consume via React Query hooks.
-- Use stable query keys:
-  - List: `["products", params]`
-  - Detail: `["products", id]`
-- Use mutations for create/update/delete and invalidate relevant keys afterward.
-
-## Install / troubleshooting
-
-- If TypeScript shows module-not-found errors for TanStack packages, run:
-  - `pnpm install` (or `npm install` / `yarn` depending on the package manager)
-
-## Package manager
-
-- Repo includes `pnpm-lock.yaml` and `pnpm-workspace.yaml`, so `pnpm` is the expected package manager.
-
-## Product Management System
-
-### Shared Component Architecture
-
-- Product add/edit forms use shared components under `components/admin/products/`:
-  - `product-schema.ts` - Zod validation schema with B2B/B2C pricing fields
-  - `general-info-section.tsx` - Product name, slug, description fields
-  - `pricing-section.tsx` - Cost price, B2C price, B2B price, SKU/UPC fields (uses `formatCurrency()` for display)
-  - `inventory-section.tsx` - Stock quantity management
-  - `taxation-section.tsx` - HSN code and GST percentage (uses `formatPercentage()` for tax display)
-  - `categorization-section.tsx` - Category, subcategory, brand selection
-  - `barcode-section.tsx` - Barcode image upload
-  - `product-image-uploader.tsx` - Shared hook and components for image/video upload
-  - `profit-margin-calculator.tsx` - Real-time profit/margin analysis (uses `formatProfitMargin()`, `formatMarkup()`, `formatCurrencyWithSign()`)
-
-### Product Schema Fields
-
-- Standard fields: name, slug, description, sku, stock, hsn, tax, upc, barcode
-- Pricing structure:
-  - `costPrice` - Base cost of the product
-  - `b2cPrice` - Business-to-customer selling price (maps to `price` for backward compatibility)
-  - `b2bPrice` - Business-to-business selling price
-  - `b2bMinQty` - Minimum quantity for B2B pricing
-- Relations: category, subcategory, brand (populated objects)
-- Media: images (array, max 5), videoUrl (optional)
-- Status: boolean active flag
-- Pricing display uses `formatCurrency()`, `formatCurrencyWithSign()`, `formatProfitMargin()`, and `formatMarkup()` from `lib/utils.ts`
-
-### Image/Video Upload Pattern
-
-- Uses presigned URLs via `/api/uploads/presign` endpoint
-- Uploads to R2/S3 storage
-- Shared hook `useProductImageUploader` handles:
-  - File selection and validation
-  - Base64 preview generation
-  - Upload coordination
-  - Add/edit mode differences
-
-## Error Logging System
-
-### Server-Side Error Logging
-
-- Centralized error logging via `lib/server/errorlogs.ts`
-- Function `logServerError()` logs errors with:
-  - errorType: "validation", "duplicate", "server", "network", "unknown"
-  - errorMessage
-  - endpoint
-  - method
-  - requestData
-  - stackTrace (optional)
-- Used across all API routes (products, categories, brands, enquiries, auth, uploads)
-- Non-blocking in logout/auth-me routes (void async)
-
-### Client-Side Error Logging
-
-- `hooks/api/useProducts.ts` includes `logError()` helper
-- Logs to `/api/error-logs` endpoint
-- Categorizes errors as duplicate vs server based on message content
-- Provides user-friendly toast messages for common errors (SKU/slug duplicates)
-
-## API Route Patterns
-
-### Standard Route Structure
+**Standard Route Structure**
 
 - All API routes follow consistent error handling:
   1. Hoist `params` outside try/catch for error logging access (prevents nested await issues)
@@ -290,7 +162,204 @@
 - Use `isValidObjectId()` for ID validation
 - Serialize responses with consistent field inclusion
 
-### Hoisting Pattern Example
+**Duplicate Checking**
+
+- Products: Check SKU and slug uniqueness before create/update
+- Categories/Brands: Check slug uniqueness
+- Return 409 status with specific error message
+- Log duplicate errors with `logServerError()`
+
+**Pagination Pattern**
+
+- Products API supports pagination via `page` and `limit` query params
+- Response includes `data` array and `pagination` object:
+  - `total` - total matching records
+  - `page` - current page
+  - `limit` - items per page
+  - `pages` - total pages
+- Client-side: useProducts hook accepts `ProductsParams` interface
+
+**Filtering Pattern**
+
+- Products API supports filtering by:
+  - `search` - searches name, SKU, category name, subcategory name, brand name
+  - `category` - filter by category ID or slug
+  - `subcategory` - filter by subcategory ID or slug
+  - `brand` - filter by brand ID or slug
+- Converts string IDs to ObjectIds with fallback to slug lookup
+
+### React Query
+
+**Provider Setup**
+
+- Query client provider is implemented in: `app/providers.tsx`
+- Root layout wraps the app with the provider: `app/layout.tsx` imports `Providers` from `./providers` and wraps existing providers
+- React Query Devtools are enabled only in development: `process.env.NODE_ENV === "development"`
+- Config lives in `app/providers.tsx` (QueryClient construction)
+- Current defaults:
+  - `staleTime: 30_000`
+  - `refetchOnWindowFocus: false`
+  - `retry: 1`
+
+**Query Keys**
+
+- Put client-side fetch functions in a small API layer (e.g. `lib/api/*.ts`) and consume via React Query hooks
+- Use stable query keys:
+  - List: `["products", params]`
+  - Detail: `["products", id]`
+- Use mutations for create/update/delete and invalidate relevant keys afterward
+
+**Custom Hooks**
+
+- Put fetch functions in `lib/api/*.ts`
+- Consume via React Query hooks in `hooks/api/`
+- Handle errors with toast messages
+
+### Form Validation
+
+**Numeric Validation**
+
+- Product forms use text inputs instead of `type="number"` to avoid mobile number pad
+- Numeric validation handled via regex in Zod schema:
+  - `b2cPrice`: `/^\d+(\.\d{1,2})?$/` - validates decimal prices
+  - `stock`: `/^\d+$/` - validates whole numbers
+  - `tax`: `/^\d+(\.\d{1,2})?$/` - validates tax percentage
+- Pattern: Remove `type="number"` attributes, add regex validation to schema
+- Provides better UX while maintaining data integrity
+- Display formatted values with `formatCurrency()` / `formatPercentage()`
+
+**Error Handling**
+
+- Use `onFormError` callback with `form.handleSubmit()`
+- Catch first error and display as toast
+- Provide immediate feedback on validation failures
+
+### Pagination with Debounced Search
+
+**State Management**
+
+- Products page implements server-side pagination with debounced search
+- State:
+  - `page`, `limit` - pagination state
+  - `searchQuery` - raw search input
+  - `debouncedSearch` - 300ms debounced search value
+  - `categoryFilter`, `subcategoryFilter`, `brandFilter` - filter state
+
+**Debounce Effect**
+
+- 300ms debounce reduces API calls while maintaining responsiveness
+- Auto-reset page when filters change using refs to track previous state (avoids stale closure issues)
+- Pagination UI with page numbers (max 5 visible) and prev/next buttons
+- Uses `useProducts` hook with `ProductsParams` interface
+
+### Skeleton Loading
+
+**Implementation**
+
+- Skeleton components provide better UX than single spinners
+- Dashboard: `DashboardSkeleton` with bento grid layout
+- Products page:
+  - `TableSkeleton` - table row skeletons matching column count (accepts `limit` prop)
+  - `AnalyticsCardsSkeleton` - analytics card placeholders
+- Pattern: Replace loading state with skeleton component, render actual content when data loads
+- Skeleton components use `Skeleton` from `@/components/ui/skeleton`
+- Skeleton components can accept props (e.g., `limit` for table row count) for dynamic rendering
+- **Important**: Define skeleton components outside the component body to avoid re-creation on every render
+
+**Loading State Pattern**
+
+```typescript
+if (isLoading) return <PageSkeleton />
+if (error) return <ErrorState error={error} />
+if (!data || data.length === 0) return <EmptyState />
+return <ActualContent data={data} />
+```
+
+### Product Image Upload
+
+**Shared Hook**
+
+- Shared hook `useProductImageUploader` in `components/admin/products/product-image-uploader.tsx`
+- Handles both add and edit modes via `mode` parameter
+- Returns:
+  - `fileInputRef`, `videoInputRef` - refs for file inputs
+  - `previews`, `videoPreview` - current preview URLs
+  - `filesToUpload`, `videoFile` - files pending upload (add mode)
+  - `newImageFiles`, `newVideoFile` - new files for edit mode
+  - `handleImageChange`, `handleVideoChange` - file selection handlers
+  - `removeImage`, `removeVideo` - removal handlers
+- Add mode: stores all files for upload
+- Edit mode: tracks only new/changed files with index mapping
+- Components: `ImageUploadCard`, `VideoUploadCard` for UI rendering
+
+**Upload Process**
+
+- Uses presigned URLs via `/api/uploads/presign` endpoint
+- Uploads to R2/S3 storage
+- Generate base64 preview
+- Handle add/edit mode differences
+
+### Sequential Subcategory Filtering
+
+**Implementation**
+
+- CategorizationSection component implements sequential filtering between category and subcategory
+- When category is selected, subcategory dropdown only shows subcategories belonging to that category
+- When subcategory is selected, its parent category is automatically selected
+- When category is changed, subcategory is reset if it doesn't belong to the new category
+- Implementation in `components/admin/products/categorization-section.tsx`:
+  - CategoryField accepts `onCategoryChange` callback
+  - SubcategoryField accepts `selectedCategoryId` prop for filtering
+  - CategorizationSection uses `form.watch("category")` to track changes
+  - Auto-selects parent category when subcategory changes
+
+### Git Hooks
+
+**Pre-commit Hook**
+
+- Pre-commit hook runs Prettier and ESLint on staged files
+- Uses `xargs` to pass file list to prettier for efficient processing
+- ESLint uses `|| true` to prevent blocking on warnings (non-blocking)
+- Fixed to properly handle empty JS/TS file lists with `|| true` after grep
+- Uses `git add $FILES` to stage formatted files after prettier/ESLint fixes
+- Pre-push hook also exists (check `.husky/pre-push`)
+
+**Pre-commit Hook Pattern**
+
+```bash
+FILES=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$FILES" ] && exit 0
+
+echo "$FILES" | xargs pnpm exec prettier --write --ignore-unknown
+
+JS_TS_FILES=$(echo "$FILES" | grep -E '\.(js|ts|tsx)$' || true)
+
+if [ -n "$JS_TS_FILES" ]; then
+  echo "$JS_TS_FILES" | xargs pnpm exec eslint --fix --max-warnings=100 || true
+fi
+
+git add $FILES
+```
+
+### Code Formatting Patterns
+
+**Simplified Return Statements**
+
+- Use single-line return statements for simple responses to reduce visual noise
+- Prefer `return NextResponse.json({ error: errorMessage }, { status: 500 })` over multi-line
+- Multi-line returns only for complex responses or when adding comments
+- Pattern applied consistently across all API routes
+
+**Comment Conventions**
+
+- Add explanatory comments for non-obvious patterns (e.g., hoisting, refs)
+- Use inline comments for quick explanations: `// Clean reference to hoisted id`
+- Use block comments for detailed explanations
+- Document ESLint disable directives when necessary: `// eslint-disable-next-line react-hooks/set-state-in-effect`
+
+## Code Examples
+
+### API Route with Hoisting Pattern
 
 ```typescript
 export async function PUT(req: NextRequest, { params }: RouteContext) {
@@ -328,114 +397,293 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 }
 ```
 
-### Duplicate Checking
+### Form Validation Error Handling
 
-- Products: Check SKU and slug uniqueness before create/update
-- Categories/Brands: Check slug uniqueness
-- Return 409 status with specific error message
-- Log duplicate errors with `logServerError()`
+```typescript
+const onFormError = (errors: any) => {
+  const firstError = Object.values(errors)[0] as any
+  if (firstError?.message) {
+    toast.error(firstError.message)
+  } else {
+    toast.error("Please fill in all required fields")
+  }
+}
 
-### Pagination Pattern
+<Button onClick={form.handleSubmit(onSubmit, onFormError)}>
+```
 
-- Products API supports pagination via `page` and `limit` query params
-- Response includes `data` array and `pagination` object:
-  - `total` - total matching records
-  - `page` - current page
-  - `limit` - items per page
-  - `pages` - total pages
-- Client-side: useProducts hook accepts `ProductsParams` interface
+### Skeleton Component Pattern
 
-### Filtering Pattern
+```typescript
+// ✅ Correct: Outside component body
+const DashboardSkeleton = () => (
+  <div className="p-6 space-y-8">
+    {/* Skeleton content */}
+  </div>
+)
 
-- Products API supports filtering by:
-  - `search` - searches name, SKU, category name, subcategory name, brand name
-  - `category` - filter by category ID or slug
-  - `subcategory` - filter by subcategory ID or slug
-  - `brand` - filter by brand ID or slug
-- Converts string IDs to ObjectIds with fallback to slug lookup
+export default function DashboardPage() {
+  if (isLoading) return <DashboardSkeleton />
+  // ...
+}
 
-## Dashboard Improvements
+// ❌ Incorrect: Inside component body (re-creates on every render)
+export default function DashboardPage() {
+  const DashboardSkeleton = () => (
+    <div className="p-6 space-y-8">
+      {/* Skeleton content */}
+    </div>
+  )
 
-### Skeleton Loading
+  if (isLoading) return <DashboardSkeleton />
+  // ...
+}
+```
 
-- Dashboard uses `DashboardSkeleton` component during data loading
-- Products page uses `TableSkeleton` and `AnalyticsCardsSkeleton`
-- Better UX than single spinner
+### Pagination Reset with Refs
 
-### Data Structure
+```typescript
+const prevFiltersRef = useRef({
+  debouncedSearch,
+  categoryFilter,
+  subcategoryFilter,
+  brandFilter,
+})
+const pageRef = useRef(page)
 
-- Dashboard now handles paginated products data: `productsData?.data`
-- Uses `pagination.total` for accurate counts
-- Added subcategories to dashboard stats
+// Update pageRef when page state changes (for pagination controls)
+useEffect(() => {
+  pageRef.current = page
+}, [page])
 
-## React Key Prop Best Practices
+useEffect(() => {
+  const prev = prevFiltersRef.current
+  const filtersChanged =
+    prev.debouncedSearch !== debouncedSearch ||
+    prev.categoryFilter !== categoryFilter ||
+    prev.subcategoryFilter !== subcategoryFilter ||
+    prev.brandFilter !== brandFilter
 
-- Always use unique keys for list items
-- Pattern: `key={item._id || item.id}` for robustness
-- SelectItem components cannot have empty string values - use "none" or similar
+  if (filtersChanged) {
+    pageRef.current = 1
+    prevFiltersRef.current = {
+      debouncedSearch,
+      categoryFilter,
+      subcategoryFilter,
+      brandFilter,
+    }
+    // Force a re-render to pick up the new page value
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1)
+  }
+}, [debouncedSearch, categoryFilter, subcategoryFilter, brandFilter])
+```
 
-## Git Hooks
+### Debounce Effect
 
-- Pre-commit hook runs Prettier and ESLint on staged files
-- Uses `xargs` to pass file list to prettier for efficient processing
-- ESLint uses `|| true` to prevent blocking on warnings (non-blocking)
-- Fixed to properly handle empty JS/TS file lists with `|| true` after grep
-- Uses `git add $FILES` to stage formatted files after prettier/ESLint fixes
-- Pre-push hook also exists (check `.husky/pre-push`)
-- Pre-commit hook pattern:
+```typescript
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearch(searchQuery)
+  }, 300)
+  return () => clearTimeout(timer)
+}, [searchQuery])
+```
 
-  ```bash
-  FILES=$(git diff --cached --name-only --diff-filter=ACMR)
-  [ -z "$FILES" ] && exit 0
+### Money Formatting Usage
 
-  echo "$FILES" | xargs pnpm exec prettier --write --ignore-unknown
+```typescript
+import {
+  formatCurrency,
+  formatCurrencyWithSign,
+  formatNumber,
+  formatPercentage,
+  formatDifference,
+  formatDiscount,
+  formatProfitMargin,
+  formatMarkup,
+} from "@/lib/utils"
 
-  JS_TS_FILES=$(echo "$FILES" | grep -E '\.(js|ts|tsx)$' || true)
+// Product price display
+<span>{formatCurrency(product.price)}</span>
+<span>{formatCurrency(product.price, { showDecimals: false })}</span>
 
-  if [ -n "$JS_TS_FILES" ]; then
-    echo "$JS_TS_FILES" | xargs pnpm exec eslint --fix --max-warnings=100 || true
-  fi
+// Profit/Loss display with color coding
+<span className={profit >= 0 ? "text-green-600" : "text-red-600"}>
+  {formatCurrencyWithSign(profit)}
+</span>
 
-  git add $FILES
-  ```
+// Price comparison
+<span>{formatDifference(b2cPrice, b2bPrice)}</span>
 
-## Subcategory System
+// Discount badge
+<Badge>{formatDiscount(originalPrice, salePrice)} OFF</Badge>
 
-- Separate Subcategory model from Category hierarchy
-- Subcategory belongs to a Category (required reference)
-- API routes: `app/api/subcategories/route.ts` and `app/api/subcategories/[id]/route.ts`
-- React Query hook: `hooks/api/useSubcategories.ts`
-- Admin pages: `app/admin/subcategories/page.tsx`, `add/page.tsx`, `edit/[id]/page.tsx`
-- Subcategory field added to Product model and forms
-- Subcategory filter added to products listing page
+// Profit margin in analytics
+<div>Margin: {formatProfitMargin(costPrice, sellingPrice)}</div>
 
-## CSS/Tailwind Notes
+// Markup in product details
+<div>Markup: {formatMarkup(costPrice, sellingPrice)}</div>
 
-- Use `bg-gradient-to-br` for gradients (not `bg-linear-to-br` - this was a typo that was fixed)
-- Badge styling: use `capitalize` instead of `uppercase` for better readability
-- Common gradient pattern: `from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900`
+// Percentage display
+<div>Tax: {formatPercentage(product.tax)}</div>
+<div>Commission: {formatPercentage(0.15, true)}</div>
 
-## Recent UI Improvements
+// Number formatting (no currency)
+<div>Quantity: {formatNumber(quantity)}</div>
+```
 
-- Customer address badges changed from uppercase to capitalize
-- Orders page gradient backgrounds fixed
-- Login page gradient fixed
-- Profile page gradient fixed
-- "View on Store" button commented out on product detail page
+### Comment Conventions
 
-## Sequential Subcategory Filtering
+```typescript
+// Inline comment for quick explanation
+const id = params.id // Clean reference to hoisted id
 
-- CategorizationSection component implements sequential filtering between category and subcategory
-- When category is selected, subcategory dropdown only shows subcategories belonging to that category
-- When subcategory is selected, its parent category is automatically selected
-- When category is changed, subcategory is reset if it doesn't belong to the new category
-- Implementation in `components/admin/products/categorization-section.tsx`:
-  - CategoryField accepts `onCategoryChange` callback
-  - SubcategoryField accepts `selectedCategoryId` prop for filtering
-  - CategorizationSection uses `form.watch("category")` to track changes
-  - Auto-selects parent category when subcategory changes
+// Block comment for detailed explanation
+// Hoist state container to preserve the request body for error logging.
+// This prevents the "body stream already read" fatal crash in the catch block.
+let parsedBody: Record<string, any> = {}
 
-## Product Image Uploader Hook
+// ESLint disable documentation
+// eslint-disable-next-line react-hooks/set-state-in-effect
+setPage(1)
+```
+
+## Project Context
+
+### Project Overview
+
+- Next.js App Router project (`app/` directory)
+- React 19
+- Uses Mongoose (`mongoose`) for DB access
+- Has API routes under `app/api/**/route.ts`
+- Repo includes `pnpm-lock.yaml` and `pnpm-workspace.yaml`, so `pnpm` is the expected package manager
+
+### Architecture Overview
+
+**Frontend**
+
+- Next.js App Router (file-based routing, server/client components, layouts and loading states, route handlers for API endpoints)
+- React Query (data fetching and caching, provider setup in `app/providers.tsx`, custom hooks in `hooks/api/` for data fetching, devtools enabled in development, default options: 30s stale time, no window focus refetch, 1 retry)
+- shadcn/ui (UI component library built on Radix UI, components in `components/ui/`, Tailwind CSS for styling, configured via `components.json`)
+
+**Backend**
+
+- API Routes (Next.js route handlers in `app/api/**/route.ts`, RESTful endpoints for CRUD operations, admin verification middleware, centralized error logging, consistent response patterns with pagination)
+- MongoDB (Mongoose ODM for MongoDB interactions, models in `models/` directory, schema validation, connection handling in `lib/db.ts`, population for related documents)
+
+**Cross-cutting**
+
+- Error Logging (server-side: `lib/server/errorlogs.ts` with `logServerError()`, client-side: `logError()` helper in API hooks, categorized error types (validation, duplicate, server, network, unknown), non-blocking in critical paths (logout, auth-me))
+- Auth (Firebase Authentication for customer auth, admin verification via `lib/auth/verifyAdmin.ts`, auth context provider: `lib/auth-context.tsx`, protected API routes, session management)
+- Data Context (global data provider: `lib/data-context.tsx`, localStorage persistence with fallback to initial datasets, used for list data (orders, categories, brands), composed with AuthProvider and React Query Provider in root layout)
+
+### UI / Admin Area Conventions
+
+- Admin pages live under `app/admin/**` and are generally client components (`"use client"`)
+- UI primitives are shadcn-style wrappers under `components/ui/**` (Radix UI components + Tailwind classes)
+- Common admin list layout pattern:
+  - Top section: title + optional action button
+  - Controls row: search input (with `lucide-react` icon) + optional filters (`Select`)
+  - Content: `Table` inside `rounded-md border bg-card`
+- Example list pages:
+  - Orders: `app/admin/orders/page.tsx`
+  - Categories: `app/admin/categories/page.tsx`
+
+### TanStack React Table Usage
+
+- Installed package: `@tanstack/react-table`
+- Orders list is implemented with TanStack Table state for:
+  - Sorting (`SortingState` + `getSortedRowModel`)
+  - Filtering:
+    - Global search (`globalFilter` + `globalFilterFn`)
+    - Status filter via column filters (`ColumnFiltersState`)
+- Rendering pattern:
+  - Headers: `table.getHeaderGroups()` + `flexRender`
+  - Rows: `table.getRowModel()` + `flexRender`
+
+### TanStack React Query Setup
+
+- Installed packages: `@tanstack/react-query`, `@tanstack/react-query-devtools`
+
+### Existing Global Providers
+
+- Auth provider: `lib/auth-context.tsx`
+- Data provider: `lib/data-context.tsx`
+- Provider composition in `app/layout.tsx`:
+  - `Providers` (React Query)
+  - `AuthProvider`
+  - `DataProvider`
+
+### DataContext Notes
+
+- Many admin pages use `useData()` from `lib/data-context.tsx` for list data (e.g. orders, categories)
+- Data is initialized from `localStorage` and falls back to `initial*` datasets when not present
+- When wiring tables, prefer using TanStack Table filtering/sorting state instead of pre-filtering arrays in render
+
+### API Routes (Examples)
+
+- Products API:
+  - `app/api/products/route.ts`
+  - `app/api/products/[id]/route.ts`
+  - `app/api/products/search/route.ts`
+
+### Suggested Patterns for API Fetching
+
+- Put client-side fetch functions in a small API layer (e.g. `lib/api/*.ts`) and consume via React Query hooks
+- Use stable query keys:
+  - List: `["products", params]`
+  - Detail: `["products", id]`
+- Use mutations for create/update/delete and invalidate relevant keys afterward
+
+### Install / Troubleshooting
+
+- If TypeScript shows module-not-found errors for TanStack packages, run:
+  - `pnpm install` (or `npm install` / `yarn` depending on the package manager)
+
+### Package Manager
+
+- Repo includes `pnpm-lock.yaml` and `pnpm-workspace.yaml`, so `pnpm` is the expected package manager
+
+### Product Management System
+
+**Shared Component Architecture**
+
+- Product add/edit forms use shared components under `components/admin/products/`:
+  - `product-schema.ts` - Zod validation schema with B2B/B2C pricing fields
+  - `general-info-section.tsx` - Product name, slug, description fields
+  - `pricing-section.tsx` - Cost price, B2C price, B2B price, SKU/UPC fields (uses `formatCurrency()` for display)
+  - `inventory-section.tsx` - Stock quantity management
+  - `taxation-section.tsx` - HSN code and GST percentage (uses `formatPercentage()` for tax display)
+  - `categorization-section.tsx` - Category, subcategory, brand selection
+  - `barcode-section.tsx` - Barcode image upload
+  - `product-image-uploader.tsx` - Shared hook and components for image/video upload
+  - `profit-margin-calculator.tsx` - Real-time profit/margin analysis (uses `formatProfitMargin()`, `formatMarkup()`, `formatCurrencyWithSign()`)
+
+**Product Schema Fields**
+
+- Standard fields: name, slug, description, sku, stock, hsn, tax, upc, barcode
+- Pricing structure:
+  - `costPrice` - Base cost of the product
+  - `b2cPrice` - Business-to-customer selling price (maps to `price` for backward compatibility)
+  - `b2bPrice` - Business-to-business selling price
+  - `b2bMinQty` - Minimum quantity for B2B pricing
+- Relations: category, subcategory, brand (populated objects)
+- Media: images (array, max 5), videoUrl (optional)
+- Status: boolean active flag
+- Pricing display uses `formatCurrency()`, `formatCurrencyWithSign()`, `formatProfitMargin()`, and `formatMarkup()` from `lib/utils.ts`
+
+**Image/Video Upload Pattern**
+
+- Uses presigned URLs via `/api/uploads/presign` endpoint
+- Uploads to R2/S3 storage
+- Shared hook `useProductImageUploader` handles:
+  - File selection and validation
+  - Base64 preview generation
+  - Upload coordination
+  - Add/edit mode differences
+
+### Product Image Uploader Hook
 
 - Shared hook `useProductImageUploader` in `components/admin/products/product-image-uploader.tsx`
 - Handles both add and edit modes via `mode` parameter
@@ -450,89 +698,9 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 - Edit mode: tracks only new/changed files with index mapping
 - Components: `ImageUploadCard`, `VideoUploadCard` for UI rendering
 
-## Form Validation Error Handling
+### Skeleton Loading Pattern
 
-- Pattern for form validation errors in add/edit pages:
-
-  ```typescript
-  const onFormError = (errors: any) => {
-    const firstError = Object.values(errors)[0] as any
-    if (firstError?.message) {
-      toast.error(firstError.message)
-    } else {
-      toast.error("Please fill in all required fields")
-    }
-  }
-
-  <Button onClick={form.handleSubmit(onSubmit, onFormError)}>
-  ```
-
-- Used in both product add and edit pages
-- Provides immediate feedback on validation failures
-- Catches first error and displays as toast
-
-## Pagination with Debounced Search
-
-- Products page implements server-side pagination with debounced search
-- State:
-  - `page`, `limit` - pagination state
-  - `searchQuery` - raw search input
-  - `debouncedSearch` - 300ms debounced search value
-  - `categoryFilter`, `subcategoryFilter`, `brandFilter` - filter state
-- Debounce effect:
-  ```typescript
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-  ```
-- Auto-reset page when filters change using refs to track previous state (avoids stale closure issues):
-
-  ```typescript
-  const prevFiltersRef = useRef({
-    debouncedSearch,
-    categoryFilter,
-    subcategoryFilter,
-    brandFilter,
-  })
-  const pageRef = useRef(page)
-
-  // Update pageRef when page state changes (for pagination controls)
-  useEffect(() => {
-    pageRef.current = page
-  }, [page])
-
-  useEffect(() => {
-    const prev = prevFiltersRef.current
-    const filtersChanged =
-      prev.debouncedSearch !== debouncedSearch ||
-      prev.categoryFilter !== categoryFilter ||
-      prev.subcategoryFilter !== subcategoryFilter ||
-      prev.brandFilter !== brandFilter
-
-    if (filtersChanged) {
-      pageRef.current = 1
-      prevFiltersRef.current = {
-        debouncedSearch,
-        categoryFilter,
-        subcategoryFilter,
-        brandFilter,
-      }
-      // Force a re-render to pick up the new page value
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPage(1)
-    }
-  }, [debouncedSearch, categoryFilter, subcategoryFilter, brandFilter])
-  ```
-
-- Pagination UI with page numbers (max 5 visible) and prev/next buttons
-- Uses `useProducts` hook with `ProductsParams` interface
-
-## Skeleton Loading Pattern
-
-### Overview
+**Overview**
 
 - Skeleton components provide better UX than single spinners by showing placeholder content that mimics the actual layout
 - Reduces perceived loading time and provides visual continuity
@@ -540,38 +708,35 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
 - Skeleton components should be defined outside component body to avoid re-creation on every render
 - Can accept props for dynamic rendering (e.g., `limit` for row count)
 
-### Current Implementations
+**Current Implementations**
 
-**Dashboard** (`app/admin/dashboard/page.tsx`)
+Dashboard (`app/admin/dashboard/page.tsx`)
 
 - `DashboardSkeleton` - Bento grid layout with large card and small card skeletons
 - Shows when any data fetching hook is loading (products, categories, brands, etc.)
 
-**Products Page** (`app/admin/products/page.tsx`)
+Products Page (`app/admin/products/page.tsx`)
 
 - `TableSkeleton` - Table row skeletons matching column count (accepts `limit` prop)
 - `AnalyticsCardsSkeleton` - Analytics card placeholders (4 cards grid)
 - Table skeleton shows when table data is loading
 - Analytics cards skeleton shows when analytics data is loading
 
-### Implementation Pattern
+**Implementation Pattern**
 
 ```typescript
-// ✅ Correct: Define skeleton component outside the component body
+// Define skeleton component outside the component body
 const TableSkeleton = ({ limit }: { limit: number }) => (
   <>
     {Array.from({ length: limit }).map((_, i) => (
       <TableRow key={i}>
-        <TableCell>
-          <Skeleton className="h-4 w-[200px]" />
-        </TableCell>
+        <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
         <TableCell>
           <div className="flex items-center gap-3">
             <Skeleton className="h-8 w-8 rounded-lg" />
             <Skeleton className="h-4 w-[100px]" />
           </div>
         </TableCell>
-        {/* More skeleton cells */}
       </TableRow>
     ))}
   </>
@@ -579,7 +744,6 @@ const TableSkeleton = ({ limit }: { limit: number }) => (
 
 export default function ProductsPage() {
   const { data, isLoading } = useProducts()
-
   return (
     <Table>
       <TableBody>
@@ -596,18 +760,18 @@ export default function ProductsPage() {
 }
 ```
 
-### Skeleton Component Best Practices
+**Skeleton Component Best Practices**
 
-1. **Match the actual layout** - Skeleton should mimic the real component's structure
-2. **Use appropriate sizing** - Skeleton dimensions should match expected content size
-3. **Define outside component body** - Prevents re-creation on every render
-4. **Accept props for flexibility** - Use props for dynamic row counts, sizes, etc.
-5. **Handle empty states separately** - Skeleton is for loading, not empty data
-6. **Use consistent spacing** - Match the spacing of the actual content
+1. Match the actual layout - Skeleton should mimic the real component's structure
+2. Use appropriate sizing - Skeleton dimensions should match expected content size
+3. Define outside component body - Prevents re-creation on every render
+4. Accept props for flexibility - Use props for dynamic row counts, sizes, etc.
+5. Handle empty states separately - Skeleton is for loading, not empty data
+6. Use consistent spacing - Match the spacing of the actual content
 
-### Common Skeleton Patterns
+**Common Skeleton Patterns**
 
-**Card Skeleton**
+Card Skeleton
 
 ```typescript
 const CardSkeleton = () => (
@@ -624,7 +788,7 @@ const CardSkeleton = () => (
 )
 ```
 
-**Table Row Skeleton**
+Table Row Skeleton
 
 ```typescript
 const TableRowSkeleton = () => (
@@ -636,7 +800,7 @@ const TableRowSkeleton = () => (
 )
 ```
 
-**List Item Skeleton**
+List Item Skeleton
 
 ```typescript
 const ListItemSkeleton = () => (
@@ -650,21 +814,19 @@ const ListItemSkeleton = () => (
 )
 ```
 
-### Loading State Pattern
+**Loading State Pattern**
 
 ```typescript
 export default function Page() {
   const { data, isLoading, error } = useData()
-
   if (isLoading) return <PageSkeleton />
   if (error) return <ErrorState error={error} />
   if (!data || data.length === 0) return <EmptyState />
-
   return <ActualContent data={data} />
 }
 ```
 
-### Performance Considerations
+**Performance Considerations**
 
 - Skeleton components are lightweight (no network requests, no complex logic)
 - Defining outside component body prevents React from re-creating them
@@ -672,7 +834,7 @@ export default function Page() {
 - Avoid complex calculations inside skeleton components
 - Keep skeleton structure simple and static
 
-## Numeric Input Validation
+### Numeric Input Validation
 
 - Product forms use text inputs instead of `type="number"` to avoid mobile number pad
 - Numeric validation handled via regex in Zod schema:
@@ -684,7 +846,7 @@ export default function Page() {
 - Price display uses `formatCurrency()` from `lib/utils.ts` for consistent formatting
 - Tax display uses `formatPercentage()` from `lib/utils.ts` for consistent percentage formatting
 
-## Form Section Organization
+### Form Section Organization
 
 - Product forms use card-based section organization for better visual hierarchy
 - Inventory (stock) separated into its own card instead of being grouped with pricing
@@ -692,30 +854,75 @@ export default function Page() {
 - Each section is a reusable component for consistency between add/edit pages
 - Pattern: Group related fields into logical sections with descriptive card titles
 
-## Code Formatting Patterns
+### Error Logging System
 
-### Simplified Return Statements
+**Server-Side Error Logging**
 
-- Use single-line return statements for simple responses to reduce visual noise
-- Prefer `return NextResponse.json({ error: errorMessage }, { status: 500 })` over multi-line
-- Multi-line returns only for complex responses or when adding comments
-- Pattern applied consistently across all API routes
+- Centralized error logging via `lib/server/errorlogs.ts`
+- Function `logServerError()` logs errors with:
+  - errorType: "validation", "duplicate", "server", "network", "unknown"
+  - errorMessage
+  - endpoint
+  - method
+  - requestData
+  - stackTrace (optional)
+- Used across all API routes (products, categories, brands, enquiries, auth, uploads)
+- Non-blocking in logout/auth-me routes (void async)
 
-### Comment Conventions
+**Client-Side Error Logging**
 
-- Add explanatory comments for non-obvious patterns (e.g., hoisting, refs)
-- Use inline comments for quick explanations: `// Clean reference to hoisted id`
-- Use block comments for detailed explanations:
-  ```typescript
-  // Hoist state container to preserve the request body for error logging.
-  // This prevents the "body stream already read" fatal crash in the catch block.
-  let parsedBody: Record<string, any> = {}
-  ```
-- Document ESLint disable directives when necessary: `// eslint-disable-next-line react-hooks/set-state-in-effect`
+- `hooks/api/useProducts.ts` includes `logError()` helper
+- Logs to `/api/error-logs` endpoint
+- Categorizes errors as duplicate vs server based on message content
+- Provides user-friendly toast messages for common errors (SKU/slug duplicates)
 
-## Money Formatting Utilities
+### Dashboard Improvements
 
-### Overview
+**Skeleton Loading**
+
+- Dashboard uses `DashboardSkeleton` component during data loading
+- Products page uses `TableSkeleton` and `AnalyticsCardsSkeleton`
+- Better UX than single spinner
+
+**Data Structure**
+
+- Dashboard now handles paginated products data: `productsData?.data`
+- Uses `pagination.total` for accurate counts
+- Added subcategories to dashboard stats
+
+### React Key Prop Best Practices
+
+- Always use unique keys for list items
+- Pattern: `key={item._id || item.id}` for robustness
+- SelectItem components cannot have empty string values - use "none" or similar
+
+### Subcategory System
+
+- Separate Subcategory model from Category hierarchy
+- Subcategory belongs to a Category (required reference)
+- API routes: `app/api/subcategories/route.ts` and `app/api/subcategories/[id]/route.ts`
+- React Query hook: `hooks/api/useSubcategories.ts`
+- Admin pages: `app/admin/subcategories/page.tsx`, `add/page.tsx`, `edit/[id]/page.tsx`
+- Subcategory field added to Product model and forms
+- Subcategory filter added to products listing page
+
+### CSS/Tailwind Notes
+
+- Use `bg-gradient-to-br` for gradients (not `bg-linear-to-br` - this was a typo that was fixed)
+- Badge styling: use `capitalize` instead of `uppercase` for better readability
+- Common gradient pattern: `from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900`
+
+### Recent UI Improvements
+
+- Customer address badges changed from uppercase to capitalize
+- Orders page gradient backgrounds fixed
+- Login page gradient fixed
+- Profile page gradient fixed
+- "View on Store" button commented out on product detail page
+
+### Money Formatting Utilities
+
+**Overview**
 
 - Centralized currency formatting utilities in `lib/utils.ts`
 - Uses Indian Rupee (INR) with `en-IN` locale for consistent formatting
@@ -723,7 +930,7 @@ export default function Page() {
 - Lightweight implementation using `Intl.NumberFormat` (no heavy dependencies like Dinero.js)
 - Full TSDoc documentation with examples for IDE autocomplete
 
-### Type Definitions
+**Type Definitions**
 
 ```typescript
 type CurrencyOptions = {
@@ -734,26 +941,13 @@ type CurrencyOptions = {
 type NumericValue = number | string
 ```
 
-### Helper Functions (Private)
+**Helper Functions (Private)**
 
-**`toNumber(value, defaultValue)`**
+- `toNumber(value, defaultValue)` - Safely parses string or number to number, returns defaultValue if parsing fails, used internally by all formatters
+- `toCents(amount)` - Converts rupees to cents (integer), uses `Math.round()` for precision, prevents floating point errors in calculations
+- `fromCents(cents)` - Converts cents back to rupees, used after integer math operations
 
-- Safely parses string or number to number
-- Returns defaultValue if parsing fails
-- Used internally by all formatters
-
-**`toCents(amount)`**
-
-- Converts rupees to cents (integer)
-- Uses `Math.round()` for precision
-- Prevents floating point errors in calculations
-
-**`fromCents(cents)`**
-
-- Converts cents back to rupees
-- Used after integer math operations
-
-### Available Functions
+**Available Functions**
 
 **`formatCurrency(amount, options)`**
 
@@ -866,7 +1060,7 @@ import {
 <div>Quantity: {formatNumber(quantity)}</div>
 ```
 
-### Performance & Best Practices
+**Performance & Best Practices**
 
 - Formatters are created once at module level (not inside components)
 - Avoids re-creation on every render
@@ -880,10 +1074,10 @@ import {
 ### April 15, 2026
 
 - Added comprehensive money formatting utilities to `lib/utils.ts`
-- Added table of contents and quick reference section to ai-skills.md
+- Restructured ai-skills.md into Principles, Patterns, Code Examples, Quick Reference (restored all original content)
 - Fixed pre-commit hook to properly handle empty JS/TS file lists
-- Added ESLint disable comment for setState-in-effect warning in products page
-- Moved skeleton components outside render functions to fix React linting errors
+- Added ESLint disable comment for setState-in-effect warning
+- Moved skeleton components outside render functions
 
 ### April 14, 2026
 
