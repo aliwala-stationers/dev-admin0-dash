@@ -530,58 +530,60 @@ const initialCustomers: Customer[] = []
 // ]
 const initialPayments: Payment[] = []
 
-const initialEnquiries: Enquiry[] = [
-  {
-    id: "1",
-    name: "David Miller",
-    email: "david.miller@example.com",
-    subject: "Product Availability",
-    message:
-      "Hello, I wanted to check if the Wireless Headphones will be back in stock soon?",
-    status: "new",
-    createdAt: "2024-01-06",
-  },
-  {
-    id: "2",
-    name: "Sarah Wilson",
-    email: "sarah.w@example.com",
-    subject: "Shipping Query",
-    message: "Do you provide international shipping to Canada?",
-    status: "read",
-    createdAt: "2024-01-05",
-  },
-  {
-    id: "3",
-    name: "Michael Ross",
-    email: "mike.r@example.com",
-    subject: "Bulk Order Discount",
-    message:
-      "I'm looking to buy 50 units for my company. Do you offer bulk discounts?",
-    status: "replied",
-    createdAt: "2024-01-04",
-  },
-]
+// const initialEnquiries: Enquiry[] = [
+//   {
+//     id: "1",
+//     name: "David Miller",
+//     email: "david.miller@example.com",
+//     subject: "Product Availability",
+//     message:
+//       "Hello, I wanted to check if the Wireless Headphones will be back in stock soon?",
+//     status: "new",
+//     createdAt: "2024-01-06",
+//   },
+//   {
+//     id: "2",
+//     name: "Sarah Wilson",
+//     email: "sarah.w@example.com",
+//     subject: "Shipping Query",
+//     message: "Do you provide international shipping to Canada?",
+//     status: "read",
+//     createdAt: "2024-01-05",
+//   },
+//   {
+//     id: "3",
+//     name: "Michael Ross",
+//     email: "mike.r@example.com",
+//     subject: "Bulk Order Discount",
+//     message:
+//       "I'm looking to buy 50 units for my company. Do you offer bulk discounts?",
+//     status: "replied",
+//     createdAt: "2024-01-04",
+//   },
+// ]
+const initialEnquiries: Enquiry[] = []
 
-const initialNewsletter: Newsletter[] = [
-  {
-    id: "1",
-    email: "alex.g@example.com",
-    status: "active",
-    createdAt: "2024-01-07",
-  },
-  {
-    id: "2",
-    email: "maria.s@example.com",
-    status: "active",
-    createdAt: "2024-01-06",
-  },
-  {
-    id: "3",
-    email: "tom.h@example.com",
-    status: "unsubscribed",
-    createdAt: "2024-01-05",
-  },
-]
+// const initialNewsletter: Newsletter[] = [
+//   {
+//     id: "1",
+//     email: "alex.g@example.com",
+//     status: "active",
+//     createdAt: "2024-01-07",
+//   },
+//   {
+//     id: "2",
+//     email: "maria.s@example.com",
+//     status: "active",
+//     createdAt: "2024-01-06",
+//   },
+//   {
+//     id: "3",
+//     email: "tom.h@example.com",
+//     status: "unsubscribed",
+//     createdAt: "2024-01-05",
+//   },
+// ]
+const initialNewsletter: Newsletter[] = []
 
 const DataContext = createContext<DataContextType | undefined>(undefined)
 

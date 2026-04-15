@@ -1,5 +1,7 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { useTheme } from "next-themes"
 import {
   Card,
   CardContent,
@@ -13,9 +15,65 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
-import { Bell, Shield, Palette, Smartphone, Laptop, Lock } from "lucide-react"
+import {
+  Bell,
+  Shield,
+  Palette,
+  Smartphone,
+  Laptop,
+  Lock,
+  Monitor,
+  Moon,
+  Sun,
+} from "lucide-react"
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme()
+  const [denseMode, setDenseMode] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [emailNotifications, setEmailNotifications] = useState(true)
+  const [pushNotifications, setPushNotifications] = useState(true)
+  const [dailySummary, setDailySummary] = useState(false)
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const savedDenseMode = localStorage.getItem("denseMode") === "true"
+    const savedSidebarCollapsed =
+      localStorage.getItem("sidebarCollapsed") === "true"
+    const savedEmailNotifications =
+      localStorage.getItem("emailNotifications") !== "false"
+    const savedPushNotifications =
+      localStorage.getItem("pushNotifications") !== "false"
+    const savedDailySummary = localStorage.getItem("dailySummary") === "true"
+
+    setDenseMode(savedDenseMode)
+    setSidebarCollapsed(savedSidebarCollapsed)
+    setEmailNotifications(savedEmailNotifications)
+    setPushNotifications(savedPushNotifications)
+    setDailySummary(savedDailySummary)
+  }, [])
+
+  // Save settings to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem("denseMode", denseMode.toString())
+  }, [denseMode])
+
+  useEffect(() => {
+    localStorage.setItem("sidebarCollapsed", sidebarCollapsed.toString())
+  }, [sidebarCollapsed])
+
+  useEffect(() => {
+    localStorage.setItem("emailNotifications", emailNotifications.toString())
+  }, [emailNotifications])
+
+  useEffect(() => {
+    localStorage.setItem("pushNotifications", pushNotifications.toString())
+  }, [pushNotifications])
+
+  useEffect(() => {
+    localStorage.setItem("dailySummary", dailySummary.toString())
+  }, [dailySummary])
+
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       <div className="flex flex-col gap-1">
@@ -59,16 +117,46 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between group">
-                <div className="space-y-0.5">
-                  <Label className="text-base font-semibold group-hover:text-accent-blue transition-colors cursor-pointer">
-                    Dark Mode
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Toggle between light and dark themes for the dashboard.
-                  </p>
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Theme</Label>
+                <p className="text-sm text-muted-foreground">
+                  Select your preferred theme for the dashboard.
+                </p>
+                <div className="flex gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit">
+                  <button
+                    onClick={() => setTheme("light")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                      theme === "light"
+                        ? "bg-white dark:bg-slate-700 shadow-sm"
+                        : "hover:bg-white/50 dark:hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <Sun className="h-4 w-4" />
+                    <span>Light</span>
+                  </button>
+                  <button
+                    onClick={() => setTheme("dark")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                      theme === "dark"
+                        ? "bg-white dark:bg-slate-700 shadow-sm"
+                        : "hover:bg-white/50 dark:hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <Moon className="h-4 w-4" />
+                    <span>Dark</span>
+                  </button>
+                  <button
+                    onClick={() => setTheme("system")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                      theme === "system"
+                        ? "bg-white dark:bg-slate-700 shadow-sm"
+                        : "hover:bg-white/50 dark:hover:bg-slate-700/50"
+                    }`}
+                  >
+                    <Monitor className="h-4 w-4" />
+                    <span>System</span>
+                  </button>
                 </div>
-                <Switch />
               </div>
               <Separator className="bg-border/50" />
               <div className="flex items-center justify-between group">
@@ -80,7 +168,7 @@ export default function SettingsPage() {
                     Reduce spacing in tables and lists to see more data.
                   </p>
                 </div>
-                <Switch />
+                <Switch checked={denseMode} onCheckedChange={setDenseMode} />
               </div>
               <Separator className="bg-border/50" />
               <div className="flex items-center justify-between group">
@@ -92,7 +180,10 @@ export default function SettingsPage() {
                     Start with the sidebar collapsed by default.
                   </p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={sidebarCollapsed}
+                  onCheckedChange={setSidebarCollapsed}
+                />
               </div>
             </CardContent>
           </Card>
@@ -124,7 +215,10 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={emailNotifications}
+                  onCheckedChange={setEmailNotifications}
+                />
               </div>
               <Separator className="bg-border/50" />
               <div className="flex items-center justify-between group">
@@ -141,7 +235,10 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
-                <Switch defaultChecked />
+                <Switch
+                  checked={pushNotifications}
+                  onCheckedChange={setPushNotifications}
+                />
               </div>
               <Separator className="bg-border/50" />
               <div className="flex items-center justify-between group">
@@ -158,7 +255,10 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
-                <Switch />
+                <Switch
+                  checked={dailySummary}
+                  onCheckedChange={setDailySummary}
+                />
               </div>
             </CardContent>
           </Card>
