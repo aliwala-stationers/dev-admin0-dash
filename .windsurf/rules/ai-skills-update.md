@@ -1,10 +1,6 @@
-<!-- ai-skills-update.md -->
-
 ---
-
 trigger: model_decision
 description: Suggest invoking update-ai-skills when meaningful engineering insights or failures emerge
-
 ---
 
 <ai_skills_update_rule>

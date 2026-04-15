@@ -1,10 +1,6 @@
-<!-- ai-skills-usage.md -->
-
 ---
-
 trigger: model_decision
 description: Reuse relevant patterns and avoid known failures from ai-skills.md when clearly applicable
-
 ---
 
 <ai_skills_usage_rule>

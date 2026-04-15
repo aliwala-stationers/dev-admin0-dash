@@ -1,15 +1,11 @@
-<!-- update-custom-ai-skills/SKILL.md -->
-
 ---
-
-name: update-custom-ai-skills
+name: update-ai-skills
 description: Extract reusable engineering insights and failures from a session into a structured ai-skills.md entry
-
 ---
 
 # Update AI Skills
 
-Extract a single high-value, reusable engineering insight OR failure from the current session and format it for `ai-skills.md`.
+Extract a single high-value, reusable engineering insight OR failure from the current session and format it for ai-skills.md.
 
 ---
 
@@ -83,6 +79,6 @@ Do not add any text before or after the output.
 
 ### Example (optional)
 
-```typescript
+```ts
 // minimal, relevant snippet
 ```
