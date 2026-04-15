@@ -10,37 +10,45 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 
-const notifications = [
-  {
-    id: "1",
-    title: "New order received",
-    description: "Order #1234 has been placed by a customer.",
-    time: "2 minutes ago",
-    unread: true,
-  },
-  {
-    id: "2",
-    title: "Stock alert",
-    description: "Nike Air Max 270 is running low on stock.",
-    time: "1 hour ago",
-    unread: true,
-  },
-  {
-    id: "3",
-    title: "System update",
-    description: "The aliwala platform has been updated to v2.1.",
-    time: "5 hours ago",
-    unread: false,
-  },
-  {
-    id: "4",
-    title: "New enquiry",
-    description: "A customer has sent a new enquiry about a product.",
-    time: "Yesterday",
-    unread: false,
-  },
-]
+// const notifications = [
+//   {
+//     id: "1",
+//     title: "New order received",
+//     description: "Order #1234 has been placed by a customer.",
+//     time: "2 minutes ago",
+//     unread: true,
+//   },
+//   {
+//     id: "2",
+//     title: "Stock alert",
+//     description: "Nike Air Max 270 is running low on stock.",
+//     time: "1 hour ago",
+//     unread: true,
+//   },
+//   {
+//     id: "3",
+//     title: "System update",
+//     description: "The aliwala platform has been updated to v2.1.",
+//     time: "5 hours ago",
+//     unread: false,
+//   },
+//   {
+//     id: "4",
+//     title: "New enquiry",
+//     description: "A customer has sent a new enquiry about a product.",
+//     time: "Yesterday",
+//     unread: false,
+//   },
+// ]
+const notifications: any[] = []
 
 export function NotificationsNav() {
   const unreadCount = notifications.filter((n) => n.unread).length
@@ -96,11 +104,16 @@ export function NotificationsNav() {
                 </div>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <Bell className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  No notifications yet
-                </p>
+              <div className="flex items-center justify-center py-10">
+                <Empty>
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <Bell className="h-6 w-6" />
+                    </EmptyMedia>
+                    <EmptyTitle>No notifications yet</EmptyTitle>
+                    <EmptyDescription>You're all caught up!</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
               </div>
             )}
           </div>

@@ -98,3 +98,36 @@ export const useLogout = () => {
     },
   })
 }
+
+// --- 4. THE UPDATE PROFILE MUTATION ---
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      name,
+      avatarUrl,
+    }: {
+      name: string
+      avatarUrl?: string
+    }) => {
+      const res = await fetch("/api/auth/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, avatarUrl }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to update profile")
+      return data.user
+    },
+    onSuccess: (updatedUser) => {
+      // Update the 'currentUser' cache with the updated user
+      queryClient.setQueryData(["currentUser"], updatedUser)
+      toast.success("Profile updated successfully")
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    },
+  })
+}
