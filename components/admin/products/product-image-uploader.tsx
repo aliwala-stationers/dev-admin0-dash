@@ -177,28 +177,21 @@ export function ImageUploadCard({
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Product Images</h3>
-        <span className="text-xs text-muted-foreground">
-          {previews.length}/5
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {previews.map((preview, index) => (
           <div
             key={index}
-            className="relative aspect-square rounded-lg overflow-hidden border group"
+            className="relative aspect-square rounded-xl overflow-hidden border border-border/40 group bg-muted/20"
           >
             <img
               src={preview}
               alt={`Product ${index + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
             <button
               type="button"
               onClick={() => removeImage(index)}
-              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-lg"
             >
               <X className="h-3 w-3" />
             </button>
@@ -209,10 +202,12 @@ export function ImageUploadCard({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-accent-blue hover:text-accent-blue transition-colors"
+            className="aspect-square border-2 border-dashed border-border/60 rounded-xl flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-accent-blue hover:text-accent-blue hover:bg-accent-blue/5 transition-all"
           >
-            <Plus className="h-6 w-6" />
-            <span className="text-xs">Add Image</span>
+            <Plus className="h-6 w-6 opacity-40" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              Add Photo
+            </span>
           </button>
         )}
       </div>
@@ -242,48 +237,42 @@ export function VideoUploadCard({
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Product Video</h3>
-        <span className="text-xs text-muted-foreground">Optional</span>
-      </div>
-
       {videoPreview ? (
-        <div className="relative aspect-video rounded-lg overflow-hidden border group">
+        <div className="relative aspect-video rounded-xl overflow-hidden border border-border/40 group bg-slate-950">
           {videoPreview === "pending-upload" ? (
             <div className="w-full h-full bg-muted flex items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : videoPreview.startsWith("data:") ||
-            videoPreview.startsWith("blob:") ? (
-            <video
-              src={videoPreview}
-              controls
-              className="w-full h-full object-cover"
-            />
           ) : (
             <video
               src={videoPreview}
               controls
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           )}
           <button
             type="button"
             onClick={removeVideo}
-            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute top-3 right-3 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all hover:scale-110 shadow-xl z-10"
           >
-            <X className="h-3 w-3" />
+            <X className="h-4 w-4" />
           </button>
         </div>
       ) : (
         <button
           type="button"
           onClick={() => videoInputRef.current?.click()}
-          className="w-full aspect-video border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-accent-blue hover:text-accent-blue transition-colors"
+          className="w-full aspect-video border-2 border-dashed border-border/60 rounded-xl flex flex-col items-center justify-center gap-3 text-muted-foreground hover:border-accent-blue hover:text-accent-blue hover:bg-accent-blue/5 transition-all"
         >
-          <Video className="h-6 w-6" />
-          <span className="text-sm">Add Video</span>
-          <span className="text-xs">(Max 50MB)</span>
+          <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center">
+            <Video className="h-6 w-6 opacity-40" />
+          </div>
+          <div className="text-center">
+            <span className="text-xs font-bold uppercase tracking-wider block">
+              Marketing Video
+            </span>
+            <span className="text-[10px] opacity-60">MP4, MOV up to 50MB</span>
+          </div>
         </button>
       )}
 

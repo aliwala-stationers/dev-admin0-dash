@@ -41,6 +41,10 @@
     - [Upload Process](#upload-process)
   - [Sequential Subcategory Filtering](#sequential-subcategory-filtering)
     - [Implementation](#implementation-1)
+  - [Centralized Typography System](#centralized-typography-system)
+    - [Usage](#usage-1)
+  - [Unified Media Showcase](#unified-media-showcase)
+    - [Implementation](#implementation-4)
   - [Drawer Pattern for Create Forms](#drawer-pattern-for-create-forms)
     - [Implementation](#implementation-2)
   - [Searchable Dropdown with Command](#searchable-dropdown-with-command)
@@ -153,8 +157,11 @@
 
 - **shadcn/ui Components**: Use pre-built components for consistency
 - **Tailwind CSS**: Utility-first CSS for rapid development
+- **Centralized Typography**: Use components from `components/ui/typography.tsx` instead of raw text tags for consistent scaling and accessibility
+- **Flat Modern Design**: Prefer `shadow-none` and subtle borders (`border-border/40`) over heavy shadows and dark borders for a cleaner professional feel
 - **Gradient Patterns**: Use consistent gradient patterns (`from-slate-50 to-slate-100`)
 - **Badge Styling**: Use `capitalize` instead of `uppercase` for better readability
+- **Contextual Tints**: Use very light background colors (e.g., `bg-blue-50/30`) to distinguish data tiers or functional sections without visual clutter
 
 ### Anti-Patterns (DON'T)
 
@@ -341,6 +348,30 @@
 - Uploads to R2/S3 storage
 - Generate base64 preview
 - Handle add/edit mode differences
+
+### Centralized Typography System
+
+**Usage**
+
+- Always import from `@/components/ui/typography`
+- `TypographyH1`: Page titles (extrabold, tracking-tight)
+- `TypographyMuted`: Sub-labels and auxiliary info (text-muted-foreground)
+- `TypographySmall`: Fine print, metadata (font-medium, leading-none)
+- `TypographyLead`: Summaries or high-level descriptions (text-xl, muted-foreground)
+
+### Unified Media Showcase
+
+**Implementation**
+
+- Combine images and videos into a single `Card` with `Tabs` for switching
+- Use a state variable `viewMode` to toggle between gallery and player
+- **Temporal Snapshot Pattern**:
+  ```tsx
+  // Shows first frame at 0.1s as thumbnail
+  <video src={`${videoUrl}#t=0.1`} preload="metadata" />
+  ```
+- Overlay a `Play` icon on video thumbnails to distinguish from static images
+- Maintain the full thumbnail list even when a specific asset type is selected for quick context switching
 
 ### Sequential Subcategory Filtering
 
@@ -1796,6 +1827,32 @@ ProductSchema.index({ price: 1 }) // Feature doesn't exist yet
 ```
 
 ## Recent Changes
+
+### April 17, 2026 - Product UI/UX & Schema Alignment Overhaul
+
+**Commit: feat(products): modern ui overhaul with dual-margin pricing and unified media**
+
+Completely redesigned the Product management lifecycle (View/Add/Edit) to match professional business standards:
+
+- **Centralized Typography**: Created `components/ui/typography.tsx` using Tailwind v4 compatible primitives for `TypographyH1`, `TypographyMuted`, etc.
+- **Redesigned Pricing Dashboard**:
+  - Implemented dual-tier pricing grid (Consumer B2C vs Wholesale B2B).
+  - Integrated real-time **Profit Margin** and **MRP Savings** calculations.
+  - Consolidated HSN, Tax, and Identity metadata into a unified 4-column footer grid.
+- **Unified Media Showcase**:
+  - Merged images and videos into a single "Media Showcase" card with tabbed switching.
+  - Implemented **Temporal Video Snapshots** (`#t=0.1`) for automatic first-frame thumbnails.
+  - Added play icon overlays and active-state highlighting for the gallery.
+- **Global UI Refinement**:
+  - Transitioned to "Flat-Modern" styling using `shadow-none` and `border-border/40`.
+  - Added contextual background tints (Blue for B2C, Indigo for B2B) to distinguish data sections.
+- **Form Alignment**: Synced Add/Edit forms with the View dashboard for a cohesive "360-degree" product management experience.
+
+**Key Technical Patterns**:
+
+- **Video Thumbnail Trick**: Use `src="${url}#t=0.1"` to force the browser to render the first frame without loading the full buffer.
+- **Dual Margin Logic**: Calculate B2C vs Cost and B2B vs Cost separately to provide granular profitability insights.
+- **Layout Consistency**: Use `lg:grid-cols-12` with an 8:4 split for main content vs organizational sidebars across all product pages.
 
 ### April 16, 2026 - Product Filtering & Sorting Optimization
 

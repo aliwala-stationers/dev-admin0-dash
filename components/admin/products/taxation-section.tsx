@@ -15,17 +15,23 @@ interface TaxationSectionProps {
 
 export function TaxationSection({ form }: TaxationSectionProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-6 sm:grid-cols-2">
       <FormField
         control={form.control}
         name="hsn"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>HSN Code</FormLabel>
+          <FormItem className="space-y-1.5">
+            <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              HSN/SAC Code
+            </FormLabel>
             <FormControl>
-              <Input placeholder="e.g. 8518" {...field} />
+              <Input
+                placeholder="e.g. 8518"
+                {...field}
+                className="h-10 font-mono text-xs"
+              />
             </FormControl>
-            <FormMessage />
+            <FormMessage className="text-[10px]" />
           </FormItem>
         )}
       />
@@ -33,12 +39,23 @@ export function TaxationSection({ form }: TaxationSectionProps) {
         control={form.control}
         name="tax"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>GST (%)</FormLabel>
+          <FormItem className="space-y-1.5">
+            <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              GST Rate (%)
+            </FormLabel>
             <FormControl>
-              <Input placeholder="18" {...field} />
+              <div className="relative">
+                <Input
+                  placeholder="18"
+                  {...field}
+                  className="h-10 pr-10 font-bold"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
+                  %
+                </span>
+              </div>
             </FormControl>
-            <FormMessage />
+            <FormMessage className="text-[10px]" />
           </FormItem>
         )}
       />

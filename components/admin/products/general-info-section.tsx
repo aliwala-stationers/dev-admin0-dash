@@ -20,11 +20,14 @@ export function GeneralInfoSection({ form }: GeneralInfoSectionProps) {
       control={form.control}
       name="name"
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>Product Name</FormLabel>
+        <FormItem className="space-y-1.5">
+          <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Product Display Name
+          </FormLabel>
           <FormControl>
             <Input
               placeholder="e.g. Ultra Wireless Headphones"
+              className="h-10"
               {...field}
               onChange={(e) => {
                 field.onChange(e)
@@ -52,7 +55,7 @@ export function GeneralInfoSection({ form }: GeneralInfoSectionProps) {
               }}
             />
           </FormControl>
-          <FormMessage />
+          <FormMessage className="text-[10px]" />
         </FormItem>
       )}
     />
@@ -69,12 +72,23 @@ export function SlugField({
       control={form.control}
       name="slug"
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>Slug</FormLabel>
+        <FormItem className="space-y-1.5">
+          <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            SEO Handle (Slug)
+          </FormLabel>
           <FormControl>
-            <Input placeholder="ultra-wireless-headphones" {...field} />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 text-xs">
+                /
+              </span>
+              <Input
+                placeholder="ultra-wireless-headphones"
+                {...field}
+                className="pl-6 h-10 font-mono text-xs"
+              />
+            </div>
           </FormControl>
-          <FormMessage />
+          <FormMessage className="text-[10px]" />
         </FormItem>
       )}
     />
@@ -91,16 +105,18 @@ export function DescriptionField({
       control={form.control}
       name="description"
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>Description</FormLabel>
+        <FormItem className="space-y-1.5">
+          <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Detailed Narrative
+          </FormLabel>
           <FormControl>
             <Textarea
-              className="min-h-[150px]"
-              placeholder="Product highlights..."
+              className="min-h-[120px] bg-card/50"
+              placeholder="Tell your customers more about this item..."
               {...field}
             />
           </FormControl>
-          <FormMessage />
+          <FormMessage className="text-[10px]" />
         </FormItem>
       )}
     />

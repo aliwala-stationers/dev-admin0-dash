@@ -3,7 +3,10 @@ import {
   formatProfitMargin,
   formatCurrency,
   formatPercentage,
+  cn,
 } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
+import { TrendingUp } from "lucide-react"
 
 export function ProfitMarginCalculator({ form }: { form: any }) {
   const costPrice = form.watch("costPrice")
@@ -19,35 +22,57 @@ export function ProfitMarginCalculator({ form }: { form: any }) {
   const b2bProfit = b2b - cost
   const b2bMargin = formatProfitMargin(cost, b2b)
 
-  const b2cProfitClass = b2cProfit >= 0 ? "text-green-600" : "text-red-600"
-  const b2bProfitClass = b2bProfit >= 0 ? "text-green-600" : "text-red-600"
+  const b2cProfitClass =
+    b2cProfit >= 0 ? "text-emerald-600" : "text-destructive"
+  const b2bProfitClass =
+    b2bProfit >= 0 ? "text-emerald-600" : "text-destructive"
   const b2cMarginClass =
-    parseFloat(b2cMargin) >= 0 ? "text-green-600" : "text-red-600"
+    parseFloat(b2cMargin) >= 0 ? "text-emerald-600" : "text-destructive"
   const b2bMarginClass =
-    parseFloat(b2bMargin) >= 0 ? "text-green-600" : "text-red-600"
+    parseFloat(b2bMargin) >= 0 ? "text-emerald-600" : "text-destructive"
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {cost > 0 ? (
-        <>
+        <div className="grid gap-6 sm:grid-cols-2">
           {/* B2C Analysis */}
-          <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-400">
-                B2C (Retail) Analysis
+          <div className="p-5 bg-card border border-border/40 rounded-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <div className="h-1.5 w-1.5 bg-blue-500 rounded-full" />
+                Consumer Analysis
               </h4>
-              <span className="text-xs text-muted-foreground">Per Unit</span>
+              <Badge
+                variant="outline"
+                className="text-[9px] font-bold h-5 px-1.5 uppercase"
+              >
+                Per Unit
+              </Badge>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Profit</p>
-                <p className={`text-xl font-bold ${b2cProfitClass}`}>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase text-muted-foreground/60 tracking-tighter">
+                  Gross Profit
+                </p>
+                <p
+                  className={cn(
+                    "text-lg font-extrabold tracking-tight",
+                    b2cProfitClass,
+                  )}
+                >
                   {formatCurrencyWithSign(b2cProfit)}
                 </p>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Margin</p>
-                <p className={`text-xl font-bold ${b2cMarginClass}`}>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase text-muted-foreground/60 tracking-tighter">
+                  Net Margin
+                </p>
+                <p
+                  className={cn(
+                    "text-lg font-extrabold tracking-tight",
+                    b2cMarginClass,
+                  )}
+                >
                   {b2cMargin}
                 </p>
               </div>
@@ -55,66 +80,65 @@ export function ProfitMarginCalculator({ form }: { form: any }) {
           </div>
 
           {/* B2B Analysis */}
-          {b2b > 0 && (
-            <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-sm font-semibold text-green-700 dark:text-green-400">
-                  B2B (Wholesale) Analysis
+          {b2b > 0 ? (
+            <div className="p-5 bg-card border border-border/40 rounded-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <div className="h-1.5 w-1.5 bg-indigo-500 rounded-full" />
+                  Wholesale Analysis
                 </h4>
-                <span className="text-xs text-muted-foreground">Per Unit</span>
+                <Badge
+                  variant="outline"
+                  className="text-[9px] font-bold h-5 px-1.5 uppercase"
+                >
+                  Per Unit
+                </Badge>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Profit</p>
-                  <p className={`text-xl font-bold ${b2bProfitClass}`}>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground/60 tracking-tighter">
+                    Gross Profit
+                  </p>
+                  <p
+                    className={cn(
+                      "text-lg font-extrabold tracking-tight",
+                      b2bProfitClass,
+                    )}
+                  >
                     {formatCurrencyWithSign(b2bProfit)}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Margin</p>
-                  <p className={`text-xl font-bold ${b2bMarginClass}`}>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground/60 tracking-tighter">
+                    Net Margin
+                  </p>
+                  <p
+                    className={cn(
+                      "text-lg font-extrabold tracking-tight",
+                      b2bMarginClass,
+                    )}
+                  >
                     {b2bMargin}
                   </p>
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Comparison */}
-          {b2b > 0 && (
-            <div className="p-4 bg-purple-50 dark:bg-purple-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
-              <h4 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
-                Price Comparison
-              </h4>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">B2C Price:</span>
-                  <span className="font-semibold">{formatCurrency(b2c)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">B2B Price:</span>
-                  <span className="font-semibold">{formatCurrency(b2b)}</span>
-                </div>
-                <div className="flex justify-between text-sm pt-2 border-t border-purple-200 dark:border-purple-800">
-                  <span className="text-muted-foreground">Difference:</span>
-                  <span className="font-semibold">
-                    {formatCurrencyWithSign(b2c - b2b)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">B2B Discount:</span>
-                  <span className="font-semibold text-green-600">
-                    {formatPercentage((b2c - b2b) / b2c, true)}
-                  </span>
-                </div>
-              </div>
+          ) : (
+            <div className="flex items-center justify-center border-2 border-dashed rounded-xl opacity-40">
+              <p className="text-[10px] font-bold uppercase tracking-widest">
+                No B2B Data
+              </p>
             </div>
           )}
-        </>
+        </div>
       ) : (
-        <div className="text-center py-8 text-muted-foreground">
-          <p className="text-sm">
-            Enter a cost price to see profit and margin calculations
+        <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-xl bg-muted/5">
+          <TrendingUp className="h-8 w-8 text-muted-foreground/30 mb-3" />
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">
+            Awaiting Cost Basis
+          </p>
+          <p className="text-[10px] text-muted-foreground/40 mt-1">
+            Input a purchase price to activate profit intelligence
           </p>
         </div>
       )}

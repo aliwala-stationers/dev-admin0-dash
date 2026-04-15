@@ -39,8 +39,10 @@ import {
   ShieldCheck,
   Check,
   Search,
+  Zap,
 } from "lucide-react"
 import { useState } from "react"
+import { cn } from "@/lib/utils"
 
 interface CategorizationSectionProps {
   form: UseFormReturn<ProductFormValues>
@@ -84,10 +86,9 @@ export function CategoryField({
       control={form.control}
       name="category"
       render={({ field }) => (
-        <FormItem className="space-y-2">
-          <FormLabel className="flex items-center gap-2 text-sm font-medium">
-            <Tag className="h-4 w-4 text-muted-foreground" />
-            Category
+        <FormItem className="space-y-1.5">
+          <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            Master Category
           </FormLabel>
           <div className="flex gap-2">
             <Popover open={open} onOpenChange={setOpen}>
@@ -97,16 +98,18 @@ export function CategoryField({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="h-10 flex-1 justify-between"
+                    className="h-10 flex-1 justify-between font-normal"
                   >
-                    {selectedCategory
-                      ? selectedCategory.name
-                      : "Select category"}
+                    <span className="truncate">
+                      {selectedCategory
+                        ? selectedCategory.name
+                        : "Select category"}
+                    </span>
                     <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
+              <PopoverContent className="w-[240px] p-0" align="start">
                 <Command>
                   <CommandInput
                     placeholder="Search category..."
@@ -114,7 +117,7 @@ export function CategoryField({
                     onValueChange={setSearch}
                   />
                   <CommandList>
-                    <CommandEmpty>No category found.</CommandEmpty>
+                    <CommandEmpty>No results found.</CommandEmpty>
                     <CommandGroup>
                       {filteredCategories.map((cat) => (
                         <CommandItem
@@ -130,11 +133,12 @@ export function CategoryField({
                           }}
                         >
                           <Check
-                            className={`mr-2 h-4 w-4 ${
+                            className={cn(
+                              "mr-2 h-4 w-4",
                               (cat._id || cat.id) === field.value
                                 ? "opacity-100"
-                                : "opacity-0"
-                            }`}
+                                : "opacity-0",
+                            )}
                           />
                           {cat.name}
                         </CommandItem>
@@ -146,7 +150,7 @@ export function CategoryField({
             </Popover>
             <CategoryDrawer onCategoryCreated={handleCategoryCreated} />
           </div>
-          <FormMessage />
+          <FormMessage className="text-[10px]" />
         </FormItem>
       )}
     />
@@ -198,12 +202,11 @@ export function SubcategoryField({
       control={form.control}
       name="subcategory"
       render={({ field }) => (
-        <FormItem className="space-y-2">
-          <FormLabel className="flex items-center gap-2 text-sm font-medium">
-            <Layers className="h-4 w-4 text-muted-foreground" />
-            Subcategory{" "}
-            <span className="text-muted-foreground font-normal">
-              (Optional)
+        <FormItem className="space-y-1.5">
+          <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+            Classification (Sub)
+            <span className="text-[9px] font-normal lowercase italic text-muted-foreground/60">
+              optional
             </span>
           </FormLabel>
           <div className="flex gap-2">
@@ -214,24 +217,27 @@ export function SubcategoryField({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="h-10 flex-1 justify-between"
+                    className="h-10 flex-1 justify-between font-normal"
+                    disabled={!selectedCategoryId}
                   >
-                    {selectedSubcategory
-                      ? selectedSubcategory.name
-                      : "Select subcategory"}
+                    <span className="truncate">
+                      {selectedSubcategory
+                        ? selectedSubcategory.name
+                        : "Select sub-category"}
+                    </span>
                     <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
+              <PopoverContent className="w-[240px] p-0" align="start">
                 <Command>
                   <CommandInput
-                    placeholder="Search subcategory..."
+                    placeholder="Search sub-category..."
                     value={search}
                     onValueChange={setSearch}
                   />
                   <CommandList>
-                    <CommandEmpty>No subcategory found.</CommandEmpty>
+                    <CommandEmpty>No results found.</CommandEmpty>
                     <CommandGroup>
                       <CommandItem
                         value="none"
@@ -244,11 +250,12 @@ export function SubcategoryField({
                         }}
                       >
                         <Check
-                          className={`mr-2 h-4 w-4 ${
-                            !field.value ? "opacity-100" : "opacity-0"
-                          }`}
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            !field.value ? "opacity-100" : "opacity-0",
+                          )}
                         />
-                        None
+                        None (Clear)
                       </CommandItem>
                       {filteredBySearch.map((sub) => (
                         <CommandItem
@@ -275,11 +282,12 @@ export function SubcategoryField({
                           }}
                         >
                           <Check
-                            className={`mr-2 h-4 w-4 ${
+                            className={cn(
+                              "mr-2 h-4 w-4",
                               (sub._id || sub.id) === field.value
                                 ? "opacity-100"
-                                : "opacity-0"
-                            }`}
+                                : "opacity-0",
+                            )}
                           />
                           {sub.name}
                         </CommandItem>
@@ -295,7 +303,7 @@ export function SubcategoryField({
               categories={categories}
             />
           </div>
-          <FormMessage />
+          <FormMessage className="text-[10px]" />
         </FormItem>
       )}
     />
@@ -333,10 +341,9 @@ export function BrandField({
       control={form.control}
       name="brand"
       render={({ field }) => (
-        <FormItem className="space-y-2">
-          <FormLabel className="flex items-center gap-2 text-sm font-medium">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            Brand
+        <FormItem className="space-y-1.5">
+          <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-foreground">
+            Brand Line
           </FormLabel>
           <div className="flex gap-2">
             <Popover open={open} onOpenChange={setOpen}>
@@ -346,14 +353,16 @@ export function BrandField({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="h-10 flex-1 justify-between"
+                    className="h-10 flex-1 justify-between font-normal"
                   >
-                    {selectedBrand ? selectedBrand.name : "Select brand"}
+                    <span className="truncate">
+                      {selectedBrand ? selectedBrand.name : "Select brand"}
+                    </span>
                     <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </FormControl>
               </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
+              <PopoverContent className="w-[240px] p-0" align="start">
                 <Command>
                   <CommandInput
                     placeholder="Search brand..."
@@ -361,7 +370,7 @@ export function BrandField({
                     onValueChange={setSearch}
                   />
                   <CommandList>
-                    <CommandEmpty>No brand found.</CommandEmpty>
+                    <CommandEmpty>No results found.</CommandEmpty>
                     <CommandGroup>
                       {filteredBrands.map((brand) => (
                         <CommandItem
@@ -376,11 +385,12 @@ export function BrandField({
                           }}
                         >
                           <Check
-                            className={`mr-2 h-4 w-4 ${
+                            className={cn(
+                              "mr-2 h-4 w-4",
                               (brand._id || brand.id) === field.value
                                 ? "opacity-100"
-                                : "opacity-0"
-                            }`}
+                                : "opacity-0",
+                            )}
                           />
                           {brand.name}
                         </CommandItem>
@@ -392,7 +402,7 @@ export function BrandField({
             </Popover>
             <BrandDrawer onBrandCreated={handleBrandCreated} />
           </div>
-          <FormMessage />
+          <FormMessage className="text-[10px]" />
         </FormItem>
       )}
     />
@@ -409,21 +419,28 @@ export function StatusField({
       control={form.control}
       name="status"
       render={({ field }) => (
-        <FormItem className="flex items-center justify-between border rounded-lg p-4 bg-muted/30">
+        <FormItem className="flex items-center justify-between border rounded-xl p-5 bg-muted/20 border-border/40">
           <div className="space-y-0.5">
-            <FormLabel className="flex items-center gap-2 text-sm font-medium m-0 cursor-pointer">
-              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-              Active Status
+            <FormLabel className="text-xs font-bold uppercase tracking-wider m-0 cursor-pointer text-foreground flex items-center gap-2">
+              <Zap
+                className={cn(
+                  "h-3.5 w-3.5",
+                  field.value
+                    ? "text-emerald-500 fill-current"
+                    : "text-muted-foreground",
+                )}
+              />
+              Visibility Status
             </FormLabel>
-            <p className="text-xs text-muted-foreground">
-              Enable this product to be visible in your store
+            <p className="text-[10px] text-muted-foreground">
+              Enable this product to make it live in your store
             </p>
           </div>
           <FormControl>
             <Switch
               checked={field.value}
               onCheckedChange={field.onChange}
-              className="scale-110"
+              className="scale-100 data-[state=checked]:bg-emerald-500"
             />
           </FormControl>
         </FormItem>
