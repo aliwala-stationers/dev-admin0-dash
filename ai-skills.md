@@ -13,6 +13,10 @@
   - [Code Quality](#code-quality)
   - [UX Principles](#ux-principles)
   - [Styling Conventions](#styling-conventions)
+  - [Anti-Patterns (DON'T)](#anti-patterns-dont)
+  - [Technology Decisions](#technology-decisions)
+  - [Boundaries](#boundaries)
+  - [Scaling Notes](#scaling-notes)
 - [Patterns (HOW)](#patterns-how)
   - [API Routes](#api-routes)
     - [Standard Route Structure](#standard-route-structure)
@@ -147,7 +151,75 @@
 - **Gradient Patterns**: Use consistent gradient patterns (`from-slate-50 to-slate-100`)
 - **Badge Styling**: Use `capitalize` instead of `uppercase` for better readability
 
-## Patterns (HOW)
+### Anti-Patterns (DON'T)
+
+- **Don't call `req.json()` inside catch** - Hoist `parsedBody` outside try/catch to prevent "body stream already read" errors
+- **Don't define components inside render** - Define skeleton components and other reusable components outside component body to avoid re-creation on every render
+- **Don't pre-filter arrays instead of table state** - Use TanStack Table filtering/sorting state instead of pre-filtering arrays in render for better performance
+- **Don't use unstable query keys** - Use stable query keys like `["products", params]` and `["products", id]` to avoid unnecessary refetches
+
+### Technology Decisions
+
+**Why React Query over SWR?**
+
+- Better TypeScript support and type inference
+- More comprehensive devtools for debugging
+- More flexible mutation API with better error handling
+- Built-in caching strategies and stale-while-revalidate
+- Better documentation and community adoption
+
+**Why Mongoose over Prisma?**
+
+- Direct MongoDB access with schema validation
+- More flexibility for complex queries and aggregations
+- Lower overhead for simple CRUD operations
+- Better control over database interactions
+- Familiarity with MongoDB ecosystem
+
+**Why Next.js API instead of separate backend?**
+
+- Single codebase reduces deployment complexity
+- Shared types between frontend and backend
+- Serverless-ready with automatic scaling
+- Faster development with unified deployment
+- Leverages Next.js built-in optimizations
+
+**Why integer math instead of float?**
+
+- Avoids floating point precision errors (0.1 + 0.2 !== 0.3)
+- Predictable calculations for financial data
+- Consistent behavior across different environments
+- Easier debugging and testing
+- Standard practice for currency applications
+
+### Boundaries
+
+- **API routes = business logic boundary** - All data validation, transformation, and business rules live in API routes. UI components should only call endpoints and handle responses.
+- **Hooks = data access boundary** - React Query hooks encapsulate all data fetching logic. Components should not directly call fetch or manage loading/error states.
+- **UI = presentation only** - Components should only handle rendering and user interactions. No business logic, no data fetching, no validation.
+
+### Scaling Notes
+
+**When to move to microservices?**
+
+- When team size grows beyond 10-15 developers
+- When different domains have independent scaling needs
+- When deployment cycles need to be decoupled
+- When codebase becomes too large to maintain in monolith
+
+**When Mongo becomes bottleneck?**
+
+- When read/write operations exceed 10k/second
+- When complex aggregations slow down queries
+- When database size exceeds 100GB
+- When response times consistently exceed 500ms
+
+**When to introduce caching layer (Redis)?**
+
+- When API response times are >200ms
+- When same data is read frequently with low write rate
+- When session management needs horizontal scaling
+- When real-time features require pub/sub
 
 ### API Routes
 
@@ -623,10 +695,56 @@ setPage(1)
 
 ### API Routes (Examples)
 
-- Products API:
-  - `app/api/products/route.ts`
-  - `app/api/products/[id]/route.ts`
-  - `app/api/products/search/route.ts`
+**Auth**
+
+- `app/api/auth/login/route.ts` - Admin login
+- `app/api/auth/logout/route.ts` - Admin logout
+- `app/api/auth/me/route.ts` - Get current admin
+
+**Products**
+
+- `app/api/products/route.ts` - List/create products (pagination, filtering)
+- `app/api/products/[id]/route.ts` - Get/update/delete product by ID
+- `app/api/products/search/route.ts` - Search products
+
+**Categories**
+
+- `app/api/categories/route.ts` - List/create categories
+- `app/api/categories/[id]/route.ts` - Get/update/delete category by ID
+
+**Subcategories**
+
+- `app/api/subcategories/route.ts` - List/create subcategories
+- `app/api/subcategories/[id]/route.ts` - Get/update/delete subcategory by ID
+
+**Brands**
+
+- `app/api/brands/route.ts` - List/create brands
+- `app/api/brands/[id]/route.ts` - Get/update/delete brand by ID
+
+**Customers**
+
+- `app/api/customers/route.ts` - List/create customers
+- `app/api/customers/mobile-app-consumer/auth/me/route.ts` - Get current customer
+- `app/api/customers/mobile-app-consumer/auth/verify-customer/route.ts` - Verify customer
+
+**Enquiries**
+
+- `app/api/enquiries/route.ts` - List/create enquiries
+- `app/api/enquiries/[id]/route.ts` - Get/update/delete enquiry by ID
+
+**Newsletter**
+
+- `app/api/newsletter/route.ts` - List/create subscribers
+- `app/api/newsletter/[id]/route.ts` - Get/update/delete subscriber by ID
+
+**Error Logs**
+
+- `app/api/error-logs/route.ts` - Create/list error logs
+
+**Uploads**
+
+- `app/api/uploads/presign/route.ts` - Generate presigned upload URL
 
 ### Suggested Patterns for API Fetching
 
