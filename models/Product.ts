@@ -1,4 +1,6 @@
-import mongoose, { Schema, model, models } from "mongoose"
+// @/models/Products
+
+import { Schema, model, models } from "mongoose"
 
 const ProductSchema = new Schema(
   {
@@ -58,7 +60,7 @@ const ProductSchema = new Schema(
     salePrice: { type: Number, min: 0 }, // Optional: If set, show "Was $100, Now $80"
 
     // --- INVENTORY ---
-    stock: { type: Number, required: true, default: 0, min: 0 },
+    stock: { type: Number, required: true, default: 0, min: 0, index: true }, // Indexed for analytics queries
     status: { type: Boolean, default: true }, // Active/Draft
 
     // --- MEDIA ---
@@ -87,6 +89,16 @@ const ProductSchema = new Schema(
     timestamps: true,
   },
 )
+
+// Compound indexes for analytics query optimization
+// Moved from schema options (indexes: [] is invalid) to Schema.index() calls
+
+// Partial index for active products only - optimizes for real query pattern
+// Since analytics only queries status: true, this reduces index size by excluding inactive products
+// This replaces the compound index (stock, status) to avoid wasted space
+ProductSchema.index({ stock: 1 }, { partialFilterExpression: { status: true } })
+
+// Future: ProductSchema.index({ store: 1, status: 1 }) for multi-tenant analytics
 
 // Prevent Next.js Hot Reload Recompilation Error
 const Product = models.Product || model("Product", ProductSchema)

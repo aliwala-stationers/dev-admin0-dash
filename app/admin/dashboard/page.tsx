@@ -1,3 +1,5 @@
+// @/app/admin/dashboard/page.tsx
+
 "use client"
 
 import { useMemo } from "react"
@@ -41,6 +43,7 @@ import { useBrands } from "@/hooks/api/useBrands"
 import { useSubcategories } from "@/hooks/api/useSubcategories"
 import { useEnquiries } from "@/hooks/api/useEnquiries"
 import { useNewsletter } from "@/hooks/api/useNewsletter"
+import { useProductAnalytics } from "@/hooks/api/useProductAnalytics"
 import { useData } from "@/lib/data-context"
 import { Button } from "@/components/ui/button"
 
@@ -185,6 +188,7 @@ export default function DashboardPage() {
   const { data: enquiries = [], isLoading: eLoading } = useEnquiries()
   const { data: newsletterSubscribers = [], isLoading: nLoading } =
     useNewsletter()
+  const { data: analytics, isLoading: aLoading } = useProductAnalytics()
   const { orders, customers, payments } = useData()
 
   // Ensure all data arrays are actually arrays (safety for API errors)
@@ -201,18 +205,12 @@ export default function DashboardPage() {
 
   // 2. Calculate Real Metrics
   const inventoryData = useMemo(() => {
-    const totalValue = productsArray.reduce(
-      (sum, p) => sum + (p.price || 0) * (p.stock || 0),
-      0,
-    )
-    const lowStockCount = productsArray.filter(
-      (p) => (p.stock || 0) < 10,
-    ).length
-    const outOfStockCount = productsArray.filter(
-      (p) => (p.stock || 0) === 0,
-    ).length
+    // Use analytics from dedicated endpoint (full dataset)
+    const totalValue = analytics?.totalInventoryValue || 0
+    const lowStockCount = analytics?.lowStockCount || 0
+    const outOfStockCount = analytics?.outOfStockCount || 0
 
-    // Sort products by newest first for "Recent" list
+    // Sort products by newest first for "Recent" list (still uses loaded data for display)
     const recent = [...productsArray]
       .sort(
         (a, b) =>
@@ -221,7 +219,7 @@ export default function DashboardPage() {
       .slice(0, 5)
 
     return { totalValue, lowStockCount, outOfStockCount, recent }
-  }, [productsArray])
+  }, [analytics, productsArray])
 
   // 3. Real Data Metrics
   const dashboardStats = useMemo(() => {
@@ -242,7 +240,15 @@ export default function DashboardPage() {
 
   // Show skeleton if any API is still loading initially
   // This ensures smooth UX during data fetch
-  if (pLoading || cLoading || bLoading || sLoading || eLoading || nLoading) {
+  if (
+    pLoading ||
+    cLoading ||
+    bLoading ||
+    sLoading ||
+    eLoading ||
+    nLoading ||
+    aLoading
+  ) {
     return <DashboardSkeleton />
   }
 
@@ -269,7 +275,7 @@ export default function DashboardPage() {
     },
     {
       title: "Total Products",
-      value: productsArray.length.toString(),
+      value: analytics?.totalProducts?.toString() || "0",
       change: `${inventoryData.lowStockCount} Low Stock`, // Showing actionable data
       trend: inventoryData.lowStockCount > 0 ? "down" : ("up" as const), // Red trend if low stock
       icon: Package,
