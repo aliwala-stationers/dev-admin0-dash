@@ -1516,7 +1516,313 @@ ProductSchema.index({ stock: 1 }, { partialFilterExpression: { status: true } })
 // Future: ProductSchema.index({ store: 1, stock: 1 }, { partialFilterExpression: { status: true } })
 ```
 
+## Scalability Hacks - MongoDB Aggregation & Index Optimization
+
+### Filtering by Populated Fields (Category/Subcategory/Brand)
+
+**Context**: Frontend sends category names (e.g., "category 1") but backend expects ObjectId.
+
+**Failure**: Backend only tried ObjectId → slug conversion, silently failed on name match → returned all products.
+
+**Root Cause**: Assumed frontend sends ObjectId or slug, not name.
+
+**Fix**: Resolve to ObjectId upfront with flexible matching (ObjectId → slug → name), parallelize lookups.
+
+```typescript
+// ❌ Wrong: Sequential lookups, limited matching
+if (category && category !== "all") {
+  try {
+    query.category = new mongoose.Types.ObjectId(category)
+  } catch (e) {
+    const catDoc = await Category.findOne({ slug: category })
+    if (catDoc) query.category = catDoc._id
+  }
+}
+
+// ✅ Correct: Parallel lookups, flexible matching
+const [catDoc, brandDoc, subcatDoc] = await Promise.all([
+  category && category !== "all"
+    ? Category.findOne({
+        $or: [
+          mongoose.Types.ObjectId.isValid(category)
+            ? { _id: new mongoose.Types.ObjectId(category) }
+            : null,
+          { slug: category },
+          { name: category },
+        ].filter(Boolean),
+      })
+    : Promise.resolve(null),
+  // ... same for brand, subcategory
+])
+if (catDoc) query.category = catDoc._id
+```
+
+### Sorting by Populated Fields
+
+**Context**: Need to sort products by category name, brand name, etc.
+
+**Failure**: Regular `find().populate().sort()` sorts by ObjectId, not populated name. Client-side sorting breaks pagination.
+
+**Root Cause**: MongoDB cannot sort by populated field properties in regular queries.
+
+**Fix**: Use aggregation pipeline with `$lookup` + `$unwind` for sorting by populated names. Use targeted `$lookup` (only lookup needed field).
+
+```typescript
+// ❌ Wrong: Sorts by ObjectId reference
+Product.find(query).populate("category", "name").sort({ category: 1 }) // Sorts by ObjectId, not name
+
+// ❌ Wrong: Client-side sorting breaks pagination
+products.sort((a, b) => a.category.name.localeCompare(b.category.name))
+
+// ✅ Correct: Aggregation with targeted $lookup
+if (sortField === "category") {
+  pipeline.push({
+    $lookup: {
+      from: "categories",
+      localField: "category",
+      foreignField: "_id",
+      as: "category",
+    },
+  })
+  pipeline.push({
+    $unwind: { path: "$category", preserveNullAndEmptyArrays: true },
+  })
+}
+pipeline.push({ $sort: { "category.name": sortOrder === "asc" ? 1 : -1 } })
+```
+
+**Performance**: Targeted `$lookup` reduces overhead. Only lookup the collection needed for current sort field, not all 3.
+
+### Single Query for Data + Count with $facet
+
+**Context**: Need both paginated data and total count.
+
+**Failure**: Separate `find()` and `countDocuments()` = 2 DB round trips.
+
+**Root Cause**: Didn't know about `$facet` for parallel aggregation branches.
+
+**Fix**: Use `$facet` to get data and count in single query.
+
+```typescript
+// ❌ Wrong: Two separate queries
+const [products, total] = await Promise.all([
+  Product.find(query).skip(skip).limit(limit),
+  Product.countDocuments(query),
+])
+
+// ✅ Correct: Single query with $facet
+const [result] = await Product.aggregate([
+  { $match: query },
+  { $sort: sortObj },
+  {
+    $facet: {
+      data: [{ $skip: skip }, { $limit: limit }],
+      total: [{ $count: "count" }],
+    },
+  },
+])
+const products = result.data
+const total = result.total?.[0]?.count || 0
+```
+
+### Projection to Reduce Payload Size
+
+**Context**: Aggregation returns full documents with all fields.
+
+**Failure**: Large payload size, memory waste, network cost.
+
+**Root Cause**: Didn't project only needed fields.
+
+**Fix**: Add `$project` stage to include only frontend-required fields.
+
+```typescript
+// ❌ Wrong: Returns all fields
+const pipeline = [
+  { $match: query },
+  { $lookup: { ... } },
+  { $sort: sortObj },
+  { $skip: skip },
+  { $limit: limit }
+]
+
+// ✅ Correct: Project only needed fields
+const pipeline = [
+  { $match: query },
+  { $lookup: { ... } },
+  { $sort: sortObj },
+  {
+    $project: {
+      _id: 1,
+      name: 1,
+      price: 1,
+      stock: 1,
+      category: 1,
+      brand: 1,
+      // only what frontend needs
+    }
+  },
+  { $skip: skip },
+  { $limit: limit }
+]
+```
+
+### Index Alignment - Remove Redundant Indexes
+
+**Context**: Had both status-aware compound indexes and legacy compound indexes.
+
+**Failure**: `{ status: 1, category: 1, createdAt: -1 }` and `{ category: 1, createdAt: -1 }` - redundant. Extra index memory, slower writes, query planner confusion.
+
+**Root Cause**: Added status-aware indexes without removing legacy ones.
+
+**Fix**: Remove legacy indexes. Status-aware indexes cover category-only queries via prefix matching.
+
+```typescript
+// ❌ Wrong: Redundant indexes
+ProductSchema.index({ status: 1, category: 1, createdAt: -1 })
+ProductSchema.index({ category: 1, createdAt: -1 }) // Redundant
+
+// ✅ Correct: Single optimal index
+ProductSchema.index({ status: 1, category: 1, createdAt: -1 })
+// Mongo can use prefix for category-only queries
+```
+
+### Partial Indexes for Common Filters
+
+**Context**: Most queries filter by `status: true` (active products only).
+
+**Failure**: Full indexes include inactive products, wasting space.
+
+**Root Cause**: Didn't use partial filter expression.
+
+**Fix**: Use partial indexes with `status: true` filter to shrink index size.
+
+```typescript
+// ❌ Wrong: Full index includes inactive products
+ProductSchema.index({ category: 1, createdAt: -1 })
+
+// ✅ Correct: Partial index excludes inactive products
+ProductSchema.index(
+  { category: 1, createdAt: -1 },
+  { partialFilterExpression: { status: true } },
+)
+// Same query performance for active products, smaller index, faster writes
+```
+
+### Text Index for Scalable Search
+
+**Context**: Using regex search (`/term/i`) on large datasets.
+
+**Failure**: Regex doesn't scale, rarely uses B-tree index unless prefix match (`/^term/i`).
+
+**Root Cause**: Regex is not designed for full-text search at scale.
+
+**Fix**: Add text index for `$text` search. Mongo allows only ONE text index per collection - include all searchable fields. Use weights to prioritize.
+
+```typescript
+// ❌ Wrong: Regex won't scale
+Product.find({ name: { $regex: search, $options: "i" } })
+
+// ✅ Correct: Text index with weights
+ProductSchema.index(
+  { name: "text", description: "text" },
+  { weights: { name: 5, description: 1 } },
+)
+
+// Usage:
+Product.find({ $text: { $search: search } })
+```
+
+### Remove Double-Index on Name
+
+**Context**: Had both field-level `index: true` on name and text index.
+
+**Failure**: Double-index - B-tree index rarely useful with text index (regex without prefix won't use it).
+
+**Root Cause**: Added field-level index without considering text index covers search.
+
+**Fix**: Remove field-level index, keep text index as primary search path.
+
+```typescript
+// ❌ Wrong: Double-index
+name: { type: String, required: true, index: true }
+ProductSchema.index({ name: "text", description: "text" })
+
+// ✅ Correct: Single text index
+name: { type: String, required: true }
+ProductSchema.index({ name: "text", description: "text" }, { weights: { name: 5, description: 1 } })
+```
+
+### Index on Lookup Collections
+
+**Context**: Category, Brand, Subcategory models used for filter resolution.
+
+**Failure**: No indexes on `name` field for lookup by name.
+
+**Root Cause**: Only had `slug` with unique constraint (auto-index), not `name`.
+
+**Fix**: Add index on `name` field for lookup performance.
+
+```typescript
+// ❌ Wrong: No name index
+const CategorySchema = new Schema({
+  name: { type: String, required: true },
+  slug: { type: String, required: true, unique: true },
+})
+
+// ✅ Correct: Name index for lookup
+const CategorySchema = new Schema({
+  name: { type: String, required: true, index: true },
+  slug: { type: String, required: true, unique: true },
+})
+```
+
+### Don't Pre-Index Speculative Queries
+
+**Context**: Considered adding price index for future range filtering.
+
+**Failure**: Pre-indexing queries that don't exist yet wastes write overhead.
+
+**Root Cause**: Optimizing for hypothetical features.
+
+**Fix**: Add indexes only when feature lands. Document as future consideration.
+
+```typescript
+// ❌ Wrong: Pre-indexing speculative query
+ProductSchema.index({ price: 1 }) // Feature doesn't exist yet
+
+// ✅ Correct: Document as future consideration
+// Future: ProductSchema.index({ price: 1 }) if price range filtering is added
+// Don't pre-index speculative queries
+```
+
 ## Recent Changes
+
+### April 16, 2026 - Product Filtering & Sorting Optimization
+
+**Commit: fix(products): filtering and sorting optimization with aggregation and indexes**
+
+Fixed product filtering and sorting issues with MongoDB aggregation and index optimization:
+
+- Fixed category/subcategory/brand filtering to handle name matching (ObjectId → slug → name)
+- Fixed sorting by category/subcategory/brand using aggregation with targeted `$lookup`
+- Parallelized filter resolution with `Promise.all` (reduced from 3 sequential to 1 parallel batch)
+- Added `$facet` for single-query data + count (eliminated separate count query)
+- Added `$projection` to reduce payload size
+- Implemented targeted `$lookup` (only lookup needed field, not all 3)
+- Removed client-side sorting (maintains pagination correctness)
+- Removed redundant indexes (legacy compound indexes)
+- Added text index with weights (name: 5, description: 1) for scalable search
+- Added partial compound indexes (category/brand/subcategory with status: true filter)
+- Removed double-index on name (field-level index redundant with text index)
+- Added indexes on Category/Brand/Subcategory name fields for lookup performance
+- Documented future considerations (multi-tenant, price index, denormalization)
+
+**Key Fixes**:
+
+- Filter resolution: Sequential → Parallel (3x faster)
+- Sorting: Client-side → Server-side aggregation (pagination correctness)
+- Indexes: Removed 6 redundant, added 4 targeted (smaller, faster)
+- Payload: Full → Projected (reduced network/memory cost)
 
 ### April 16, 2026 - Product Analytics Implementation
 

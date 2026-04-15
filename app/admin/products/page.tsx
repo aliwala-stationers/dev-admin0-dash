@@ -58,6 +58,7 @@ import Link from "next/link"
 import { useInfiniteProducts, useDeleteProduct } from "@/hooks/api/useProducts"
 import { useSubcategories } from "@/hooks/api/useSubcategories"
 import { useBrands } from "@/hooks/api/useBrands"
+import { useProductAnalytics } from "@/hooks/api/useProductAnalytics"
 import { useDebounce } from "@/hooks/useDebounce"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/utils"
@@ -173,6 +174,7 @@ export default function ProductsPage() {
   const deleteMutation = useDeleteProduct()
   const { data: subcategories = [] } = useSubcategories()
   const { data: brands = [] } = useBrands()
+  const { data: analytics, isLoading: analyticsLoading } = useProductAnalytics()
 
   // Flatten all pages for table display
   const products = useMemo(
@@ -486,7 +488,7 @@ export default function ProductsPage() {
         </Button>
       </div>
 
-      {isLoading ? (
+      {isLoading || analyticsLoading ? (
         <AnalyticsCardsSkeleton />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -498,9 +500,59 @@ export default function ProductsPage() {
               <Package className="h-4 w-4 text-accent-blue" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{pagination.total}</div>
+              <div className="text-2xl font-bold">
+                {analytics?.totalProducts || 0}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Unique items in catalog
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Inventory Value
+              </CardTitle>
+              <IndianRupee className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(analytics?.totalInventoryValue || 0)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Cost basis (full dataset)
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Low Stock
+              </CardTitle>
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {analytics?.lowStockCount || 0}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Items below threshold
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Out of Stock
+              </CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {analytics?.outOfStockCount || 0}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Zero stock items
               </p>
             </CardContent>
           </Card>

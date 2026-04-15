@@ -2,8 +2,8 @@ import { Schema, model, models } from "mongoose"
 
 const SubcategorySchema = new Schema(
   {
-    name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true },
+    name: { type: String, required: true, index: true }, // Index for lookup performance
+    slug: { type: String, required: true, unique: true }, // unique creates index automatically
     description: { type: String },
     status: { type: Boolean, default: true },
     image: { type: String }, // URL from R2

@@ -95,10 +95,44 @@ const ProductSchema = new Schema(
 
 // Partial index for active products only - optimizes for real query pattern
 // Since analytics only queries status: true, this reduces index size by excluding inactive products
-// This replaces the compound index (stock, status) to avoid wasted space
 ProductSchema.index({ stock: 1 }, { partialFilterExpression: { status: true } })
 
-// Future: ProductSchema.index({ store: 1, status: 1 }) for multi-tenant analytics
+// Text index for future-proof search - enables $text search instead of regex
+// Regex won't scale at large datasets
+// Mongo allows only ONE text index per collection, so we include all searchable fields here
+// Weights prioritize name over description (5:1) for better search relevance
+ProductSchema.index(
+  { name: "text", description: "text" },
+  { weights: { name: 5, description: 1 } },
+)
+
+// Featured index - for homepage highlights
+ProductSchema.index({ isFeatured: 1, createdAt: -1 })
+
+// Status-aware partial compound indexes - optimizes real query pattern (status: true + filter + sort)
+// Most queries are: status: true + category/brand/subcategory + createdAt
+// Partial filter shrinks index size by excluding inactive products
+ProductSchema.index(
+  { category: 1, createdAt: -1 },
+  { partialFilterExpression: { status: true } },
+)
+ProductSchema.index(
+  { brand: 1, createdAt: -1 },
+  { partialFilterExpression: { status: true } },
+)
+ProductSchema.index(
+  { subcategory: 1, createdAt: -1 },
+  { partialFilterExpression: { status: true } },
+)
+
+// Future multi-tenant considerations:
+// ProductSchema.index({ store: 1, status: 1 }) for multi-tenant analytics
+// ProductSchema.index({ store: 1, sku: 1 }, { unique: true }) for multi-tenant SKU uniqueness
+// ProductSchema.index({ price: 1 }) if price range filtering is added (don't pre-index speculative queries)
+
+// Future denormalization consideration:
+// For heavy read scenarios, consider adding categoryName, brandName fields
+// This avoids $lookup in aggregation and improves performance
 
 // Prevent Next.js Hot Reload Recompilation Error
 const Product = models.Product || model("Product", ProductSchema)

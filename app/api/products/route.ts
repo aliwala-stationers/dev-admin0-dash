@@ -100,6 +100,10 @@ export async function GET(req: NextRequest) {
      */
     const query: any = {}
 
+    // Enforce status: true for partial indexes to work
+    // Partial indexes only work when status: true is included in query
+    query.status = true
+
     // Search by name, SKU, category name, subcategory name, or brand name
     if (search) {
       const searchRegex = { $regex: search, $options: "i" }
@@ -127,60 +131,199 @@ export async function GET(req: NextRequest) {
       ]
     }
 
-    // Filter by category (convert string to ObjectId)
-    if (category && category !== "all") {
-      try {
-        query.category = new mongoose.Types.ObjectId(category)
-      } catch (e) {
-        // If invalid ObjectId, try to find by slug instead
-        const catDoc = await Category.findOne({ slug: category })
-        if (catDoc) {
-          query.category = catDoc._id
-        }
-      }
-    }
+    // Resolve category/subcategory/brand to ObjectId (parallelized for performance)
+    let categoryId: mongoose.Types.ObjectId | undefined
+    let subcategoryId: mongoose.Types.ObjectId | undefined
+    let brandId: mongoose.Types.ObjectId | undefined
 
-    // Filter by subcategory (convert string to ObjectId)
-    if (subcategory && subcategory !== "all") {
-      try {
-        query.subcategory = new mongoose.Types.ObjectId(subcategory)
-      } catch (e) {
-        // If invalid ObjectId, try to find by slug instead
-        const subcatDoc = await Subcategory.findOne({ slug: subcategory })
-        if (subcatDoc) {
-          query.subcategory = subcatDoc._id
-        }
-      }
-    }
-
-    // Filter by brand (convert string to ObjectId)
-    if (brand && brand !== "all") {
-      try {
-        query.brand = new mongoose.Types.ObjectId(brand)
-      } catch (e) {
-        // If invalid ObjectId, try to find by slug instead
-        const brandDoc = await Brand.findOne({ slug: brand })
-        if (brandDoc) {
-          query.brand = brandDoc._id
-        }
-      }
-    }
-
-    // Build sort object
-    const sortObj: any = {}
-    sortObj[sortField] = sortOrder === "asc" ? 1 : -1
-
-    const [products, total] = await Promise.all([
-      Product.find(query)
-        .populate("category", "name")
-        .populate("brand", "name logo")
-        .populate("subcategory", "name")
-        .sort(sortObj)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Product.countDocuments(query),
+    const [catDoc, subcatDoc, brandDoc] = await Promise.all([
+      category && category !== "all"
+        ? (() => {
+            const orConditions: any[] = []
+            if (mongoose.Types.ObjectId.isValid(category)) {
+              orConditions.push({
+                _id: new mongoose.Types.ObjectId(category),
+              })
+            }
+            orConditions.push({ slug: category })
+            orConditions.push({ name: category })
+            return Category.findOne({ $or: orConditions })
+          })()
+        : Promise.resolve(null),
+      subcategory && subcategory !== "all"
+        ? (() => {
+            const orConditions: any[] = []
+            if (mongoose.Types.ObjectId.isValid(subcategory)) {
+              orConditions.push({
+                _id: new mongoose.Types.ObjectId(subcategory),
+              })
+            }
+            orConditions.push({ slug: subcategory })
+            orConditions.push({ name: subcategory })
+            return Subcategory.findOne({ $or: orConditions })
+          })()
+        : Promise.resolve(null),
+      brand && brand !== "all"
+        ? (() => {
+            const orConditions: any[] = []
+            if (mongoose.Types.ObjectId.isValid(brand)) {
+              orConditions.push({
+                _id: new mongoose.Types.ObjectId(brand),
+              })
+            }
+            orConditions.push({ slug: brand })
+            orConditions.push({ name: brand })
+            return Brand.findOne({ $or: orConditions })
+          })()
+        : Promise.resolve(null),
     ])
+
+    if (catDoc) categoryId = catDoc._id
+    if (subcatDoc) subcategoryId = subcatDoc._id
+    if (brandDoc) brandId = brandDoc._id
+
+    // Build query with resolved ObjectIds
+    if (categoryId) query.category = categoryId
+    if (subcategoryId) query.subcategory = subcategoryId
+    if (brandId) query.brand = brandId
+
+    // Use aggregation pipeline for sorting by populated fields
+    const needsAggregation =
+      sortField === "category" ||
+      sortField === "subcategory" ||
+      sortField === "brand"
+
+    let products: any[]
+    let total: number
+
+    if (needsAggregation) {
+      // Build sort object for aggregation
+      const sortObj: any = {}
+      sortObj[`${sortField}.name`] = sortOrder === "asc" ? 1 : -1
+
+      // Build targeted aggregation pipeline - only lookup what's needed
+      const pipeline: any[] = [{ $match: query }]
+
+      // Only add lookup for the field being sorted
+      if (sortField === "category") {
+        pipeline.push({
+          $lookup: {
+            from: "categories",
+            localField: "category",
+            foreignField: "_id",
+            as: "category",
+          },
+        })
+        pipeline.push({
+          $unwind: {
+            path: "$category",
+            preserveNullAndEmptyArrays: true,
+          },
+        })
+      }
+
+      if (sortField === "brand") {
+        pipeline.push({
+          $lookup: {
+            from: "brands",
+            localField: "brand",
+            foreignField: "_id",
+            as: "brand",
+          },
+        })
+        pipeline.push({
+          $unwind: {
+            path: "$brand",
+            preserveNullAndEmptyArrays: true,
+          },
+        })
+      }
+
+      if (sortField === "subcategory") {
+        pipeline.push({
+          $lookup: {
+            from: "subcategories",
+            localField: "subcategory",
+            foreignField: "_id",
+            as: "subcategory",
+          },
+        })
+        pipeline.push({
+          $unwind: {
+            path: "$subcategory",
+            preserveNullAndEmptyArrays: true,
+          },
+        })
+      }
+
+      pipeline.push({ $sort: sortObj })
+
+      // Add projection to reduce payload size - only include fields needed by frontend
+      pipeline.push({
+        $project: {
+          _id: 1,
+          name: 1,
+          slug: 1,
+          sku: 1,
+          description: 1,
+          b2cPrice: 1,
+          price: 1,
+          costPrice: 1,
+          salePrice: 1,
+          mrp: 1,
+          b2bPrice: 1,
+          b2bMinQty: 1,
+          hsn: 1,
+          tax: 1,
+          upc: 1,
+          barcode: 1,
+          stock: 1,
+          status: 1,
+          images: 1,
+          videoUrl: 1,
+          specs: 1,
+          isFeatured: 1,
+          category: 1,
+          brand: 1,
+          subcategory: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      })
+
+      // Use $facet to get both data and total count in single query
+      const facetPipeline = [
+        ...pipeline,
+        {
+          $facet: {
+            data: [{ $skip: skip }, { $limit: limit }],
+            total: [{ $count: "count" }],
+          },
+        },
+      ]
+
+      const [result] = await Product.aggregate(facetPipeline).exec()
+      products = result.data || []
+      total = result.total?.[0]?.count || 0
+    } else {
+      // Regular find for non-populated field sorting (more efficient)
+      const sortObj: any = {}
+      sortObj[sortField] = sortOrder === "asc" ? 1 : -1
+
+      const [productsResult, totalCount] = await Promise.all([
+        Product.find(query)
+          .populate("category", "name")
+          .populate("brand", "name logo")
+          .populate("subcategory", "name")
+          .sort(sortObj)
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Product.countDocuments(query),
+      ])
+      products = productsResult
+      total = totalCount
+    }
 
     return NextResponse.json({
       success: true,
