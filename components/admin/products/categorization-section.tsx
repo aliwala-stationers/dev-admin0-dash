@@ -30,6 +30,8 @@ import { Switch } from "@/components/ui/switch"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./product-schema"
 import { CategoryDrawer } from "./category-drawer"
+import { SubcategoryDrawer } from "./subcategory-drawer"
+import { BrandDrawer } from "./brand-drawer"
 import {
   Building2,
   Tag,
@@ -155,13 +157,24 @@ export function SubcategoryField({
   form,
   subcategories,
   selectedCategoryId,
+  categories,
   useValue = false,
 }: {
   form: UseFormReturn<ProductFormValues>
   subcategories: any[]
   selectedCategoryId?: string
+  categories: any[]
   useValue?: boolean
 }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+
+  const handleSubcategoryCreated = (subcategoryId: string) => {
+    if (subcategoryId) {
+      form.setValue("subcategory", subcategoryId, { shouldValidate: true })
+    }
+  }
+
   // Filter subcategories by selected category
   const filteredSubcategories = selectedCategoryId
     ? subcategories.filter(
@@ -171,6 +184,14 @@ export function SubcategoryField({
             : sub.category) === selectedCategoryId,
       )
     : subcategories
+
+  const filteredBySearch = filteredSubcategories.filter((sub) =>
+    sub.name.toLowerCase().includes(search.toLowerCase()),
+  )
+
+  const selectedSubcategory = subcategories.find(
+    (sub) => (sub._id || sub.id) === form.watch("subcategory"),
+  )
 
   return (
     <FormField
@@ -185,47 +206,95 @@ export function SubcategoryField({
               (Optional)
             </span>
           </FormLabel>
-          <Select
-            onValueChange={(value) => {
-              field.onChange(value)
-              // Auto-select parent category when subcategory is chosen
-              if (value && value !== "none" && value !== "") {
-                const selectedSub = subcategories.find(
-                  (sub) => (sub._id || sub.id) === value,
-                )
-                if (selectedSub && selectedSub.category) {
-                  const categoryId =
-                    typeof selectedSub.category === "object"
-                      ? selectedSub.category._id || selectedSub.category.id
-                      : selectedSub.category
-                  if (categoryId) {
-                    form.setValue("category", categoryId, {
-                      shouldValidate: true,
-                    })
-                  }
-                }
-              }
-            }}
-            value={useValue ? field.value : undefined}
-            defaultValue={useValue ? undefined : field.value}
-          >
-            <FormControl>
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Select subcategory" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value={useValue ? "" : "none"}>None</SelectItem>
-              {filteredSubcategories.map((sub) => (
-                <SelectItem
-                  key={sub._id || sub.id}
-                  value={sub._id || sub.id || ""}
-                >
-                  {sub.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <FormControl>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="h-10 flex-1 justify-between"
+                  >
+                    {selectedSubcategory
+                      ? selectedSubcategory.name
+                      : "Select subcategory"}
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </FormControl>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0">
+                <Command>
+                  <CommandInput
+                    placeholder="Search subcategory..."
+                    value={search}
+                    onValueChange={setSearch}
+                  />
+                  <CommandList>
+                    <CommandEmpty>No subcategory found.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="none"
+                        onSelect={() => {
+                          form.setValue("subcategory", "", {
+                            shouldValidate: true,
+                          })
+                          setOpen(false)
+                          setSearch("")
+                        }}
+                      >
+                        <Check
+                          className={`mr-2 h-4 w-4 ${
+                            !field.value ? "opacity-100" : "opacity-0"
+                          }`}
+                        />
+                        None
+                      </CommandItem>
+                      {filteredBySearch.map((sub) => (
+                        <CommandItem
+                          key={sub._id || sub.id}
+                          value={sub.name}
+                          onSelect={() => {
+                            form.setValue("subcategory", sub._id || sub.id, {
+                              shouldValidate: true,
+                            })
+                            // Auto-select parent category when subcategory is chosen
+                            if (sub.category) {
+                              const categoryId =
+                                typeof sub.category === "object"
+                                  ? sub.category._id || sub.category.id
+                                  : sub.category
+                              if (categoryId) {
+                                form.setValue("category", categoryId, {
+                                  shouldValidate: true,
+                                })
+                              }
+                            }
+                            setOpen(false)
+                            setSearch("")
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              (sub._id || sub.id) === field.value
+                                ? "opacity-100"
+                                : "opacity-0"
+                            }`}
+                          />
+                          {sub.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <SubcategoryDrawer
+              onSubcategoryCreated={handleSubcategoryCreated}
+              selectedCategoryId={selectedCategoryId}
+              categories={categories}
+            />
+          </div>
           <FormMessage />
         </FormItem>
       )}
@@ -242,6 +311,23 @@ export function BrandField({
   brands: any[]
   useValue?: boolean
 }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+
+  const handleBrandCreated = (brandId: string) => {
+    if (brandId) {
+      form.setValue("brand", brandId, { shouldValidate: true })
+    }
+  }
+
+  const filteredBrands = brands.filter((brand) =>
+    brand.name.toLowerCase().includes(search.toLowerCase()),
+  )
+
+  const selectedBrand = brands.find(
+    (brand) => (brand._id || brand.id) === form.watch("brand"),
+  )
+
   return (
     <FormField
       control={form.control}
@@ -252,27 +338,60 @@ export function BrandField({
             <Building2 className="h-4 w-4 text-muted-foreground" />
             Brand
           </FormLabel>
-          <Select
-            onValueChange={field.onChange}
-            value={useValue ? field.value : undefined}
-            defaultValue={useValue ? undefined : field.value}
-          >
-            <FormControl>
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Select brand" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {brands.map((brand) => (
-                <SelectItem
-                  key={brand._id || brand.id}
-                  value={brand._id || brand.id || ""}
-                >
-                  {brand.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex gap-2">
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <FormControl>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="h-10 flex-1 justify-between"
+                  >
+                    {selectedBrand ? selectedBrand.name : "Select brand"}
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </FormControl>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0">
+                <Command>
+                  <CommandInput
+                    placeholder="Search brand..."
+                    value={search}
+                    onValueChange={setSearch}
+                  />
+                  <CommandList>
+                    <CommandEmpty>No brand found.</CommandEmpty>
+                    <CommandGroup>
+                      {filteredBrands.map((brand) => (
+                        <CommandItem
+                          key={brand._id || brand.id}
+                          value={brand.name}
+                          onSelect={() => {
+                            form.setValue("brand", brand._id || brand.id, {
+                              shouldValidate: true,
+                            })
+                            setOpen(false)
+                            setSearch("")
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              (brand._id || brand.id) === field.value
+                                ? "opacity-100"
+                                : "opacity-0"
+                            }`}
+                          />
+                          {brand.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <BrandDrawer onBrandCreated={handleBrandCreated} />
+          </div>
           <FormMessage />
         </FormItem>
       )}
@@ -354,6 +473,7 @@ export function CategorizationSection({
         form={form}
         subcategories={subcategories}
         selectedCategoryId={selectedCategoryId}
+        categories={categories}
         useValue={useValue}
       />
       <BrandField form={form} brands={brands} useValue={useValue} />
