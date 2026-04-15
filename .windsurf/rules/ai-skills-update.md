@@ -1,6 +1,10 @@
+<!-- ai-skills-update.md -->
+
 ---
+
 trigger: model_decision
-description: Suggest invoking update-ai-skills when meaningful engineering insights emerge
+description: Suggest invoking update-ai-skills when meaningful engineering insights or failures emerge
+
 ---
 
 <ai_skills_update_rule>
@@ -15,8 +19,13 @@ Suggest ONLY if BOTH are true:
    - architecture decision
    - debugging / issue resolution
 
-2. Outcome contains:
+2. Outcome contains CLEAR and REUSABLE value:
    - reusable, non-obvious, or generalizable insight
+   - clearly understood failure with root cause
+
+Otherwise:
+
+- Do NOT suggest update
 
 ---
 
@@ -30,18 +39,26 @@ Valid insights include:
 - performance or scalability improvements
 - non-trivial implementation techniques
 
+Valid failures include:
+
+- bugs with identified root cause
+- incorrect assumptions leading to issues
+- edge cases discovered during implementation
+- performance bottlenecks with explanation
+
 DO NOT include:
 
 - trivial fixes
 - obvious or self-explanatory code
 - duplicate or already documented patterns
+- failures without clear root cause
 
 ---
 
 ## Behavior Rules
 
 - NEVER update `ai-skills.md` automatically
-- ONLY suggest invocation using:
+- ONLY suggest using:
 
   "Do you want me to extract this into ai-skills.md?"
 
@@ -56,7 +73,7 @@ DO NOT include:
 ## Output Handling
 
 - Do NOT manually generate the entry in this rule
-- Delegate ALL formatting and extraction to the skill:
+- Delegate ALL extraction and formatting to:
   → `@update-ai-skills`
 
 ---
@@ -67,7 +84,7 @@ Before suggesting:
 
 - Check if similar concept already exists
 - If yes:
-  - prefer refining existing entry instead of creating a new one
+  - refine or extend instead of creating a new entry
 - Avoid semantic duplicates
 
 ---
@@ -79,12 +96,14 @@ Before suggesting:
   - qualification criteria are satisfied
 
 - Otherwise:
-  - DO NOT mention `ai-skills.md`
+  - do nothing
 
 ---
 
 ## Quality Principle
 
 - Prefer fewer, high-quality entries over frequent low-value updates
+- Prioritize insights with strong reuse potential
+- Capture failures ONLY when root cause is clearly understood
 
 </ai_skills_update_rule>
