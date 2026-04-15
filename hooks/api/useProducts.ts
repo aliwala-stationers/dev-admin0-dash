@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query"
 import { toast } from "sonner"
 
 // Helper function to log errors to API
@@ -69,10 +74,21 @@ export interface ProductsParams {
   category?: string
   subcategory?: string
   brand?: string
+  sortField?: string
+  sortOrder?: "asc" | "desc"
 }
 
 export const useProducts = (params: ProductsParams = {}) => {
-  const { page = 1, limit = 20, search, category, subcategory, brand } = params
+  const {
+    page = 1,
+    limit = 20,
+    search,
+    category,
+    subcategory,
+    brand,
+    sortField = "createdAt",
+    sortOrder = "desc",
+  } = params
 
   const queryParams = new URLSearchParams()
   queryParams.append("page", page.toString())
@@ -82,6 +98,8 @@ export const useProducts = (params: ProductsParams = {}) => {
   if (subcategory && subcategory !== "all")
     queryParams.append("subcategory", subcategory)
   if (brand && brand !== "all") queryParams.append("brand", brand)
+  queryParams.append("sortField", sortField)
+  queryParams.append("sortOrder", sortOrder)
 
   return useQuery({
     queryKey: ["products", params],
@@ -95,6 +113,57 @@ export const useProducts = (params: ProductsParams = {}) => {
       }
     },
     retry: false,
+  })
+}
+
+// 6. FETCH PRODUCTS WITH INFINITE SCROLL (LAZY LOADING)
+export const useInfiniteProducts = (
+  params: Omit<ProductsParams, "page"> = {},
+) => {
+  const {
+    limit = 20,
+    search,
+    category,
+    subcategory,
+    brand,
+    sortField = "createdAt",
+    sortOrder = "desc",
+  } = params
+
+  return useInfiniteQuery({
+    queryKey: ["products-infinite", params],
+    queryFn: async ({ pageParam = 1 }) => {
+      const queryParams = new URLSearchParams()
+      queryParams.append("page", pageParam.toString())
+      queryParams.append("limit", limit.toString())
+      if (search) queryParams.append("search", search)
+      if (category && category !== "all")
+        queryParams.append("category", category)
+      if (subcategory && subcategory !== "all")
+        queryParams.append("subcategory", subcategory)
+      if (brand && brand !== "all") queryParams.append("brand", brand)
+      queryParams.append("sortField", sortField)
+      queryParams.append("sortOrder", sortOrder)
+
+      const res = await fetch(`/api/products?${queryParams.toString()}`)
+      if (!res.ok) throw new Error("Failed to fetch products")
+      const json = await res.json()
+      return {
+        data: json.data || [],
+        pagination: json.pagination || {
+          total: 0,
+          page: pageParam,
+          limit,
+          pages: 0,
+        },
+        nextPage:
+          json.pagination?.pages > pageParam ? pageParam + 1 : undefined,
+      }
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    retry: false,
+    placeholderData: (previousData) => previousData, // Keep previous data visible during loading to prevent flicker
   })
 }
 

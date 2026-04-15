@@ -910,6 +910,97 @@ return <ActualContent data={data} />
 - `logError()` helper in `hooks/api/useProducts.ts`
 - Logs to `/api/error-logs` endpoint
 - Categorizes errors as duplicate vs server
+
+### TanStack Table Infinite Scroll Patterns
+
+**Query Key Completeness**
+
+- Use `queryKey: ["products-infinite", params]` to include all API params
+- React Query automatically refetches when params change
+- Manual `invalidateQueries` is redundant and causes race conditions
+- Prevents cache collisions and stale data reuse
+
+**IntersectionObserver Race Prevention**
+
+- Add guard `isFetchingRef` to prevent duplicate `fetchNextPage` calls during rapid scrolling
+- Use `.catch()` before `.finally()` to ensure guard resets even if request fails or component unmounts
+- Prevents silent lock or inconsistent state
+- Use `observerRef` to track observer instance and prevent recreation on every render
+
+**API Contract Cleanliness**
+
+- Convert UI-specific values (e.g., "all") to empty strings before backend call
+- Prevents magic values leaking to API
+- Maintains stable, minimal query params
+
+**Analytics Data Consistency**
+
+- Analytics calculated from loaded pages only are misleading
+- Use full dataset stats from API (e.g., `pagination.total`) or remove partial metrics
+- For production accuracy, complex metrics should come from dedicated analytics endpoint
+
+**Pattern**
+
+```typescript
+// ✅ Correct: Query key includes params, no manual invalidation
+useInfiniteQuery({
+  queryKey: ["products-infinite", params], // Full params in key
+  queryFn: async ({ pageParam = 1 }) => {
+    /* ... */
+  },
+  getNextPageParam: (lastPage) => lastPage.nextPage,
+  placeholderData: (previousData) => previousData, // Prevent loading flicker
+})
+
+// ❌ Incorrect: Manual invalidation causes race conditions
+useEffect(() => {
+  queryClient.invalidateQueries({ queryKey: ["products-infinite"] })
+}, [debouncedGlobalFilter, sorting, columnFilters, queryClient])
+
+// ✅ Correct: IntersectionObserver with guard
+const isFetchingRef = useRef(false)
+
+observerRef.current = new IntersectionObserver(
+  (entries) => {
+    if (
+      entries[0].isIntersecting &&
+      hasNextPage &&
+      !isFetchingNextPage &&
+      !isFetchingRef.current
+    ) {
+      isFetchingRef.current = true
+      fetchNextPage()
+        .catch(() => {
+          /* optional: log error */
+        })
+        .finally(() => {
+          isFetchingRef.current = false
+        })
+    }
+  },
+  { threshold: 0.1 },
+)
+
+// ✅ Correct: API param mapping with clean values
+const apiParams = useMemo(() => {
+  return {
+    limit,
+    search: debouncedGlobalFilter || "",
+    category: category === "all" ? "" : category, // Convert "all" to empty
+    subcategory: subcategory === "all" ? "" : subcategory,
+    brand: brand === "all" ? "" : brand,
+    sortField,
+    sortOrder,
+  }
+}, [sorting, filterMap, debouncedGlobalFilter, limit])
+```
+
+**Lessons Learned**
+
+- Manual `invalidateQueries` combined with automatic refetch from queryKey changes caused race conditions
+- IntersectionObserver without guard caused duplicate `fetchNextPage` calls during rapid scrolling
+- Analytics calculated from loaded pages only showed misleading partial dataset stats
+- UI values like "all" leaking to backend caused unnecessary API complexity
 - User-friendly toast messages for common errors
 
 ### Dashboard Improvements

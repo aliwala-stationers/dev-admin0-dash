@@ -84,6 +84,8 @@ export async function GET(req: NextRequest) {
     const category = req.nextUrl.searchParams.get("category") || ""
     const subcategory = req.nextUrl.searchParams.get("subcategory") || ""
     const brand = req.nextUrl.searchParams.get("brand") || ""
+    const sortField = req.nextUrl.searchParams.get("sortField") || "createdAt"
+    const sortOrder = req.nextUrl.searchParams.get("sortOrder") || "desc"
 
     /**
      * DB
@@ -164,12 +166,16 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Build sort object
+    const sortObj: any = {}
+    sortObj[sortField] = sortOrder === "asc" ? 1 : -1
+
     const [products, total] = await Promise.all([
       Product.find(query)
         .populate("category", "name")
         .populate("brand", "name logo")
         .populate("subcategory", "name")
-        .sort({ createdAt: -1 })
+        .sort(sortObj)
         .skip(skip)
         .limit(limit)
         .lean(),
